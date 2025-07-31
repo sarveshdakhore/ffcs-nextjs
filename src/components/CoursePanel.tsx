@@ -16,7 +16,10 @@ import {
   isCommonSlot,
   subtractArray,
   updateSlots,
-  getSlotsOfCourse
+  getSlotsOfCourse,
+  getCourseSlotsAttack,
+  slotsForAttack,
+  getSlots
 } from '@/utils/timetableHelpers';
 import { CourseData } from '@/context/FFCSContext';
 
@@ -50,8 +53,252 @@ export default function CoursePanel() {
   const [courseMessage, setCourseMessage] = useState({ text: '', color: '' });
   const [teacherMessage, setTeacherMessage] = useState({ text: '', color: '' });
 
+  // Course data and autocomplete states
+  const [coursesData, setCoursesData] = useState<{ courses: any[]; all_data: any[] }>({ 
+    courses: [], 
+    all_data: [] 
+  });
+  const [slotButtons, setSlotButtons] = useState<Array<{
+    code: string;
+    title: string;
+    slot: string;
+    faculty: string;
+    type: string;
+    venue: string;
+    credits: string;
+  }>>([]);
+
+  // Slot filter states
+  const [slotFilter, setSlotFilter] = useState<string[]>([]);
+  const [showAdvancedOptions, setShowAdvancedOptions] = useState(false);
+  const [selectedSlotButton, setSelectedSlotButton] = useState<string | null>(null);
+
+  // Panel input states (advanced options)
+  const [panelSlot, setPanelSlot] = useState('');
+  const [panelFaculty, setPanelFaculty] = useState('');
+  const [panelVenue, setPanelVenue] = useState('');
+  const [panelCredits, setPanelCredits] = useState('');
+  const [panelIsProject, setPanelIsProject] = useState(false);
+
   const activeTable = state.activeTable;
   const subjects = activeTable.subject || {};
+
+  // Load courses data on component mount (like getCourses in vanilla JS)
+  useEffect(() => {
+    const loadCoursesData = async () => {
+      try {
+        // Load course data based on campus selection
+        let coursesModule;
+        
+        if (state.currentCampus === 'Chennai') {
+          coursesModule = await import('@/data/schemas/chennai.json');
+        } else {
+          coursesModule = await import('@/data/schemas/vellore.json');
+        }
+        
+        // Extract courses data from the imported JSON
+        const data = coursesModule.default || coursesModule;
+        
+        // Handle different possible data structures
+        let courses: any[] = [];
+        let all_data: any[] = [];
+        
+        if (Array.isArray(data)) {
+          courses = data;
+          all_data = data;
+        } else if (data && typeof data === 'object') {
+          // Handle nested structure if needed
+          courses = data.courses || data.theory || [];
+          all_data = data.all_data || data.theory || [];
+        }
+        
+        setCoursesData({
+          courses,
+          all_data
+        });
+      } catch (error) {
+        console.error('Error loading courses data:', error);
+        setCoursesData({ courses: [], all_data: [] });
+      }
+    };
+
+    loadCoursesData();
+  }, [state.currentCampus]);
+
+  // Get courses based on selected campus (like getCourses in vanilla JS)
+  const getCourses = () => {
+    // This is now handled by the useEffect above
+    return coursesData;
+  };
+
+  // Add slot buttons functionality (like addSlotButtons in vanilla JS)
+  const addSlotButtons = (courseCode: string) => {
+    const newSlotButtons: typeof slotButtons = [];
+    const theorySlotGroup: string[] = [];
+    const labSlotGroup: string[] = [];
+
+    coursesData.all_data.forEach((courseData: any) => {
+      if (courseData.CODE === courseCode) {
+        const slotButton = {
+          code: courseData.CODE,
+          title: courseData.TITLE,
+          slot: courseData.SLOT,
+          faculty: courseData.FACULTY,
+          type: courseData.TYPE,
+          venue: courseData.VENUE,
+          credits: courseData.CREDITS || '0'
+        };
+
+        // Check if slot belongs to lab or theory
+        if (courseData.SLOT && courseData.SLOT[0] === 'L') {
+          if (labSlotGroup.indexOf(courseData.SLOT) === -1) {
+            labSlotGroup.push(courseData.SLOT);
+          }
+        } else {
+          if (theorySlotGroup.indexOf(courseData.SLOT) === -1) {
+            theorySlotGroup.push(courseData.SLOT);
+          }
+        }
+
+        newSlotButtons.push(slotButton);
+      }
+    });
+
+    setSlotButtons(newSlotButtons);
+    
+    // Update slot filter options
+    const allSlots = [...theorySlotGroup, ...labSlotGroup];
+    setSlotFilter(allSlots);
+  };
+
+  // Build slot button (like buildSlotButton in vanilla JS)
+  const buildSlotButton = (courseData: any) => {
+    return {
+      code: courseData.CODE,
+      title: courseData.TITLE,
+      slot: courseData.SLOT,
+      faculty: courseData.FACULTY,
+      type: courseData.TYPE,
+      venue: courseData.VENUE,
+      credits: courseData.CREDITS || '0'
+    };
+  };
+
+  // Clear panel functionality (like clearPanel in vanilla JS)
+  const clearPanel = () => {
+    setCourseName('');
+    setCredits('');
+    setSelectedCourse('');
+    setTeacherName('');
+    setSlots('');
+    setVenue('');
+    setPanelSlot('');
+    setPanelFaculty('');
+    setPanelVenue('');
+    setPanelCredits('');
+    setPanelIsProject(false);
+    setSlotButtons([]);
+    setSlotFilter([]);
+    setSelectedSlotButton(null);
+    setCourseMessage({ text: '', color: '' });
+    setTeacherMessage({ text: '', color: '' });
+  };
+
+  // Handle slot button click
+  const handleSlotButtonClick = (buttonData: typeof slotButtons[0]) => {
+    setSelectedSlotButton(buttonData.slot);
+    setPanelSlot(buttonData.slot);
+    setPanelFaculty(buttonData.faculty);
+    setPanelVenue(buttonData.venue);
+    setPanelCredits(buttonData.credits);
+    setPanelIsProject(buttonData.type === 'EPJ');
+    
+    // Update form fields
+    setSlots(buttonData.slot);
+    setVenue(buttonData.venue);
+  };
+
+  // Handle advanced options toggle
+  const toggleAdvancedOptions = () => {
+    setShowAdvancedOptions(!showAdvancedOptions);
+  };
+
+  // Handle course selection from autocomplete
+  const handleCourseSelect = (selectedCourse: any) => {
+    const courseString = `${selectedCourse.CODE} - ${selectedCourse.TITLE}`;
+    setCourseName(courseString);
+    
+    // Clear other fields when new course is selected
+    setSlots('');
+    setVenue('');
+    setPanelSlot('');
+    setPanelFaculty('');
+    setPanelVenue('');
+    setPanelCredits('');
+    setPanelIsProject(false);
+    setSelectedSlotButton(null);
+    
+    // Load slot buttons for the selected course
+    addSlotButtons(selectedCourse.CODE);
+  };
+
+  // Add course functionality from advanced panel
+  const handleAddCourseFromPanel = () => {
+    const courseArray = courseName.trim().split('-');
+    const faculty = panelFaculty.trim();
+    const slotString = panelSlot.toUpperCase().trim();
+    const venue = panelVenue.trim();
+    const credits = panelCredits.trim();
+    const isProject = panelIsProject;
+
+    if (courseArray[0] === '') {
+      // Focus course input if available
+      const courseInput = document.getElementById('course-input');
+      if (courseInput) courseInput.focus();
+      return;
+    }
+
+    if (slotString === '') {
+      if (!showAdvancedOptions) {
+        toggleAdvancedOptions();
+      }
+      // Focus slot input if available
+      const slotInput = document.getElementById('panel-slot-input');
+      if (slotInput) slotInput.focus();
+      return;
+    }
+
+    const slots = slotString.split(/\s*\+\s*/).filter(slot => slot);
+    
+    // Generate courseId
+    let courseId = 0;
+    if (activeTable.data.length > 0) {
+      const lastAddedCourse = activeTable.data[activeTable.data.length - 1];
+      courseId = lastAddedCourse.courseId + 1;
+    }
+
+    const courseCode = courseArray[0].trim();
+    const courseTitle = courseArray.slice(1).join('-').trim();
+
+    const courseData: CourseData = {
+      courseId,
+      courseTitle,
+      faculty,
+      slots,
+      venue,
+      credits: parseFloat(credits) || 0,
+      isProject,
+      courseCode
+    };
+
+    dispatch({
+      type: 'ADD_COURSE_TO_TIMETABLE',
+      payload: courseData
+    });
+
+    // Clear form after adding
+    clearPanel();
+  };
 
   // Sort teachers by color priority (Green > Orange > Red) and clash status (EXACTLY like vanilla JS)
   const sortTeachersByColor = (teachers: { [key: string]: any }, courseName: string): [string, any][] => {
