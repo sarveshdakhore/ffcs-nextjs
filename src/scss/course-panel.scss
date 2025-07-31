@@ -206,3 +206,92 @@
 .header-button-element .form-check {
     margin-left: 0.5rem;
 }
+
+/* Course dropdown styles */
+.dropdown-list {
+    display: none;
+}
+
+.dropdown-list.show {
+    display: block;
+}
+
+.dropdown-heading {
+    cursor: pointer;
+}
+
+.arrow {
+    display: inline-block;
+    width: 0;
+    height: 0;
+    margin-left: 0.8rem;
+    margin-bottom: 0.1rem;
+    border-top: 0.5rem solid transparent;
+    border-bottom: 0.5rem solid transparent;
+    border-left: 0.5rem solid rgba(212, 1, 1, 0.766);
+    transition: transform 0.3s ease;
+}
+
+.dropdown-heading.open .arrow {
+    transform: rotate(90deg);
+    border-left: 0.6rem solid rgba(25, 183, 54, 0.766);
+}
+
+.dropdown-teacher {
+    margin-bottom: 0.5rem;
+}
+
+.dropdown-teacher .h2s {
+    color: #070707;
+    font-weight: bold;
+}
+
+/* Clash styling for unavailable teachers */
+.clashLi {
+    opacity: 0.5;
+    position: relative;
+}
+
+.clashLi::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: repeating-linear-gradient(
+        45deg,
+        transparent,
+        transparent 10px,
+        rgba(255, 0, 0, 0.1) 10px,
+        rgba(255, 0, 0, 0.1) 20px
+    );
+    pointer-events: none;
+}
+
+.clash {
+    text-decoration: line-through;
+    color: #999 !important;
+}
+
+/* Sortable styling */
+.sortable-chosen {
+    opacity: 0.5;
+    background: #f0f0f0 !important;
+    transform: scale(1.05);
+    transition: all 0.3s ease;
+}
+
+.sortable-ghost {
+    opacity: 0.4;
+    background: #ddd !important;
+}
+
+/* When sortable is active, show drag cursor on hoverable elements */
+.dropdown-heading:hover {
+    background: rgba(0, 0, 0, 0.05);
+}
+
+.dropdown-list li:hover {
+    background: rgba(0, 0, 0, 0.05) !important;
+}

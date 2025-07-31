@@ -44,10 +44,17 @@ export default function Timetable() {
   };
 
   const handleQuickToggle = () => {
-    setShowQuickButtons(!showQuickButtons);
+    const newShowState = !showQuickButtons;
+    setShowQuickButtons(newShowState);
+    
+    if (!newShowState) {
+      // QV is being closed - remove QV effects but keep individual cell highlights
+      dispatch({ type: 'CLEAR_QV_HIGHLIGHTS' });
+    }
+    
     dispatch({ 
       type: 'SET_UI_STATE', 
-      payload: { quickVisualizationEnabled: !state.ui.quickVisualizationEnabled } 
+      payload: { quickVisualizationEnabled: newShowState } 
     });
   };
 
@@ -134,14 +141,37 @@ export default function Timetable() {
       slots.forEach((slotText, index) => {
         if (slotText) {
           // Original logic with theory/lab handling restored
-          const parts = slotText.split('/');
-          const theorySlot = parts[0];
-          const labSlot = parts[1] ? parts[1].trim() : null;
+          const parts = slotText.split(' / ');
+          const theorySlot = parts[0]?.trim();
+          const labSlot = parts[1]?.trim() || null;
           
-          // Check for highlighting and courses
-          const timetableSlot = state.timetable[theorySlot];
-          const isHighlighted = timetableSlot?.isSelected || false;
-          const isClash = hasClash(theorySlot);
+          // Check for courses in this slot (attack mode or normal mode)
+          const dataToCheck = state.ui.attackMode ? state.activeTable.attackData : state.activeTable.data;
+          const coursesInSlot = dataToCheck.filter(course => 
+            course.slots.includes(theorySlot)
+          );
+          
+          // Check if this specific cell is highlighted in quick array
+          const quickArray = state.ui.attackMode ? state.activeTable.attackQuick : state.activeTable.quick;
+          const dayRowMap: { [key: string]: number } = {
+            mon: 2, tue: 3, wed: 4, thu: 5, fri: 6, sat: 7, sun: 8
+          };
+          const currentRow = dayRowMap[day];
+          const currentCol = index;
+          
+          const isQuickHighlighted = quickArray.some((entry: number[]) => {
+            if (entry.length === 2) {
+              // Individual cell highlight [row, col]
+              return entry[0] === currentRow && entry[1] === currentCol;
+            } else if (entry.length === 3 && entry[2] === true) {
+              // QV tile highlight [row, col, true]
+              return entry[0] === currentRow && entry[1] === currentCol;
+            }
+            return false;
+          });
+          
+          const isHighlighted = isQuickHighlighted || coursesInSlot.length > 0;
+          const isClash = coursesInSlot.length > 1; // Multiple courses in same slot
           
           const classNames = ['period', theorySlot].filter(Boolean);
           if (isHighlighted) classNames.push('highlight');
@@ -151,16 +181,40 @@ export default function Timetable() {
             <td 
               key={`${day}-${index}`} 
               className={classNames.join(' ')}
-              onClick={() => handleSlotClick(theorySlot)}
+              onClick={() => {
+                // Cell click only works when QV is enabled and cell has no courses
+                if (state.ui.quickVisualizationEnabled && coursesInSlot.length === 0 && !isClash) {
+                  dispatch({ type: 'TOGGLE_CELL_HIGHLIGHT', payload: { day, index, theorySlot } });
+                }
+              }}
             >
-              {timetableSlot?.course && timetableSlot?.teacher ? (
-                <div 
-                  data-course={`course${timetableSlot.course.code}`}
-                  style={{ backgroundColor: timetableSlot.teacher.color }}
-                >
-                  {timetableSlot.course.code}
-                  {timetableSlot.teacher.venue ? `-${timetableSlot.teacher.venue}` : ''}
-                  {labSlot ? ` / ${labSlot}` : ''}
+              {coursesInSlot.length > 0 ? (
+                coursesInSlot.map((course, courseIndex) => {
+                  // Find the teacher's color from the subject data
+                  const subjectName = course.courseCode ? 
+                    `${course.courseCode}-${course.courseTitle}` : 
+                    course.courseTitle;
+                  const teacherData = state.activeTable.subject[subjectName]?.teacher[course.faculty];
+                  const backgroundColor = teacherData?.color || 'rgb(255, 228, 135)';
+                  
+                  return (
+                    <div 
+                      key={`${course.courseId}-${courseIndex}`}
+                      data-course={`course${course.courseId}`}
+                      style={{ 
+                        backgroundColor,
+                        marginBottom: courseIndex < coursesInSlot.length - 1 ? '2px' : '0'
+                      }}
+                    >
+                      {course.courseCode || course.courseTitle}
+                      {course.venue && course.venue !== 'VENUE' ? `-${course.venue}` : ''}
+                    </div>
+                  );
+                })
+              ) : isQuickHighlighted ? (
+                // Show empty highlighted slot from quick array
+                <div style={{ backgroundColor: 'rgba(212, 237, 218, 0.3)' }}>
+                  {slotText}
                 </div>
               ) : (
                 slotText
@@ -196,16 +250,86 @@ export default function Timetable() {
 
   const renderQuickButtons = () => {
     const handleQuickButtonClick = (slot: string) => {
-      dispatch({ type: 'TOGGLE_SLOT_HIGHLIGHT', payload: slot });
+      // QV tile click - find ALL cells with this theory slot and highlight them
+      // This matches vanilla JS: $(`#timetable .${slot}`).each((i, el) => { ... })
+      
+      const activeTableToUpdate = state.ui.attackMode ? 'attackQuick' : 'quick';
+      const currentQuick = state.ui.attackMode ? state.activeTable.attackQuick : state.activeTable.quick;
+      
+      // Find all cells with this theory slot class in the DOM
+      const cellsWithSlot: [number, number][] = [];
+      const timetableRows = document.querySelectorAll('#timetable tbody tr');
+      
+      timetableRows.forEach((row, rowIndex) => {
+        const cells = row.querySelectorAll('td');
+        cells.forEach((cell, colIndex) => {
+          // Check if this cell has the theory slot class and no course content
+          if (cell.classList.contains(slot) && 
+              cell.classList.contains('period') && 
+              !cell.classList.contains('clash') && 
+              cell.querySelector('div[data-course]') === null) {
+            cellsWithSlot.push([rowIndex, colIndex]);
+          }
+        });
+      });
+      
+      if (cellsWithSlot.length === 0) return; // No valid cells found
+      
+      // Check if any of these positions are currently highlighted (with third parameter true)
+      const hasHighlighted = cellsWithSlot.some(([r, c]) => 
+        currentQuick.some((entry: number[]) => {
+          if (entry.length === 3) {
+            return entry[0] === r && entry[1] === c && entry[2] === true;
+          }
+          return false;
+        })
+      );
+      
+      // Create the positions array for the action
+      const positions = cellsWithSlot.map(([r, c]) => [r, c] as [number, number]);
+      
+      dispatch({ 
+        type: 'PROCESS_QV_SLOT_HIGHLIGHT', 
+        payload: { slot, positions } 
+      });
     };
 
     const renderButton = (slot: string) => {
-      const isHighlighted = state.timetable[slot]?.isSelected || false;
+      // Check if this slot is highlighted in quick array (QV tile highlights have third parameter true)
+      const quickArray = state.ui.attackMode ? state.activeTable.attackQuick : state.activeTable.quick;
+      
+      // Find cells with this theory slot class to check if they're highlighted
+      const cellsWithSlot: [number, number][] = [];
+      if (typeof document !== 'undefined') {
+        const timetableRows = document.querySelectorAll('#timetable tbody tr');
+        timetableRows.forEach((row, rowIndex) => {
+          const cells = row.querySelectorAll('td');
+          cells.forEach((cell, colIndex) => {
+            if (cell.classList.contains(slot) && cell.classList.contains('period')) {
+              cellsWithSlot.push([rowIndex, colIndex]);
+            }
+          });
+        });
+      }
+      
+      // Check if any of this slot's positions are QV-highlighted
+      const isQVHighlighted = cellsWithSlot.some(([r, c]) => 
+        quickArray.some((entry: number[]) => {
+          return entry.length === 3 && entry[0] === r && entry[1] === c && entry[2] === true;
+        })
+      );
+      
+      const dataToCheck = state.ui.attackMode ? state.activeTable.attackData : state.activeTable.data;
+      const hasCoursesInSlot = dataToCheck.some(course => 
+        course.slots.includes(slot)
+      );
+      const shouldHighlight = isQVHighlighted || hasCoursesInSlot;
+      
       return (
         <button 
           key={slot}
           type="button"
-          className={`${slot}-tile btn quick-button${isHighlighted ? ' highlight' : ''}`}
+          className={`${slot}-tile btn quick-button${shouldHighlight ? ' highlight' : ''}`}
           onClick={() => handleQuickButtonClick(slot)}
         >
           {slot}
@@ -254,16 +378,86 @@ export default function Timetable() {
 
   const renderQuickButtonsBelow = () => {
     const handleQuickButtonClick = (slot: string) => {
-      dispatch({ type: 'TOGGLE_SLOT_HIGHLIGHT', payload: slot });
+      // QV tile click - find ALL cells with this theory slot and highlight them
+      // This matches vanilla JS: $(`#timetable .${slot}`).each((i, el) => { ... })
+      
+      const activeTableToUpdate = state.ui.attackMode ? 'attackQuick' : 'quick';
+      const currentQuick = state.ui.attackMode ? state.activeTable.attackQuick : state.activeTable.quick;
+      
+      // Find all cells with this theory slot class in the DOM
+      const cellsWithSlot: [number, number][] = [];
+      const timetableRows = document.querySelectorAll('#timetable tbody tr');
+      
+      timetableRows.forEach((row, rowIndex) => {
+        const cells = row.querySelectorAll('td');
+        cells.forEach((cell, colIndex) => {
+          // Check if this cell has the theory slot class and no course content
+          if (cell.classList.contains(slot) && 
+              cell.classList.contains('period') && 
+              !cell.classList.contains('clash') && 
+              cell.querySelector('div[data-course]') === null) {
+            cellsWithSlot.push([rowIndex, colIndex]);
+          }
+        });
+      });
+      
+      if (cellsWithSlot.length === 0) return; // No valid cells found
+      
+      // Check if any of these positions are currently highlighted (with third parameter true)
+      const hasHighlighted = cellsWithSlot.some(([r, c]) => 
+        currentQuick.some((entry: number[]) => {
+          if (entry.length === 3) {
+            return entry[0] === r && entry[1] === c && entry[2] === true;
+          }
+          return false;
+        })
+      );
+      
+      // Create the positions array for the action
+      const positions = cellsWithSlot.map(([r, c]) => [r, c] as [number, number]);
+      
+      dispatch({ 
+        type: 'PROCESS_QV_SLOT_HIGHLIGHT', 
+        payload: { slot, positions } 
+      });
     };
 
     const renderButton = (slot: string) => {
-      const isHighlighted = state.timetable[slot]?.isSelected || false;
+      // Check if this slot is highlighted in quick array (QV tile highlights have third parameter true)
+      const quickArray = state.ui.attackMode ? state.activeTable.attackQuick : state.activeTable.quick;
+      
+      // Find cells with this theory slot class to check if they're highlighted
+      const cellsWithSlot: [number, number][] = [];
+      if (typeof document !== 'undefined') {
+        const timetableRows = document.querySelectorAll('#timetable tbody tr');
+        timetableRows.forEach((row, rowIndex) => {
+          const cells = row.querySelectorAll('td');
+          cells.forEach((cell, colIndex) => {
+            if (cell.classList.contains(slot) && cell.classList.contains('period')) {
+              cellsWithSlot.push([rowIndex, colIndex]);
+            }
+          });
+        });
+      }
+      
+      // Check if any of this slot's positions are QV-highlighted
+      const isQVHighlighted = cellsWithSlot.some(([r, c]) => 
+        quickArray.some((entry: number[]) => {
+          return entry.length === 3 && entry[0] === r && entry[1] === c && entry[2] === true;
+        })
+      );
+      
+      const dataToCheck = state.ui.attackMode ? state.activeTable.attackData : state.activeTable.data;
+      const hasCoursesInSlot = dataToCheck.some(course => 
+        course.slots.includes(slot)
+      );
+      const shouldHighlight = isQVHighlighted || hasCoursesInSlot;
+      
       return (
         <button 
           key={slot}
           type="button"
-          className={`${slot}-tile btn quick-button${isHighlighted ? ' highlight' : ''}`}
+          className={`${slot}-tile btn quick-button${shouldHighlight ? ' highlight' : ''}`}
           onClick={() => handleQuickButtonClick(slot)}
         >
           {slot}
@@ -330,17 +524,17 @@ export default function Timetable() {
                   data-bs-toggle="dropdown"
                   aria-expanded="false"
                 >
-                  {state.tables[currentTable]?.name || 'Default Table'}
+                  {state.timetableStoragePref.find(t => t.id === currentTable)?.name || 'Default Table'}
                 </button>
                 <ul id="tt-picker-dropdown" className="dropdown-menu">
-                  {Object.entries(state.tables).map(([id, table]) => (
-                    <li key={id}>
+                  {state.timetableStoragePref.map((table) => (
+                    <li key={table.id}>
                       <div className="dropdown-item d-flex justify-content-between">
                         <a
                           href="#"
                           onClick={(e) => {
                             e.preventDefault();
-                            handleTableSwitch(Number(id));
+                            handleTableSwitch(table.id);
                           }}
                         >
                           {table.name}
@@ -354,7 +548,7 @@ export default function Timetable() {
                             if (newName) {
                               dispatch({ 
                                 type: 'RENAME_TABLE', 
-                                payload: { id: Number(id), name: newName } 
+                                payload: { id: table.id, name: newName } 
                               });
                             }
                           }}
@@ -384,8 +578,9 @@ export default function Timetable() {
             <button
               className="btn btn-success"
               type="button"
-              data-bs-toggle="modal"
-              data-bs-target="#download-modal"
+              onClick={() => {
+                document.getElementById('download-modal')?.click();
+              }}
             >
               <i className="fas fa-download"></i>
               <span>&nbsp;&nbsp;Download Timetable</span>
@@ -406,8 +601,9 @@ export default function Timetable() {
             <button
               className="btn btn-danger"
               type="button"
-              data-bs-toggle="modal"
-              data-bs-target="#reset-modal"
+              onClick={() => {
+                document.getElementById('reset-modal')?.click();
+              }}
             >
               <i className="fas fa-redo"></i>
               <span>&nbsp;&nbsp;Reset Table</span>

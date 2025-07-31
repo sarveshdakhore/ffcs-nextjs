@@ -1,1 +1,238 @@
 /* Next.js Global Styles */
+
+/* Timetable Styles */
+#timetable {
+  font-size: 0.8rem;
+}
+
+#timetable table {
+  border-collapse: collapse;
+  width: 100%;
+}
+
+#timetable td {
+  border: 1px solid #dee2e6;
+  padding: 4px;
+  text-align: center;
+  vertical-align: middle;
+  min-width: 50px;
+  height: 40px;
+}
+
+#timetable .day {
+  background-color: #f8f9fa;
+  font-weight: bold;
+  writing-mode: horizontal-tb;
+}
+
+#timetable .theory-hour,
+#timetable .lab-hour {
+  background-color: #f8f9fa;
+  font-size: 0.7rem;
+  line-height: 1.1;
+}
+
+#timetable .lunch {
+  background-color: #ffc107;
+  writing-mode: vertical-rl;
+  text-orientation: mixed;
+  font-weight: bold;
+  color: #000;
+}
+
+#timetable .period {
+  cursor: pointer;
+  position: relative;
+  font-size: 0.75rem;
+  line-height: 1.2;
+}
+
+#timetable .period:hover {
+  background-color: #f8f9fa;
+}
+
+#timetable .period.highlight {
+  background-color: #d4edda !important;
+  border-color: #28a745 !important;
+}
+
+#timetable .period.clash {
+  background-color: #f8d7da !important;
+  border-color: #dc3545 !important;
+}
+
+#timetable .period div[data-course] {
+  padding: 2px 4px;
+  border-radius: 3px;
+  font-weight: 500;
+  font-size: 0.7rem;
+  line-height: 1;
+  margin: 1px;
+  word-break: break-word;
+}
+
+/* Quick Visualization Buttons */
+.quick-buttons {
+  margin: 10px 0;
+}
+
+.quick-buttons table {
+  margin: 0 auto;
+}
+
+.quick-buttons .quick-button {
+  margin: 2px;
+  padding: 8px 12px;
+  font-size: 0.8rem;
+  border: 1px solid #dee2e6;
+  background-color: #fff;
+  color: #495057;
+  cursor: pointer;
+  border-radius: 4px;
+  transition: all 0.2s;
+}
+
+.quick-buttons .quick-button:hover {
+  background-color: #f8f9fa;
+}
+
+.quick-buttons .quick-button.highlight {
+  background-color: #d4edda;
+  border-color: #28a745;
+  color: #155724;
+}
+
+/* Course Panel Styles */
+.dropdown-list {
+  display: none;
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  border: 1px solid #dee2e6;
+  border-top: none;
+  background-color: #fff;
+}
+
+.dropdown-list.show {
+  display: block;
+}
+
+.dropdown-list li {
+  display: flex;
+  align-items: center;
+  padding: 8px;
+  border-bottom: 1px solid #f1f3f4;
+  cursor: pointer;
+}
+
+.dropdown-list li:hover {
+  background-color: #f8f9fa;
+}
+
+.dropdown-list li:last-child {
+  border-bottom: none;
+}
+
+.dropdown-heading {
+  background-color: #f8f9fa;
+  border: 1px solid #dee2e6;
+  padding: 10px;
+  cursor: pointer;
+  user-select: none;
+}
+
+.dropdown-heading:hover {
+  background-color: #e9ecef;
+}
+
+.dropdown-heading.open {
+  border-bottom: none;
+}
+
+.dropdown-heading .arrow::after {
+  content: '▼';
+  float: right;
+  transition: transform 0.2s;
+}
+
+.dropdown-heading.open .arrow::after {
+  transform: rotate(180deg);
+}
+
+.h2s {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin: 0;
+}
+
+.h2s h2 {
+  margin: 0;
+  font-size: 1.1rem;
+  display: flex;
+  align-items: center;
+}
+
+.h2s h4 {
+  margin: 0;
+  font-size: 0.9rem;
+  color: #6c757d;
+}
+
+/* Utility Classes */
+.noselect {
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+}
+
+.left-border {
+  border-left: 1px solid #dee2e6;
+}
+
+.left-box {
+  flex: 1;
+  min-height: 400px;
+}
+
+.right-box {
+  flex: 1;
+  padding: 0 15px;
+}
+
+/* Course List Sortable Styles */
+#course-list th {
+  cursor: pointer;
+  user-select: none;
+  position: relative;
+  transition: background-color 0.2s;
+}
+
+#course-list th:hover {
+  background-color: rgba(25, 135, 84, 0.1);
+}
+
+#course-list th:last-child {
+  cursor: default;
+}
+
+#course-list th:last-child:hover {
+  background-color: transparent;
+}
+
+#course-list th.ascending,
+#course-list th.descending {
+  background-color: rgba(25, 135, 84, 0.2);
+  font-weight: bold;
+}
+
+/* Table hover effects */
+#course-list tbody tr:hover {
+  background-color: rgba(0, 0, 0, 0.05);
+}
+
+/* Sort indicators styling */
+#course-list th {
+  white-space: nowrap;
+}

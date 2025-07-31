@@ -11,31 +11,33 @@ export default function Modals() {
   const [showResetModal, setShowResetModal] = useState(false);
   const [showDownloadModal, setShowDownloadModal] = useState(false);
   const [showSwitchCampusModal, setShowSwitchCampusModal] = useState(false);
+  const [showUploadModal, setShowUploadModal] = useState(false);
   const [tableNameInput, setTableNameInput] = useState('');
   const [tableToRename, setTableToRename] = useState<number | null>(null);
   const [tableToDelete, setTableToDelete] = useState<number | null>(null);
 
   const handleDownloadTimetable = () => {
-    // Create a canvas or use html2canvas to capture the timetable
-    // For now, we'll create a simple text export
-    const timetableData = {
-      courses: state.selectedCourses,
-      timetable: state.timetable,
-      totalCredits: state.totalCredits,
-      tableName: state.tables[state.currentTableId]?.name || 'Default Table',
-      campus: state.currentCampus,
-      exportDate: new Date().toISOString(),
-    };
+    // Exit edit modes before export (matching vanilla JS behavior)
+    if (state.globalVars.editSub || state.globalVars.editTeacher) {
+      dispatch({ type: 'SET_GLOBAL_VAR', payload: { key: 'editSub', value: false } });
+      dispatch({ type: 'SET_GLOBAL_VAR', payload: { key: 'editTeacher', value: false } });
+    }
 
-    const dataStr = JSON.stringify(timetableData, null, 2);
-    const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
+    // Export activeTable matching vanilla JS format
+    const activeTable = state.activeTable;
+    const jsonStr = JSON.stringify(activeTable);
+    const utf8Str = btoa(encodeURIComponent(jsonStr));
     
-    const exportFileDefaultName = `ffcs-timetable-${new Date().toISOString().slice(0, 10)}.json`;
+    const blob = new Blob([utf8Str], { type: 'application/octet-stream' });
+    const url = URL.createObjectURL(blob);
     
     const linkElement = document.createElement('a');
-    linkElement.setAttribute('href', dataUri);
-    linkElement.setAttribute('download', exportFileDefaultName);
+    linkElement.setAttribute('href', url);
+    linkElement.setAttribute('download', `${activeTable.name}.ffcsplanner`);
+    document.body.appendChild(linkElement);
     linkElement.click();
+    document.body.removeChild(linkElement);
+    URL.revokeObjectURL(url);
     
     setShowDownloadModal(false);
   };
@@ -84,6 +86,63 @@ export default function Modals() {
   const handleResetTable = () => {
     dispatch({ type: 'RESET_TABLE' });
     setShowResetModal(false);
+  };
+
+  const handleUploadTimetable = () => {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.ffcsplanner, .txt, .ffcsonthego';
+    input.onchange = (event: any) => {
+      const file = event.target.files[0];
+      if (file) {
+        processFile(file);
+      }
+    };
+    input.click();
+    setShowUploadModal(false);
+  };
+
+  const processFile = (file: File) => {
+    const reader = new FileReader();
+    reader.onload = (event: any) => {
+      try {
+        // Extract the data from the file
+        const base64Data = event.target.result;
+        
+        // Decode the base64 string back into a URI-encoded string
+        const uriEncodedData = atob(base64Data);
+        
+        // Decode the URI-encoded string back into a JSON string
+        const jsonStr = decodeURIComponent(uriEncodedData);
+        
+        // Parse the JSON string back into an object
+        const activeTableUpdate = JSON.parse(jsonStr);
+        
+        // Preserve current table ID and name
+        activeTableUpdate.id = state.activeTable.id;
+        activeTableUpdate.name = state.activeTable.name;
+        
+        // Update the current table with imported data
+        const updatedTables = state.timetableStoragePref.map(table => 
+          table.id === state.activeTable.id ? activeTableUpdate : table
+        );
+        
+        dispatch({
+          type: 'LOAD_DATA',
+          payload: {
+            timetableStoragePref: updatedTables,
+            activeTable: activeTableUpdate,
+            totalCredits: activeTableUpdate.data.reduce((sum: number, course: any) => sum + course.credits, 0)
+          }
+        });
+        
+        alert('Timetable imported successfully!');
+      } catch (error) {
+        console.error('Error processing file:', error);
+        alert('Error importing timetable. Please check the file format.');
+      }
+    };
+    reader.readAsText(file);
   };
 
   const handleSwitchCampus = () => {
@@ -302,6 +361,37 @@ export default function Modals() {
         </div>
       )}
 
+      {/* Upload Modal */}
+      {showUploadModal && (
+        <div className="modal show d-block" tabIndex={-1}>
+          <div className="modal-dialog modal-sm">
+            <div className="modal-content">
+              <div className="modal-header">
+                <h5 className="modal-title">Upload Timetable</h5>
+                <button
+                  type="button"
+                  className="btn-close"
+                  onClick={() => setShowUploadModal(false)}
+                ></button>
+              </div>
+              <div className="modal-body">
+                <p className="text-muted mb-3">
+                  Upload a previously saved timetable file (.ffcsplanner)
+                </p>
+                <button
+                  type="button"
+                  className="btn btn-primary w-100"
+                  onClick={handleUploadTimetable}
+                >
+                  <i className="fas fa-upload"></i>
+                  &nbsp;&nbsp;Choose File
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Switch Campus Modal */}
       {showSwitchCampusModal && (
         <div className="modal show d-block" tabIndex={-1}>
@@ -349,6 +439,7 @@ export default function Modals() {
         <div id="delete-modal" onClick={() => setShowDeleteModal(true)}></div>
         <div id="reset-modal" onClick={() => setShowResetModal(true)}></div>
         <div id="download-modal" onClick={() => setShowDownloadModal(true)}></div>
+        <div id="upload-modal" onClick={() => setShowUploadModal(true)}></div>
         <div id="switch-campus-modal" onClick={() => setShowSwitchCampusModal(true)}></div>
       </div>
     </>

@@ -1,6 +1,26 @@
 'use client';
 
 import React, { createContext, useContext, useReducer, useEffect, ReactNode } from 'react';
+import localforage from 'localforage';
+
+// Clash map from vanilla JS - used for slot conflict detection
+const clashMap: { [key: string]: string[] } = {
+  A1: ['L1', 'L14'], B1: ['L7', 'L20'], C1: ['L13', 'L26'], D1: ['L3', 'L19', 'L4'],
+  E1: ['L9', 'L25', 'L10'], F1: ['L2', 'L15', 'L16'], G1: ['L8', 'L21', 'L22'],
+  TA1: ['L27', 'L28'], TB1: ['L4', 'L5'], TC1: ['L10', 'L11'], TD1: ['L29', 'L30'],
+  TE1: ['L22', 'L23'], TF1: ['L28', 'L29'], TG1: ['L5', 'L6'], TAA1: ['L11', 'L12'],
+  TCC1: ['L23', 'L24'], A2: ['L31', 'L44'], B2: ['L37', 'L50'], C2: ['L43', 'L56'],
+  D2: ['L33', 'L49', 'L34'], E2: ['L39', 'L55', 'L40'], F2: ['L32', 'L45', 'L46'],
+  G2: ['L38', 'L51', 'L52'], TA2: ['L57', 'L58'], TB2: ['L34', 'L35'], TC2: ['L40', 'L41'],
+  TD2: ['L46', 'L47'], TE2: ['L52', 'L53'], TF2: ['L58', 'L59'], TG2: ['L35', 'L36'],
+  TAA2: ['L41', 'L42'], TBB2: ['L47', 'L48'], TCC2: ['L53', 'L54'], TDD2: ['L59', 'L60'],
+  L1: ['A1'], L2: ['F1'], L3: ['D1'], L4: ['TB1', 'D1'], L5: ['TG1', 'TB1'], L6: ['TG1'],
+  L7: ['B1'], L8: ['G1'], L9: ['E1'], L10: ['TC1', 'E1'], L11: ['TAA1', 'TC1'], L12: ['TAA1'],
+  L13: ['C1'], L14: ['A1'], L15: ['F1'], L16: ['V1', 'F1'], L17: ['V2', 'V1'], L18: ['V2'],
+  L19: ['D1'], L20: ['B1'], L21: ['G1'], L22: ['TE1', 'G1'], L23: ['TCC1', 'TE1'], L24: ['TCC1'],
+  L25: ['E1'], L26: ['C1'], L27: ['TA1'], L28: ['TF1', 'TA1'], L29: ['TD1', 'TF1'], L30: ['TD1']
+};
+import { slotsExistInNonLectureFormat, clashMap } from '@/constants/timetableConstants';
 
 // Types
 export interface Course {
@@ -25,13 +45,67 @@ export interface TimetableSlot {
   isSelected: boolean;
 }
 
+// Match vanilla JS data structure
+export interface TeacherData {
+  slots: string;
+  venue: string;
+  color: string;  // Added color field to match vanilla JS
+}
+
+export interface SubjectData {
+  teacher: {
+    [teacherName: string]: TeacherData;
+  };
+  credits: number;
+}
+
+// Course data structure for the data array
+export interface CourseData {
+  courseId: number;
+  courseTitle: string;
+  faculty: string;
+  slots: string[];
+  venue: string;
+  credits: number;
+  isProject: boolean;
+  courseCode: string;
+}
+
+export interface TimetableData {
+  id: number;
+  name: string;
+  data: CourseData[];        // Course enrollment data
+  subject: {         // Subject/course list - changed from array to object
+    [courseName: string]: SubjectData;
+  };
+  quick: number[][];       // Quick visualization data [[row, column, isHighlighted?]]
+  attackData: CourseData[];  // Attack mode data
+  attackQuick: number[][]; // Attack mode quick visualization
+}
+
+// Global variables from vanilla JS
+export interface GlobalVars {
+  editSub: boolean;
+  editTeacher: boolean;
+  sortableIsActive: boolean;
+  attackData: CourseData[];
+  attackQuick: number[][];
+  slotsExistInNonLectureFormat: Set<string>;
+  clashMap: { [key: string]: string[] };
+}
+
 export interface FFCSState {
+  // Array of timetables matching vanilla JS structure
+  timetableStoragePref: TimetableData[];
+  activeTable: TimetableData;
+  currentTableId: number;
+  
+  // Legacy fields for compatibility
   courses: Course[];
   selectedCourses: Course[];
   timetable: { [key: string]: TimetableSlot };
   currentCampus: 'Vellore' | 'Chennai';
-  currentTableId: number;
-  tables: { [key: number]: { name: string; courses: Course[] } };
+  
   editMode: {
     isEditingCourse: boolean;
     isEditingTeacher: boolean;
@@ -43,8 +117,13 @@ export interface FFCSState {
     autoFocusEnabled: boolean;
     courseEditEnabled: boolean;
     liveFFCSMode: boolean;
+    attackMode: boolean;
+    pendingQVSlot?: string;
   };
   totalCredits: number;
+  
+  // Global variables from vanilla JS
+  globalVars: GlobalVars;
 }
 
 // Action types
@@ -58,6 +137,10 @@ type FFCSAction =
   | { type: 'SELECT_SLOT'; payload: { slot: string; course?: Course; teacher?: Teacher } }
   | { type: 'DESELECT_SLOT'; payload: string }
   | { type: 'TOGGLE_SLOT_HIGHLIGHT'; payload: string }
+  | { type: 'TOGGLE_CELL_HIGHLIGHT'; payload: { day: string; index: number; theorySlot: string } }
+  | { type: 'TOGGLE_QV_SLOT_HIGHLIGHT'; payload: string }
+  | { type: 'PROCESS_QV_SLOT_HIGHLIGHT'; payload: { slot: string; positions: [number, number][] } }
+  | { type: 'CLEAR_QV_HIGHLIGHTS' }
   | { type: 'SWITCH_CAMPUS'; payload: 'Vellore' | 'Chennai' }
   | { type: 'CREATE_TABLE'; payload: string }
   | { type: 'SWITCH_TABLE'; payload: number }
@@ -67,18 +150,41 @@ type FFCSAction =
   | { type: 'SET_EDIT_MODE'; payload: Partial<FFCSState['editMode']> }
   | { type: 'SET_UI_STATE'; payload: Partial<FFCSState['ui']> }
   | { type: 'LOAD_DATA'; payload: Partial<FFCSState> }
-  | { type: 'CLEAR_ALL' };
+  | { type: 'CLEAR_ALL' }
+  | { type: 'ADD_SUBJECT'; payload: { courseName: string; credits: number } }
+  | { type: 'REMOVE_SUBJECT'; payload: string }
+  | { type: 'ADD_TEACHER_TO_SUBJECT'; payload: { courseName: string; teacherName: string; slots: string; venue: string; color: string } }
+  | { type: 'UPDATE_TEACHER_IN_SUBJECT'; payload: { courseName: string; teacherName: string; slots: string; venue: string; color: string } }
+  | { type: 'REMOVE_TEACHER_FROM_SUBJECT'; payload: { courseName: string; teacherName: string } }
+  | { type: 'UPDATE_LOCALFORAGE' }
+  | { type: 'SET_GLOBAL_VAR'; payload: { key: keyof GlobalVars; value: any } }
+  | { type: 'ADD_COURSE_TO_TIMETABLE'; payload: CourseData }
+  | { type: 'REMOVE_COURSE_FROM_TIMETABLE'; payload: number }
+  | { type: 'ADD_COURSE_TO_ATTACK_DATA'; payload: CourseData }
+  | { type: 'REMOVE_COURSE_FROM_ATTACK_DATA'; payload: number };
 
-// Initial state
+// Initial state matching vanilla JS structure
+const defaultTable: TimetableData = {
+  id: 0,
+  name: 'Default Table',
+  data: [],
+  subject: {},  // Changed from array to object
+  quick: [],
+  attackData: [],
+  attackQuick: [],
+};
+
 const initialState: FFCSState = {
+  timetableStoragePref: [defaultTable],
+  activeTable: defaultTable,
+  currentTableId: 0,
+  
+  // Legacy fields
   courses: [],
   selectedCourses: [],
   timetable: {},
   currentCampus: 'Vellore',
-  currentTableId: 0,
-  tables: {
-    0: { name: 'Default Table', courses: [] }
-  },
+  
   editMode: {
     isEditingCourse: false,
     isEditingTeacher: false,
@@ -88,8 +194,20 @@ const initialState: FFCSState = {
     autoFocusEnabled: true,
     courseEditEnabled: false,
     liveFFCSMode: false,
+    attackMode: false,
   },
   totalCredits: 0,
+  
+  // Global variables from vanilla JS
+  globalVars: {
+    editSub: false,
+    editTeacher: false,
+    sortableIsActive: false,
+    attackData: [],
+    attackQuick: [],
+    slotsExistInNonLectureFormat: slotsExistInNonLectureFormat,
+    clashMap: clashMap,
+  },
 };
 
 // Reducer
@@ -201,55 +319,77 @@ function ffcsReducer(state: FFCSState, action: FFCSAction): FFCSState {
       };
 
     case 'CREATE_TABLE':
-      const newTableId = Math.max(...Object.keys(state.tables).map(Number)) + 1;
+      const newTableId = state.timetableStoragePref[state.timetableStoragePref.length - 1].id + 1;
+      const newTable: TimetableData = {
+        id: newTableId,
+        name: action.payload || `Table ${newTableId}`,
+        data: [],
+        subject: {},  // Changed from array to object
+        quick: [],
+        attackData: [],
+        attackQuick: [],
+      };
+      const updatedTables = [...state.timetableStoragePref, newTable];
       return {
         ...state,
-        tables: {
-          ...state.tables,
-          [newTableId]: { name: action.payload, courses: [] }
-        },
+        timetableStoragePref: updatedTables,
+        activeTable: newTable,
         currentTableId: newTableId,
       };
 
     case 'SWITCH_TABLE':
+      const selectedTable = state.timetableStoragePref.find(t => t.id === action.payload);
+      if (!selectedTable) return state;
       return {
         ...state,
+        activeTable: selectedTable,
         currentTableId: action.payload,
       };
 
     case 'RENAME_TABLE':
+      const renamedTables = state.timetableStoragePref.map(table =>
+        table.id === action.payload.id
+          ? { ...table, name: action.payload.name }
+          : table
+      );
+      const renamedActive = state.activeTable.id === action.payload.id
+        ? { ...state.activeTable, name: action.payload.name }
+        : state.activeTable;
       return {
         ...state,
-        tables: {
-          ...state.tables,
-          [action.payload.id]: {
-            ...state.tables[action.payload.id],
-            name: action.payload.name
-          }
-        },
+        timetableStoragePref: renamedTables,
+        activeTable: renamedActive,
       };
 
     case 'DELETE_TABLE':
-      const newTables = { ...state.tables };
-      delete newTables[action.payload];
+      if (state.timetableStoragePref.length === 1) return state; // Can't delete last table
+      const filteredTables = state.timetableStoragePref.filter(t => t.id !== action.payload);
+      const newCurrentTable = action.payload === state.currentTableId 
+        ? filteredTables[0] 
+        : state.activeTable;
       return {
         ...state,
-        tables: newTables,
-        currentTableId: action.payload === state.currentTableId ? 0 : state.currentTableId,
+        timetableStoragePref: filteredTables,
+        activeTable: newCurrentTable,
+        currentTableId: newCurrentTable.id,
       };
 
     case 'RESET_TABLE':
+      // Clear only selections, not the course/subject data (like vanilla JS clearTimetable + courseRemove)
+      const resetTables = state.timetableStoragePref.map(table =>
+        table.id === state.currentTableId
+          ? { ...table, data: [], quick: [], attackData: [], attackQuick: [] }
+          : table
+      );
+      const resetActive = { ...state.activeTable, data: [], quick: [], attackData: [], attackQuick: [] };
       return {
         ...state,
+        timetableStoragePref: resetTables,
+        activeTable: resetActive,
         selectedCourses: [],
         timetable: {},
-        tables: {
-          ...state.tables,
-          [state.currentTableId]: {
-            ...state.tables[state.currentTableId],
-            courses: []
-          }
-        },
+        courses: [],
+        totalCredits: 0,
       };
 
     case 'SET_EDIT_MODE':
@@ -273,6 +413,508 @@ function ffcsReducer(state: FFCSState, action: FFCSAction): FFCSState {
     case 'CLEAR_ALL':
       return initialState;
 
+    case 'ADD_SUBJECT': {
+      const updatedTable = state.timetableStoragePref.map(table => {
+        if (table.id === state.currentTableId) {
+          return {
+            ...table,
+            subject: {
+              ...table.subject,
+              [action.payload.courseName]: {
+                teacher: {},
+                credits: action.payload.credits
+              }
+            }
+          };
+        }
+        return table;
+      });
+      
+      const updatedActive = {
+        ...state.activeTable,
+        subject: {
+          ...state.activeTable.subject,
+          [action.payload.courseName]: {
+            teacher: {},
+            credits: action.payload.credits
+          }
+        }
+      };
+      
+      return {
+        ...state,
+        timetableStoragePref: updatedTable,
+        activeTable: updatedActive
+      };
+    }
+
+    case 'REMOVE_SUBJECT': {
+      const updatedTable = state.timetableStoragePref.map(table => {
+        if (table.id === state.currentTableId) {
+          const { [action.payload]: removed, ...remainingSubjects } = table.subject;
+          return {
+            ...table,
+            subject: remainingSubjects
+          };
+        }
+        return table;
+      });
+      
+      const { [action.payload]: removed, ...remainingSubjects } = state.activeTable.subject;
+      const updatedActive = {
+        ...state.activeTable,
+        subject: remainingSubjects
+      };
+      
+      return {
+        ...state,
+        timetableStoragePref: updatedTable,
+        activeTable: updatedActive
+      };
+    }
+
+    case 'ADD_TEACHER_TO_SUBJECT': {
+      
+      const updatedTable = state.timetableStoragePref.map(table => {
+        if (table.id === state.currentTableId) {
+          const currentSubject = table.subject[action.payload.courseName] || { teacher: {}, credits: 0 };
+          const updatedSubject = {
+            ...currentSubject,
+            teacher: {
+              ...currentSubject.teacher,
+              [action.payload.teacherName]: {
+                slots: action.payload.slots,
+                venue: action.payload.venue,
+                color: action.payload.color
+              }
+            }
+          };
+          
+          
+          return {
+            ...table,
+            subject: {
+              ...table.subject,
+              [action.payload.courseName]: updatedSubject
+            }
+          };
+        }
+        return table;
+      });
+      
+      const currentActiveSubject = state.activeTable.subject[action.payload.courseName] || { teacher: {}, credits: 0 };
+      const updatedActiveSubject = {
+        ...currentActiveSubject,
+        teacher: {
+          ...currentActiveSubject.teacher,
+          [action.payload.teacherName]: {
+            slots: action.payload.slots,
+            venue: action.payload.venue,
+            color: action.payload.color
+          }
+        }
+      };
+      
+      const updatedActive = {
+        ...state.activeTable,
+        subject: {
+          ...state.activeTable.subject,
+          [action.payload.courseName]: updatedActiveSubject
+        }
+      };
+      
+      
+      return {
+        ...state,
+        timetableStoragePref: updatedTable,
+        activeTable: updatedActive
+      };
+    }
+
+    case 'UPDATE_TEACHER_IN_SUBJECT': {
+      return {
+        ...state,
+        // Same implementation as ADD_TEACHER_TO_SUBJECT since it's an update
+        ...ffcsReducer(state, { 
+          type: 'ADD_TEACHER_TO_SUBJECT', 
+          payload: action.payload 
+        })
+      };
+    }
+
+    case 'REMOVE_TEACHER_FROM_SUBJECT': {
+      const updatedTable = state.timetableStoragePref.map(table => {
+        if (table.id === state.currentTableId && table.subject[action.payload.courseName]) {
+          const { [action.payload.teacherName]: removed, ...remainingTeachers } = 
+            table.subject[action.payload.courseName].teacher;
+          return {
+            ...table,
+            subject: {
+              ...table.subject,
+              [action.payload.courseName]: {
+                ...table.subject[action.payload.courseName],
+                teacher: remainingTeachers
+              }
+            }
+          };
+        }
+        return table;
+      });
+      
+      if (state.activeTable.subject[action.payload.courseName]) {
+        const { [action.payload.teacherName]: removed, ...remainingTeachers } = 
+          state.activeTable.subject[action.payload.courseName].teacher;
+        const updatedActive = {
+          ...state.activeTable,
+          subject: {
+            ...state.activeTable.subject,
+            [action.payload.courseName]: {
+              ...state.activeTable.subject[action.payload.courseName],
+              teacher: remainingTeachers
+            }
+          }
+        };
+        
+        return {
+          ...state,
+          timetableStoragePref: updatedTable,
+          activeTable: updatedActive
+        };
+      }
+      
+      return state;
+    }
+
+    case 'TOGGLE_CELL_HIGHLIGHT': {
+      // Handle individual cell highlight (only works when QV is enabled)
+      // This highlights only the specific clicked cell, matching vanilla JS behavior
+      if (!state.ui.quickVisualizationEnabled) {
+        return state; // No cell highlighting when QV is disabled
+      }
+      
+      const { day, index, theorySlot } = action.payload;
+      const activeTableToUpdate = state.ui.attackMode ? 'attackQuick' : 'quick';
+      
+      // Calculate row index: mon=2, tue=3, wed=4, thu=5, fri=6
+      const dayRowMap: { [key: string]: number } = {
+        mon: 2, tue: 3, wed: 4, thu: 5, fri: 6, sat: 7, sun: 8
+      };
+      const row = dayRowMap[day];
+      const column = index;
+      
+      const updatedTables = state.timetableStoragePref.map(table => {
+        if (table.id === state.currentTableId) {
+          const currentQuick = table[activeTableToUpdate] || [];
+          
+          // Check if this specific cell [row, column] is already highlighted
+          const existingIndex = currentQuick.findIndex(([r, c]) => r === row && c === column);
+          
+          let newQuick;
+          if (existingIndex >= 0) {
+            // Remove highlighting from this specific cell
+            newQuick = currentQuick.filter((_, i) => i !== existingIndex);
+          } else {
+            // Add highlighting to this specific cell [row, column] (no third parameter for individual cell)
+            newQuick = [...currentQuick, [row, column]];
+          }
+          
+          return {
+            ...table,
+            [activeTableToUpdate]: newQuick
+          };
+        }
+        return table;
+      });
+      
+      const updatedActive = {
+        ...state.activeTable,
+        [activeTableToUpdate]: updatedTables.find(t => t.id === state.currentTableId)?.[activeTableToUpdate] || []
+      };
+      
+      return {
+        ...state,
+        timetableStoragePref: updatedTables,
+        activeTable: updatedActive
+      };
+    }
+
+    case 'TOGGLE_QV_SLOT_HIGHLIGHT': {
+      // Handle quick visualization tile click (highlights ALL cells with this theory slot)
+      // This matches the vanilla JS behavior where QV tile clicks highlight all occurrences
+      const slot = action.payload;
+      const activeTableToUpdate = state.ui.attackMode ? 'attackQuick' : 'quick';
+      
+      const updatedTables = state.timetableStoragePref.map(table => {
+        if (table.id === state.currentTableId) {
+          const currentQuick = table[activeTableToUpdate] || [];
+          
+          // Define where each theory slot appears in the timetable
+          // Row indices: theory=0, lab=1, mon=2, tue=3, wed=4, thu=5, fri=6
+          // Column mapping based on the timetable structure
+          const slotPositions: { [key: string]: [number, number][] } = {
+            'A1': [[2, 1], [4, 2]], // A1 appears on MON col 1, WED col 2
+            'F1': [[2, 2], [4, 3]], // F1 appears on MON col 2, WED col 3
+            'D1': [[2, 3], [5, 1]], // D1 appears on MON col 3, THU col 1
+            'TB1': [[2, 4]], // TB1 appears on MON col 4
+            'TG1': [[2, 5]], // TG1 appears on MON col 5
+            'A2': [[2, 8], [4, 9]], // A2 appears on MON col 8, WED col 9
+            'F2': [[2, 9], [4, 10]], // F2 appears on MON col 9, WED col 10
+            'D2': [[2, 10], [5, 9]], // D2 appears on MON col 10, THU col 9
+            'TB2': [[2, 11]], // TB2 appears on MON col 11
+            'TG2': [[2, 12]], // TG2 appears on MON col 12
+            'B1': [[3, 1], [5, 2]], // B1 appears on TUE col 1, THU col 2
+            'G1': [[3, 2], [5, 3]], // G1 appears on TUE col 2, THU col 3
+            'E1': [[3, 3], [6, 1]], // E1 appears on TUE col 3, FRI col 1
+            'TC1': [[3, 4]], // TC1 appears on TUE col 4
+            'TAA1': [[3, 5]], // TAA1 appears on TUE col 5
+            'B2': [[3, 8], [5, 10]], // B2 appears on TUE col 8, THU col 10
+            'G2': [[3, 9], [5, 11]], // G2 appears on TUE col 9, THU col 11
+            'E2': [[3, 10], [6, 9]], // E2 appears on TUE col 10, FRI col 9
+            'TC2': [[3, 11]], // TC2 appears on TUE col 11
+            'TAA2': [[3, 12]], // TAA2 appears on TUE col 12
+            'C1': [[4, 1], [6, 2]], // C1 appears on WED col 1, FRI col 2
+            'C2': [[4, 8], [6, 10]], // C2 appears on WED col 8, FRI col 10
+            // Add more slots as needed based on the actual timetable structure
+          };
+          
+          const slotsToToggle = slotPositions[slot] || [];
+          
+          // Check if any of these slots are currently highlighted (with third parameter true)
+          const hasHighlighted = slotsToToggle.some(([r, c]) => 
+            currentQuick.some((entry) => {
+              if (entry.length === 3) {
+                // Entry with third parameter [row, col, true] from QV tile
+                return entry[0] === r && entry[1] === c && entry[2] === true;
+              }
+              return false;
+            })
+          );
+          
+          let newQuick;
+          if (hasHighlighted) {
+            // Remove all QV-highlighted slots with this theory slot
+            newQuick = currentQuick.filter((entry) => {
+              if (entry.length === 3 && entry[2] === true) {
+                // This is a QV highlight, check if it matches our slot
+                return !slotsToToggle.some(([r, c]) => entry[0] === r && entry[1] === c);
+              }
+              // Keep individual cell highlights (length 2)
+              return true;
+            });
+          } else {
+            // Add all slots with this theory slot (with third parameter true)
+            const newSlots = slotsToToggle.map(([r, c]) => [r, c, true] as [number, number, boolean]);
+            newQuick = [...currentQuick, ...newSlots];
+          }
+          
+          return {
+            ...table,
+            [activeTableToUpdate]: newQuick
+          };
+        }
+        return table;
+      });
+      
+      const updatedActive = {
+        ...state.activeTable,
+        [activeTableToUpdate]: updatedTables.find(t => t.id === state.currentTableId)?.[activeTableToUpdate] || []
+      };
+      
+      return {
+        ...state,
+        timetableStoragePref: updatedTables,
+        activeTable: updatedActive
+      };
+    }
+
+    case 'PROCESS_QV_SLOT_HIGHLIGHT': {
+      // Process the actual QV slot highlighting with DOM positions
+      const { slot, positions } = action.payload;
+      const activeTableToUpdate = state.ui.attackMode ? 'attackQuick' : 'quick';
+      
+      const updatedTables = state.timetableStoragePref.map(table => {
+        if (table.id === state.currentTableId) {
+          const currentQuick = table[activeTableToUpdate] || [];
+          
+          // Check if any of these positions are currently highlighted (with third parameter true)
+          const hasHighlighted = positions.some(([r, c]) => 
+            currentQuick.some((entry) => {
+              if (entry.length === 3) {
+                // Entry with third parameter [row, col, true] from QV tile
+                return entry[0] === r && entry[1] === c && entry[2] === true;
+              }
+              return false;
+            })
+          );
+          
+          let newQuick;
+          if (hasHighlighted) {
+            // Remove all QV-highlighted slots with this theory slot
+            newQuick = currentQuick.filter((entry) => {
+              if (entry.length === 3 && entry[2] === true) {
+                // This is a QV highlight, check if it matches our slot positions
+                return !positions.some(([r, c]) => entry[0] === r && entry[1] === c);
+              }
+              // Keep individual cell highlights (length 2)
+              return true;
+            });
+          } else {
+            // Add all positions with this theory slot (with third parameter true)
+            const newSlots = positions.map(([r, c]) => [r, c, true] as [number, number, boolean]);
+            newQuick = [...currentQuick, ...newSlots];
+          }
+          
+          return {
+            ...table,
+            [activeTableToUpdate]: newQuick
+          };
+        }
+        return table;
+      });
+      
+      const updatedActive = {
+        ...state.activeTable,
+        [activeTableToUpdate]: updatedTables.find(t => t.id === state.currentTableId)?.[activeTableToUpdate] || []
+      };
+      
+      return {
+        ...state,
+        timetableStoragePref: updatedTables,
+        activeTable: updatedActive
+      };
+    }
+
+    case 'CLEAR_QV_HIGHLIGHTS': {
+      // Clear all highlighting when QV is disabled
+      return {
+        ...state,
+        timetable: {}
+      };
+    }
+
+    case 'UPDATE_LOCALFORAGE': {
+      // Trigger a save to localforage (handled by useEffect)
+      return state;
+    }
+
+    case 'SET_GLOBAL_VAR': {
+      return {
+        ...state,
+        globalVars: {
+          ...state.globalVars,
+          [action.payload.key]: action.payload.value
+        }
+      };
+    }
+
+    case 'ADD_COURSE_TO_TIMETABLE': {
+      const updatedTables = state.timetableStoragePref.map(table => {
+        if (table.id === state.currentTableId) {
+          return {
+            ...table,
+            data: [...table.data, action.payload]
+          };
+        }
+        return table;
+      });
+      
+      const updatedActive = {
+        ...state.activeTable,
+        data: [...state.activeTable.data, action.payload]
+      };
+      
+      // Update total credits
+      const newTotalCredits = updatedActive.data.reduce((sum, course) => sum + course.credits, 0);
+      
+      return {
+        ...state,
+        timetableStoragePref: updatedTables,
+        activeTable: updatedActive,
+        totalCredits: newTotalCredits
+      };
+    }
+
+    case 'REMOVE_COURSE_FROM_TIMETABLE': {
+      const updatedTables = state.timetableStoragePref.map(table => {
+        if (table.id === state.currentTableId) {
+          return {
+            ...table,
+            data: table.data.filter(course => course.courseId !== action.payload)
+          };
+        }
+        return table;
+      });
+      
+      const updatedActive = {
+        ...state.activeTable,
+        data: state.activeTable.data.filter(course => course.courseId !== action.payload)
+      };
+      
+      // Update total credits
+      const newTotalCredits = updatedActive.data.reduce((sum, course) => sum + course.credits, 0);
+      
+      return {
+        ...state,
+        timetableStoragePref: updatedTables,
+        activeTable: updatedActive,
+        totalCredits: newTotalCredits
+      };
+    }
+
+    case 'ADD_COURSE_TO_ATTACK_DATA': {
+      const updatedTables = state.timetableStoragePref.map(table => {
+        if (table.id === state.currentTableId) {
+          return {
+            ...table,
+            attackData: [...table.attackData, action.payload]
+          };
+        }
+        return table;
+      });
+      
+      const updatedActive = {
+        ...state.activeTable,
+        attackData: [...state.activeTable.attackData, action.payload]
+      };
+      
+      return {
+        ...state,
+        timetableStoragePref: updatedTables,
+        activeTable: updatedActive,
+        globalVars: {
+          ...state.globalVars,
+          attackData: [...state.globalVars.attackData, action.payload]
+        }
+      };
+    }
+
+    case 'REMOVE_COURSE_FROM_ATTACK_DATA': {
+      const updatedTables = state.timetableStoragePref.map(table => {
+        if (table.id === state.currentTableId) {
+          return {
+            ...table,
+            attackData: table.attackData.filter(course => course.courseId !== action.payload)
+          };
+        }
+        return table;
+      });
+      
+      const updatedActive = {
+        ...state.activeTable,
+        attackData: state.activeTable.attackData.filter(course => course.courseId !== action.payload)
+      };
+      
+      return {
+        ...state,
+        timetableStoragePref: updatedTables,
+        activeTable: updatedActive,
+        globalVars: {
+          ...state.globalVars,
+          attackData: state.globalVars.attackData.filter(course => course.courseId !== action.payload)
+        }
+      };
+    }
+
     default:
       return state;
   }
@@ -288,23 +930,40 @@ const FFCSContext = createContext<{
 export function FFCSProvider({ children }: { children: ReactNode }) {
   const [state, dispatch] = useReducer(ffcsReducer, initialState);
 
-  // Load data from localStorage on mount
+  // Load data from localforage on mount
   useEffect(() => {
-    const savedData = localStorage.getItem('ffcs-data');
-    if (savedData) {
-      try {
-        const parsedData = JSON.parse(savedData);
-        dispatch({ type: 'LOAD_DATA', payload: parsedData });
-      } catch (error) {
-        console.error('Error loading saved data:', error);
-      }
-    }
+    localforage.getItem('timetableStoragePref')
+      .then((storedValue: any) => {
+        if (storedValue && Array.isArray(storedValue)) {
+          const activeTable = storedValue[0] || defaultTable;
+          dispatch({ 
+            type: 'LOAD_DATA', 
+            payload: { 
+              timetableStoragePref: storedValue,
+              activeTable: activeTable,
+              currentTableId: activeTable.id
+            } 
+          });
+        }
+      })
+      .catch((error) => {
+        console.error('Error loading saved data from localforage:', error);
+      });
   }, []);
 
-  // Save data to localStorage whenever state changes
+  // Save data to localforage whenever state changes
   useEffect(() => {
-    localStorage.setItem('ffcs-data', JSON.stringify(state));
-  }, [state]);
+    // Only save timetableStoragePref to match vanilla JS behavior
+    if (state.timetableStoragePref && state.timetableStoragePref.length > 0) {
+      localforage.setItem('timetableStoragePref', state.timetableStoragePref)
+        .then(() => {
+          console.log('Timetable data saved to localforage');
+        })
+        .catch((error) => {
+          console.error('Error saving data to localforage:', error);
+        });
+    }
+  }, [state.timetableStoragePref]);
 
   return (
     <FFCSContext.Provider value={{ state, dispatch }}>
@@ -319,5 +978,19 @@ export function useFFCS() {
   if (context === undefined) {
     throw new Error('useFFCS must be used within a FFCSProvider');
   }
+  
+  // Add to window for debugging
+  if (typeof window !== 'undefined') {
+    (window as any).ffcsDebug = {
+      state: context.state,
+      dispatch: context.dispatch,
+      activeTable: context.state.activeTable,
+      timetableStoragePref: context.state.timetableStoragePref
+    };
+  }
+  
   return context;
 }
+
+// Export clashMap for use in other components
+export { clashMap };
