@@ -236,3 +236,234 @@
 #course-list th {
   white-space: nowrap;
 }
+
+/* Loading Screen Animations */
+@keyframes loading-bounce {
+  0%, 80%, 100% {
+    transform: scale(0.8);
+    opacity: 0.6;
+  }
+  40% {
+    transform: scale(1.2);
+    opacity: 1;
+  }
+}
+
+/* Enhanced modern styling for form elements */
+.form-control:focus, .form-select:focus {
+  border-color: rgba(78, 205, 196, 0.8) !important;
+  box-shadow: 0 0 0 0.2rem rgba(78, 205, 196, 0.25) !important;
+  background: rgba(255, 255, 255, 0.15) !important;
+}
+
+.form-control::placeholder {
+  color: rgba(255, 255, 255, 0.6) !important;
+}
+
+.form-select option {
+  background-color: rgba(0, 0, 0, 0.9) !important;
+  color: white !important;
+}
+
+/* Button hover animations */
+.btn {
+  transition: all 0.3s ease !important;
+}
+
+/* Modal enhancements */
+.modal-backdrop {
+  background-color: rgba(0, 0, 0, 0.6) !important;
+  backdrop-filter: blur(3px);
+  -webkit-backdrop-filter: blur(3px);
+}
+
+.modal-content {
+  background: rgba(25, 25, 25, 0.95) !important;
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
+  border-radius: 15px !important;
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  color: white !important;
+}
+
+.modal-header {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
+  background: rgba(35, 35, 35, 0.9) !important;
+  border-radius: 15px 15px 0 0 !important;
+}
+
+.modal-footer {
+  border-top: 1px solid rgba(255, 255, 255, 0.1) !important;
+  background: rgba(35, 35, 35, 0.9) !important;
+  border-radius: 0 0 15px 15px !important;
+}
+
+.modal-title {
+  color: white !important;
+  font-weight: 600 !important;
+}
+
+.btn-close {
+  filter: invert(1) grayscale(100%) brightness(200%) !important;
+}
+
+.modal-body {
+  color: rgba(255, 255, 255, 0.9) !important;
+}
+
+.modal {
+  z-index: 1055 !important;
+}
+
+.modal-backdrop {
+  z-index: 1050 !important;
+}
+
+/* Card and container improvements */
+.card {
+  border: none !important;
+  background: transparent !important;
+}
+
+.cardnew {
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+}
+
+/* Ensure proper layering */
+.navbar {
+  z-index: 1030 !important;
+}
+
+.container-xl, .container-xxl, .container-sm {
+  position: relative;
+  z-index: 10;
+}
+
+.card, .modal {
+  z-index: 15;
+}
+
+/* Fix dropdown z-index issues - use extremely high values */
+.dropdown-menu {
+  z-index: 9999 !important;
+  position: absolute !important;
+}
+
+.btn-group {
+  position: relative;
+  z-index: 9998 !important;
+}
+
+/* Ensure timetable and all containers don't interfere */
+#timetable, .table-responsive {
+  position: relative;
+  z-index: 1 !important;
+}
+
+/* Force container positioning */
+.container-xxl {
+  z-index: 1 !important;
+}
+
+/* Override any transform or backdrop-filter that creates stacking context */
+.container-xxl .table-responsive {
+  transform: none !important;
+  backdrop-filter: none !important;
+  z-index: 1 !important;
+}
+
+/* Collaboration features styles */
+.participant-badge {
+  background: rgba(78, 205, 196, 0.2);
+  color: #4ecdc4;
+  padding: 0.25rem 0.75rem;
+  border-radius: 15px;
+  font-size: 0.8rem;
+  border: 1px solid rgba(78, 205, 196, 0.3);
+  display: inline-block;
+  margin: 0.25rem;
+}
+
+.participant-badge.user-admin {
+  background: rgba(255, 193, 7, 0.2);
+  color: #ffc107;
+  border-color: rgba(255, 193, 7, 0.3);
+}
+
+.participant-badge.user-self {
+  background: rgba(40, 167, 69, 0.2);
+  color: #28a745;
+  border-color: rgba(40, 167, 69, 0.3);
+  font-weight: 600;
+}
+
+#collab-indicator {
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0% { opacity: 1; }
+  50% { opacity: 0.8; }
+  100% { opacity: 1; }
+}
+
+.remote-change-highlight {
+  animation: remoteChangeGlow 2s ease-out;
+}
+
+@keyframes remoteChangeGlow {
+  0% { box-shadow: 0 0 20px rgba(78, 205, 196, 0.8); }
+  100% { box-shadow: none; }
+}
+
+/* Auth integration styles */
+.auth-required-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  border-radius: 20px;
+  backdrop-filter: blur(5px);
+}
+
+.auth-prompt {
+  background: rgba(25, 25, 25, 0.95);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 15px;
+  padding: 2rem;
+  text-align: center;
+  color: white;
+  max-width: 400px;
+}
+
+.feature-disabled {
+  opacity: 0.6;
+  pointer-events: none;
+  position: relative;
+}
+
+.guest-badge {
+  background: rgba(108, 117, 125, 0.2);
+  color: #6c757d;
+  padding: 0.25rem 0.5rem;
+  border-radius: 10px;
+  font-size: 0.7rem;
+  margin-left: 0.5rem;
+}
+
+/* NoSelect utility class */
+.noselect {
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  -khtml-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+}

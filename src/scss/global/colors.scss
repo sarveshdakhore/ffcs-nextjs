@@ -3,33 +3,33 @@
  *  confined in one place so that they can be changed easily
  */
 
-$colors-light: (
-    primary: #008080,
-    primary-dark: #005c5c,
-    primary-light: #5fd6d6e3,
-    background: #ffffff,
-    text: #000000,
-    text-light: #808080,
-    table-border: #000000,
-    input-text: #212529,
-    input-border: #cccccc,
-    input-border-active: #86b7fe,
-    input-border-shadow: rgb(13 110 253 / 25%),
-    slot-button-selected: #f8ceff,
-    quick-button: #ffc107,
-    quick-button-highlight: #64dd17,
-    lab: #99ccff,
-    theory: #ccccff,
-    day-lunch: #c0c0c0,
-    period: #ffffcc,
-    period-highlight: #ccff33,
-    period-clash: #ff0000,
+$colors-dark: (
+    primary: #4ecdc4,
+    primary-dark: #35a09a,
+    primary-light: #5fd6d680,
+    background: #1a1a1a,
+    text: #e0e0e0,
+    text-light: #b0b0b0,
+    table-border: #444444,
+    input-text: #e0e0e0,
+    input-border: #555555,
+    input-border-active: #4ecdc4,
+    input-border-shadow: rgba(78, 205, 196, 0.25),
+    slot-button-selected: #6b3d6b,
+    quick-button: #ff9500,
+    quick-button-highlight: #4caf50,
+    lab: #2e5cb8,
+    theory: #4a4a8a,
+    day-lunch: #404040,
+    period: #2a2a2a,
+    period-highlight: #4caf50,
+    period-clash: #ff4444,
     on-clash: #ffffff,
-    course-list-header-hover: #e2f1eb,
+    course-list-header-hover: #2d4332,
 );
 
 :root {
-    @each $name, $color in $colors-light {
+    @each $name, $color in $colors-dark {
         --#{$name}-color: #{$color};
     }
 }

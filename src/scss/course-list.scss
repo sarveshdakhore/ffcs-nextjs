@@ -1,35 +1,185 @@
 /**
- *  This style sheet contains the custom styling applied
- *  to the course list table
+ *  Modern dark theme styling for the course list table
+ *  with glassmorphic design and improved UX
  */
 
 @import 'global/colors.scss';
 
-#course-list table tr {
-    border: 1px solid var(--table-border-color);
+// Modern dark course list styling
+#course-list {
+    // Table row styling for dark theme
+    tbody {
+        tr {
+            background: rgba(40, 40, 40, 0.7) !important;
+            border: none !important;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            
+            &:hover {
+                background: rgba(78, 205, 196, 0.15) !important;
+                transform: translateY(-1px);
+                box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+            }
+            
+            &:nth-child(even) {
+                background: rgba(45, 45, 45, 0.7) !important;
+                
+                &:hover {
+                    background: rgba(78, 205, 196, 0.15) !important;
+                }
+            }
+            
+            td {
+                background: transparent !important;
+                color: white !important;
+                padding: 1rem 1.5rem;
+                border: none !important;
+                font-weight: 500;
+                font-size: 0.9rem;
+                vertical-align: middle;
+                border-bottom: 1px solid rgba(255, 255, 255, 0.05) !important;
+                
+                // Remove button styling
+                .btn, button {
+                    background: rgba(220, 53, 69, 0.8) !important;
+                    border: none !important;
+                    border-radius: 50% !important;
+                    width: 28px;
+                    height: 28px;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    color: white !important;
+                    transition: all 0.3s ease;
+                    
+                    &:hover {
+                        background: rgba(220, 53, 69, 1) !important;
+                        transform: scale(1.1);
+                    }
+                }
+                
+                // Close icon styling
+                .close, .fas.fa-times {
+                    color: rgba(220, 53, 69, 0.8) !important;
+                    cursor: pointer;
+                    transition: all 0.3s ease;
+                    padding: 4px;
+                    border-radius: 50%;
+                    
+                    &:hover {
+                        color: rgba(220, 53, 69, 1) !important;
+                        background: rgba(220, 53, 69, 0.1);
+                        transform: scale(1.2);
+                    }
+                }
+            }
+        }
+    }
+    
+    // Table header styling
+    thead {
+        th {
+            background: transparent !important;
+            color: white !important;
+            cursor: pointer !important;
+            border: none !important;
+            user-select: none;
+            
+            &:last-child {
+                cursor: default !important;
+            }
+            
+            &:hover:not(:last-child) {
+                background: rgba(78, 205, 196, 0.2) !important;
+                color: rgba(78, 205, 196, 1) !important;
+                transition: all 0.3s ease;
+            }
+            
+            &.sorted {
+                background: rgba(78, 205, 196, 0.3) !important;
+                color: rgba(78, 205, 196, 1) !important;
+            }
+            
+            // Sort arrows
+            &.ascending::after {
+                content: '\f062';
+                margin-left: 10px;
+                font-family: 'Font Awesome 5 Free';
+                font-weight: 900;
+                color: rgba(78, 205, 196, 1);
+            }
+            
+            &.descending::after {
+                content: '\f063';
+                margin-left: 10px;
+                font-family: 'Font Awesome 5 Free';
+                font-weight: 900;
+                color: rgba(78, 205, 196, 1);
+            }
+        }
+    }
+    
+    // Table footer styling
+    tfoot {
+        tr {
+            background: rgba(20, 20, 20, 0.9) !important;
+            
+            td {
+                background: transparent !important;
+                color: white !important;
+            }
+        }
+    }
 }
 
-#course-list table tr th:not(:last-of-type) {
-    cursor: pointer;
+// Legacy compatibility for existing JS selectors
+#course-list tr {
+    border: none !important;
 }
 
-#course-list table tr th.sorted,
-#course-list table tr th:hover:not(:last-of-type) {
-    background-color: var(--course-list-header-hover-color);
+#course-list th:not(:last-child) {
+    cursor: pointer !important;
+    user-select: none;
 }
 
-#course-list table tr th.ascending::after {
-    content: '\f062';
+#course-list th.sorted,
+#course-list th:hover:not(:last-child) {
+    background-color: rgba(78, 205, 196, 0.3) !important;
+    color: rgba(78, 205, 196, 1) !important;
+    transition: all 0.3s ease;
+}
+
+#course-list th.ascending::after {
+    content: '\f062' !important;
     margin-left: 10px;
     font-family: 'Font Awesome 5 Free';
+    font-weight: 900;
+    color: rgba(78, 205, 196, 1);
 }
 
-#course-list table tr th.descending::after {
-    content: '\f063';
+#course-list th.descending::after {
+    content: '\f063' !important;
     margin-left: 10px;
     font-family: 'Font Awesome 5 Free';
+    font-weight: 900;
+    color: rgba(78, 205, 196, 1);
 }
 
-#course-list table tbody tr {
-    cursor: pointer;
+#course-list tbody tr {
+    cursor: pointer !important;
+}
+
+// Responsive adjustments
+@media (max-width: 768px) {
+    #course-list {
+        thead th {
+            padding: 0.75rem 1rem;
+            font-size: 0.8rem;
+        }
+        
+        tbody td {
+            padding: 0.75rem 1rem;
+            font-size: 0.85rem;
+        }
+    }
 }
