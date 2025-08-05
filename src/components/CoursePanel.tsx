@@ -1051,7 +1051,7 @@ export default function CoursePanel() {
                   <h4>[{subjectData.credits}]</h4>
                 </div>
               </div>
-              <ul className="dropdown-list">
+              <ul className="dropdown-list bg-[#0b0b0b]" >
                 {sortTeachersByColor(subjectData.teacher, subjectName).map(([teacherName, teacherData]) => {
                   // Check if this teacher has slot clashes (EXACTLY like vanilla JS rearrangeTeacherLiInSubjectArea)
                   const teacherSlots = slotsProcessingForCourseList(teacherData.slots);
