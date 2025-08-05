@@ -227,7 +227,6 @@ export default function Home() {
 
         <Navbar />
         
-        <ScrollButton />
         
         {showMobileMessage && (
           <div style={{ textAlign: 'center', display: 'block' }} id="mobile_message">

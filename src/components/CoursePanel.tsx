@@ -934,56 +934,94 @@ export default function CoursePanel() {
             <i className="fas fa-plus"></i> Course
           </button>
           
-          {state.globalVars.editSub || state.globalVars.editTeacher ? (
-            <>
-              <button
-                id="tt-subject-done"
-                className="btn btn-primary ms-1 me-1"
-                type="button"
-                onClick={handleDoneClick}
-              >
-                <span>Done</span>
-              </button>
-              <button
-                id="tt-subject-collapse"
-                className="btn btn-outline-secondary ms-1 me-1"
-                type="button"
-                onClick={closeAllDropdowns}
-              >
-                <i className="fas fa-chevron-up"></i>
-                <span>&nbsp;&nbsp;Collapse All</span>
-              </button>
-              <div className="form-check form-switch" style={{ marginTop: '7px', display: 'inline-block' }}>
-                <label className="form-check-label" htmlFor="tt-sub-edit-switch">
-                  Course Edit
-                </label>
-                <input
-                  className="form-check-input"
-                  type="checkbox"
-                  role="switch"
-                  id="tt-sub-edit-switch"
-                  checked={state.globalVars.editSub}
-                  onChange={(e) => handleCourseEditSwitch(e.target.checked)}
-                />
-              </div>
-            </>
-          ) : (
-            <button
-              id="tt-subject-edit"
-              className="btn btn-warning ms-1 me-1"
-              type="button"
-              onClick={handleEditClick}
-            >
-              <i className="fas fa-pencil"></i>
-              <span>&nbsp;&nbsp;Edit</span>
-            </button>
-          )}
+          <button
+            id="tt-subject-edit"
+            className="btn btn-warning ms-1 me-1"
+            type="button"
+            onClick={handleEditClick}
+            style={{ display: state.globalVars.editTeacher || state.globalVars.editSub ? 'none' : 'inline-block' }}
+          >
+            <i className="fas fa-pencil"></i>
+            <span>&nbsp;&nbsp;Edit</span>
+          </button>
+          
+          <button
+            id="tt-subject-done"
+            className="btn btn-primary"
+            type="button"
+            onClick={handleDoneClick}
+            style={{ 
+              display: state.globalVars.editSub || state.globalVars.editTeacher ? 'inline-block' : 'none',
+              marginLeft: '0.25rem',
+              marginRight: '0.25rem'
+            }}
+          >
+            <span>Done</span>
+          </button>
+          <button
+            id="tt-subject-collapse"
+            className="btn btn-secondary"
+            type="button"
+            onClick={closeAllDropdowns}
+            style={{ 
+              display: state.globalVars.editSub || state.globalVars.editTeacher ? 'inline-block' : 'none',
+              marginLeft: '0.25rem',
+              marginRight: '0.25rem'
+            }}
+          >
+            <i className="fas fa-chevron-up"></i>
+            <span>&nbsp;&nbsp;Collapse All</span>
+          </button>
+          <div 
+            className="form-check form-switch" 
+            style={{ 
+              marginTop: '7px', 
+              display: state.globalVars.editSub || state.globalVars.editTeacher ? 'inline-block' : 'none',
+              color: 'white'
+            }}
+            id="div-auto-focus"
+          >
+            <label className="form-check-label" htmlFor="tt-auto-focus-switch" style={{ color: 'white' }}>
+              Auto Focus
+            </label>
+            <input
+              className="form-check-input"
+              type="checkbox"
+              role="switch"
+              id="tt-auto-focus-switch"
+              checked={state.ui.autoFocusEnabled}
+              onChange={(e) => dispatch({ type: 'SET_UI_STATE', payload: { autoFocusEnabled: e.target.checked } })}
+              style={{ marginLeft: '0.5rem' }}
+            />
+          </div>
+          <div 
+            className="form-check form-switch" 
+            style={{ 
+              marginTop: '7px', 
+              display: state.globalVars.editSub || state.globalVars.editTeacher ? 'inline-block' : 'none',
+              color: 'white'
+            }}
+            id="tt-sub-edit-switch-div"
+          >
+            <label className="form-check-label" htmlFor="tt-sub-edit-switch" style={{ color: 'white' }}>
+              Course Edit
+            </label>
+            <input
+              className="form-check-input"
+              type="checkbox"
+              role="switch"
+              id="tt-sub-edit-switch"
+              checked={state.globalVars.editSub}
+              onChange={(e) => handleCourseEditSwitch(e.target.checked)}
+              style={{ marginLeft: '0.5rem' }}
+            />
+          </div>
         </div>
       </div>
 
-      <div style={{ padding: '0%', display: 'flex', flexDirection: 'row', minHeight: '600px', maxHeight: '600px' }} className="card-body">
+      <div style={{ padding: '0%', display: 'flex', flexDirection: 'row', minHeight: '400px', maxHeight: 'none', borderRadius: '0 0 20px 20px' }} className="card-body">
         {/* Subject Area */}
-        <section style={{ height: '600px', overflowY: 'auto' }} className="left-border left-box" id="subjectArea">
+        <section style={{ flex: 1, minHeight: '400px', overflowY: 'auto', scrollbarWidth: 'none', msOverflowStyle: 'none' }} className="left-border left-box" id="subjectArea">
           {Object.entries(subjects).map(([subjectName, subjectData]) => {
             return (
             <div key={subjectName} className="dropdown dropdown-teacher">
@@ -1099,58 +1137,75 @@ export default function CoursePanel() {
         </section>
 
         {/* Right Panel */}
-        <section className="left-border right-box">
-          {(state.globalVars.editSub || state.globalVars.editTeacher) && (
-            <h5 id="edit_msg_" style={{ padding: '4.5%', paddingBottom: 0, display: showEditCourse || showEditTeacher ? 'none' : 'block' }}>
-              {state.globalVars.editSub ? 'Click on the Course to edit it.' : 'Click on the Teacher to edit it.'}
-            </h5>
-          )}
+        <section className="left-border right-box" style={{ flex: 1, minHeight: '400px', overflowY: 'auto', scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+          <h5 
+            id="edit_msg_" 
+            style={{ 
+              padding: '4.5%', 
+              paddingBottom: 0, 
+              display: (showEditCourse || showEditTeacher) ? 'none' : (state.globalVars.editSub || state.globalVars.editTeacher) ? 'block' : 'none',
+              color: 'white'
+            }}
+          >
+            {state.globalVars.editSub ? 'Click on the Course to edit it.' : 'Click on the Teacher to edit it.'}
+          </h5>
 
           {/* Add Course Form */}
           {showAddCourse && !state.globalVars.editSub && !state.globalVars.editTeacher && (
-            <div id="div-for-add-course">
-              <div>
-                <h4 style={{ padding: '4.5%', paddingBottom: 0 }}>Add Course</h4>
-                <hr />
+            <div id="div-for-add-course" style={{ display: 'block', background: 'rgba(0, 0, 0, 0.4)', backdropFilter: 'blur(15px)', borderRadius: '20px', padding: '2rem', margin: '1rem' }}>
+              <div style={{ marginBottom: '1rem' }}>
+                <h4 style={{ color: 'white', fontWeight: '600', margin: '0', fontSize: '1.25rem' }}>
+                  Add Course
+                </h4>
               </div>
-              <form onSubmit={handleAddCourse}>
-                <div style={{ margin: '4.5%', paddingTop: '10px', paddingBottom: 0, paddingRight: '0%' }} className="modal-body">
-                  <label htmlFor="course-input_remove">Course</label>
-                  <input
-                    type="text"
-                    className="form-control"
-                    id="course-input_remove"
-                    placeholder="CSE1001 - Problem Solving and Programming"
-                    value={courseName}
-                    onChange={(e) => setCourseName(removeDotsLive(e.target.value))}
-                    autoComplete="off"
-                  />
-                  <div style={{ color: 'blue', opacity: '50%', marginTop: '-5px' }}>
-                    Course Code & Name Separated by '<b style={{ color: 'rgb(255, 0, 0)', fontWeight: 700, fontSize: '20px' }}>-</b>'
+              <form id="courseSaveForm" onSubmit={handleAddCourse}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                  <div>
+                    <label htmlFor="course-input_remove" style={{ color: 'white', fontWeight: '500', marginBottom: '0.5rem', display: 'block' }}>
+                      Course
+                    </label>
+                    <input
+                      type="text"
+                      className="form-control"
+                      id="course-input_remove"
+                      placeholder="CSE1001 - Problem Solving and Programming"
+                      value={courseName}
+                      onChange={(e) => setCourseName(removeDotsLive(e.target.value))}
+                      autoComplete="off"
+                    />
+                    <div style={{ color: 'rgba(78, 205, 196, 0.8)', fontSize: '0.85rem', marginTop: '0.5rem' }}>
+                      Course Code & Name separated by '-'
+                    </div>
                   </div>
 
-                  <label style={{ marginTop: '15px' }} htmlFor="credits-input">Credits</label>
-                  <input
-                    id="credits-input"
-                    className="form-control text-uppercase"
-                    type="number"
-                    style={{ maxWidth: '25%' }}
-                    value={credits}
-                    onChange={(e) => setCredits(e.target.value)}
-                    autoComplete="off"
-                    placeholder="4"
-                    min="0"
-                    max="30"
-                    step="0.5"
-                  />
-                  <span id="span-course-add" style={{ color: courseMessage.color, fontWeight: 'bold' }}>
+                  <div style={{ maxWidth: '200px' }}>
+                    <label htmlFor="credits-input" style={{ color: 'white', fontWeight: '500', marginBottom: '0.5rem', display: 'block' }}>
+                      Credits
+                    </label>
+                    <input
+                      id="credits-input"
+                      className="form-control"
+                      type="number"
+                      value={credits}
+                      onChange={(e) => setCredits(e.target.value)}
+                      autoComplete="off"
+                      placeholder="4"
+                      min="0"
+                      max="30"
+                      step="0.5"
+                    />
+                  </div>
+                  <span id="span-course-add" style={{ color: '#4ECDCC', fontWeight: '500' }}>
                     {courseMessage.text}
                   </span>
                   <br style={{ display: courseMessage.text ? 'none' : 'inline' }} id="hide_br" />
-                  <hr />
                 </div>
-                <div className="modal-footer">
-                  <button style={{ width: '30%' }} type="submit" className="btn btn-primary">
+                <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '1rem', borderTop: '1px solid rgba(255, 255, 255, 0.1)', paddingTop: '1rem' }}>
+                  <button
+                    type="submit"
+                    className="btn btn-primary btn-sm"
+                    id="saveSubjectModal"
+                  >
                     Save
                   </button>
                 </div>
@@ -1160,47 +1215,68 @@ export default function CoursePanel() {
 
           {/* Edit Course Form */}
           {showEditCourse && state.globalVars.editSub && (
-            <div id="div-for-edit-course">
-              <div>
-                <h4 style={{ padding: '4.5%', paddingBottom: 0 }}>Edit Course</h4>
-                <hr />
+            <div id="div-for-edit-course" style={{ display: 'block', background: 'rgba(0, 0, 0, 0.4)', backdropFilter: 'blur(15px)', borderRadius: '20px', padding: '2rem', margin: '1rem' }}>
+              <div style={{ marginBottom: '1rem' }}>
+                <h4 style={{ color: 'white', fontWeight: '600', margin: '0', fontSize: '1.25rem' }}>
+                  Edit Course
+                </h4>
               </div>
-              <form onSubmit={handleSaveCourseEdit}>
-                <div style={{ margin: '4.5%', paddingTop: '10px', paddingBottom: 0, paddingRight: '0%' }} className="modal-body">
-                  <label htmlFor="course-input_edit">Course Name</label>
-                  <input
-                    type="text"
-                    className="form-control"
-                    id="course-input_edit"
-                    value={editCourseName}
-                    onChange={(e) => setEditCourseName(removeDotsLive(e.target.value))}
-                    autoComplete="off"
-                  />
+              <form id="courseEditSaveForm-1" onSubmit={handleSaveCourseEdit}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                  <div>
+                    <label htmlFor="course-input_edit" style={{ color: 'white', fontWeight: '500', marginBottom: '0.5rem', display: 'block' }}>
+                      Course Name
+                    </label>
+                    <input
+                      type="text"
+                      className="form-control"
+                      id="course-input_edit"
+                      placeholder="CSE1001 Problem Solving and Programming"
+                      value={editCourseName}
+                      onChange={(e) => setEditCourseName(removeDotsLive(e.target.value))}
+                      autoComplete="off"
+                    />
+                  </div>
 
-                  <label style={{ marginTop: '15px' }} htmlFor="credits-input-edit">Credits</label>
-                  <input
-                    id="credits-input-edit"
-                    className="form-control text-uppercase"
-                    type="number"
-                    style={{ maxWidth: '25%' }}
-                    value={editCredits}
-                    onChange={(e) => setEditCredits(e.target.value)}
-                    autoComplete="off"
-                    min="0"
-                    max="30"
-                    step="0.5"
-                  />
-                  <span id="span-course-edit" style={{ color: courseMessage.color, fontWeight: 'bold' }}>
+                  <div style={{ maxWidth: '200px' }}>
+                    <label htmlFor="credits-input-edit" style={{ color: 'white', fontWeight: '500', marginBottom: '0.5rem', display: 'block' }}>
+                      Credits
+                    </label>
+                    <div hidden id="course-input-edit-pre"></div>
+                    <div hidden id="credit-input-edit-pre"></div>
+                    <input
+                      id="credits-input-edit"
+                      className="form-control"
+                      type="number"
+                      value={editCredits}
+                      onChange={(e) => setEditCredits(e.target.value)}
+                      autoComplete="off"
+                      placeholder="4"
+                      min="0"
+                      max="30"
+                      step="0.5"
+                    />
+                  </div>
+
+                  <span id="span-course-edit" style={{ color: '#4ECDCC', fontWeight: '500' }}>
                     {courseMessage.text}
                   </span>
                   <br style={{ display: courseMessage.text ? 'none' : 'inline' }} id="hide_br-edit" />
-                  <hr />
                 </div>
-                <div className="modal-footer">
-                  <button type="button" className="btn btn-danger" onClick={handleDeleteCourse}>
+                <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'space-between', marginTop: '1rem', borderTop: '1px solid rgba(255, 255, 255, 0.1)', paddingTop: '1rem' }}>
+                  <button
+                    type="button"
+                    className="btn btn-danger btn-sm"
+                    id="deleteSubjectEdit"
+                    onClick={handleDeleteCourse}
+                  >
                     Delete
                   </button>
-                  <button style={{ width: '30%' }} type="submit" className="btn btn-primary">
+                  <button
+                    type="submit"
+                    className="btn btn-primary btn-sm"
+                    id="saveSubjectEditModal"
+                  >
                     Save
                   </button>
                 </div>
@@ -1210,101 +1286,99 @@ export default function CoursePanel() {
 
           {/* Add Teacher Form */}
           {showAddTeacher && !state.globalVars.editSub && !state.globalVars.editTeacher && (
-            <div id="div-for-add-teacher">
-              <form onSubmit={handleAddTeacher}>
-                <div>
-                  <h4 style={{ padding: '4.5%', paddingBottom: 0 }}>Add Teachers</h4>
-                  <hr />
+            <div id="div-for-add-teacher" style={{ background: '#1f1f1f', backdropFilter: 'blur(15px)', borderRadius: '20px', padding: '2rem', margin: '1rem' }}>
+              <form id="teacherSaveForm" onSubmit={handleAddTeacher}>
+                <div style={{ marginBottom: '1rem' }}>
+                  <h4 style={{ color: 'white', fontWeight: '600', margin: '0', fontSize: '1.25rem' }}>
+                    Add Teachers
+                  </h4>
                 </div>
-                <div style={{ margin: '4.5%', paddingTop: '10px', paddingBottom: 0, paddingRight: '0%' }}>
-                  <label htmlFor="course-select-add-teacher">
-                    Course &nbsp;&nbsp;
-                    {Object.keys(subjects).length === 0 && (
-                      <a href="#" onClick={(e) => { e.preventDefault(); setShowAddCourse(true); setShowAddTeacher(false); }} style={{ color: 'red', fontWeight: 'bold' }}>
-                        ⚠ Add Courses First!
-                      </a>
-                    )}
-                  </label>
-                  <select
-                    id="course-select-add-teacher"
-                    className="form-select"
-                    value={selectedCourse}
-                    onChange={(e) => setSelectedCourse(e.target.value)}
-                  >
-                    {Object.keys(subjects).length === 0 ? (
-                      <option value="">You need to add courses</option>
-                    ) : (
-                      <>
-                        <option value="">Select Course</option>
-                        {Object.keys(subjects).map((courseName) => (
-                          <option key={courseName} value={courseName}>
-                            {courseName}
-                          </option>
-                        ))}
-                      </>
-                    )}
-                  </select>
-                  <br />
-
-                  <div style={{ display: 'flex', flexDirection: 'row' }}>
-                    <div style={{ width: '72%' }}>
-                      <label htmlFor="teacher-input_remove">Teacher Name</label>
-                      <input
-                        type="text"
-                        className="form-control"
-                        id="teacher-input_remove"
-                        placeholder="KIM JONG UN"
-                        value={teacherName}
-                        onChange={(e) => setTeacherName(removeDotsLive(e.target.value))}
-                        autoComplete="off"
-                      />
-                    </div>
-                    <div style={{ width: '2%' }}></div>
-                    <div style={{ width: '26%' }}>
-                      <label htmlFor="color1-select">Color</label>
-                      <select
-                        id="color1-select"
-                        className="form-select"
-                        value={color}
-                        onChange={(e) => setColor(e.target.value)}
-                      >
-                        <option value="rgb(214, 255, 214)" style={{ backgroundColor: 'rgb(214, 255, 214)' }}>
-                          Green
-                        </option>
-                        <option value="rgb(255, 228, 135)" style={{ backgroundColor: 'rgb(255, 228, 135)' }}>
-                          Orange
-                        </option>
-                        <option value="rgb(255, 205, 205)" style={{ backgroundColor: 'rgb(255, 205, 205)' }}>
-                          Red
-                        </option>
-                      </select>
-                    </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                  {/* Course select option dropdown input */}
+                  <div>
+                    <label htmlFor="course-select-add-teacher" style={{ color: 'white', fontWeight: '500', marginBottom: '0.5rem', display: 'block' }}>
+                      Course 
+                      {Object.keys(subjects).length === 0 && (
+                        <a 
+                          id="course_link" 
+                          href="#" 
+                          onClick={(e) => { e.preventDefault(); setShowAddCourse(true); setShowAddTeacher(false); }} 
+                          style={{ color: '#4ECDCC', textDecoration: 'none', marginLeft: '1rem', fontSize: '0.9rem' }}
+                        >
+                          Add Courses
+                        </a>
+                      )}
+                    </label>
+                    <select
+                      id="course-select-add-teacher"
+                      className="form-select"
+                      aria-label="Select Course"
+                      value={selectedCourse}
+                      onChange={(e) => setSelectedCourse(e.target.value)}
+                    >
+                      {Object.keys(subjects).length === 0 ? (
+                        <option value="">You need to add courses</option>
+                      ) : (
+                        <>
+                          <option value="">Select Course</option>
+                          {Object.keys(subjects).map((courseName) => (
+                            <option key={courseName} value={courseName}>
+                              {courseName}
+                            </option>
+                          ))}
+                        </>
+                      )}
+                    </select>
                   </div>
 
-                  <div style={{ display: 'flex', flexDirection: 'row' }}>
-                    <div style={{ width: '58%' }}>
-                      <label style={{ marginTop: '15px' }} htmlFor="slot-input">Slots</label>
+                  <div>
+                    <label htmlFor="teacher-input_remove" style={{ color: 'white', fontWeight: '500', marginBottom: '0.5rem', display: 'block' }}>
+                      Teacher Name
+                    </label>
+                    <input
+                      type="text"
+                      className="form-control"
+                      id="teacher-input_remove"
+                      placeholder="KIM JONG UN"
+                      value={teacherName}
+                      onChange={(e) => setTeacherName(removeDotsLive(e.target.value))}
+                      autoComplete="off"
+                    />
+                    {/* Hidden color field for JavaScript compatibility */}
+                    <select
+                      id="color1-select"
+                      className="form-select"
+                      style={{ display: 'none' }}
+                      value={color}
+                      onChange={(e) => setColor(e.target.value)}
+                    >
+                      <option value="rgb(255, 228, 135)">Orange</option>
+                    </select>
+                  </div>
+
+                  <div style={{ display: 'flex', gap: '1rem' }}>
+                    <div style={{ flex: 1 }}>
+                      <label htmlFor="slot-input" style={{ color: 'white', fontWeight: '500', marginBottom: '0.5rem', display: 'block' }}>
+                        Slots
+                      </label>
                       <input
                         id="slot-input"
                         className="form-control text-uppercase"
                         type="text"
-                        style={{ maxWidth: '100%' }}
                         value={slots}
                         onChange={(e) => setSlots(removeSlotSplCharLive(e.target.value))}
                         autoComplete="off"
                         placeholder="A1+TA1"
                       />
                     </div>
-
-                    <div style={{ width: '10%' }}></div>
-
-                    <div style={{ width: '30%' }}>
-                      <label style={{ marginTop: '15px' }} htmlFor="venue-input">Venue</label>
+                    <div style={{ flex: '0 0 200px' }}>
+                      <label htmlFor="venue-input" style={{ color: 'white', fontWeight: '500', marginBottom: '0.5rem', display: 'block' }}>
+                        Venue
+                      </label>
                       <input
                         id="venue-input"
                         className="form-control text-uppercase"
                         type="text"
-                        style={{ maxWidth: '100%' }}
                         value={venue}
                         onChange={(e) => setVenue(e.target.value)}
                         autoComplete="off"
@@ -1312,14 +1386,30 @@ export default function CoursePanel() {
                       />
                     </div>
                   </div>
-                  <span id="span-teacher-add" style={{ color: teacherMessage.color, fontWeight: 'bold' }}>
+
+                  <span id="span-teacher-add" style={{ color: '#4ECDCC', fontWeight: '500' }}>
                     {teacherMessage.text}
                   </span>
                   <br id="hide_br_teacher" style={{ display: teacherMessage.text ? 'none' : 'inline' }} />
-                  <hr />
                 </div>
-                <div className="modal-footer">
-                  <button style={{ width: '30%' }} type="submit" className="btn btn-primary">
+                <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'flex-end', marginTop: '1rem', borderTop: '1px solid rgba(255, 255, 255, 0.1)', paddingTop: '1rem' }}>
+                  <button
+                    className="btn btn-success btn-sm"
+                    type="button"
+                    id="addMultipleTeacher"
+                    onClick={() => {
+                      // Add functionality for multiple teachers if needed
+                      console.log('Add Multiple Teachers clicked');
+                    }}
+                  >
+                    <i className="fas fa-plus"></i>
+                    <span>&nbsp;&nbsp;Add Multiple</span>
+                  </button>
+                  <button
+                    type="submit"
+                    className="btn btn-primary btn-sm"
+                    id="saveTeacherModal"
+                  >
                     Save
                   </button>
                 </div>
@@ -1329,98 +1419,167 @@ export default function CoursePanel() {
 
           {/* Edit Teacher Form */}
           {showEditTeacher && state.globalVars.editTeacher && !state.globalVars.editSub && (
-            <div id="div-for-edit-teacher">
-              <form onSubmit={handleSaveTeacherEdit}>
-                <div>
-                  <h4 style={{ padding: '4.5%', paddingBottom: 0 }}>Edit Teachers</h4>
-                  <hr />
+            <div id="div-for-edit-teacher" style={{ display: 'block', background: 'rgba(0, 0, 0, 0.4)', backdropFilter: 'blur(15px)', borderRadius: '20px', padding: '2rem', margin: '1rem' }}>
+              <form id="teacherSaveFormEdit" onSubmit={handleSaveTeacherEdit}>
+                <div style={{ marginBottom: '2rem' }}>
+                  <h4 style={{ color: 'white', fontWeight: '600', margin: '0', fontSize: '1.5rem' }}>
+                    Edit Teachers
+                  </h4>
                 </div>
-                <div style={{ margin: '4.5%', paddingTop: '10px', paddingBottom: 0, paddingRight: '0%' }}>
-                  <label htmlFor="teacher-edit-course">Course</label>
-                  <input
-                    disabled
-                    type="text"
-                    className="form-control"
-                    id="teacher-edit-course"
-                    value={editingCourse}
-                    autoComplete="off"
-                  />
-                  <br />
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+                  {/* Course select option dropdown input */}
+                  <div>
+                    <label htmlFor="teacher-edit-course" style={{ color: 'white', fontWeight: '500', marginBottom: '0.5rem', display: 'block' }}>
+                      Course
+                    </label>
+                    <input
+                      disabled
+                      type="text"
+                      className="form-control"
+                      id="teacher-edit-course"
+                      placeholder="Course"
+                      value={editingCourse}
+                      autoComplete="off"
+                      style={{ 
+                        background: 'rgba(255, 255, 255, 0.05)', 
+                        border: '1px solid rgba(255, 255, 255, 0.1)', 
+                        borderRadius: '15px', 
+                        color: 'rgba(255, 255, 255, 0.7)', 
+                        padding: '0.75rem 1rem', 
+                        backdropFilter: 'blur(10px)' 
+                      }}
+                    />
+                  </div>
 
-                  <div style={{ display: 'flex', flexDirection: 'row' }}>
-                    <div style={{ width: '72%' }}>
-                      <label htmlFor="teacher-input_remove-edit">Teacher Name</label>
+                  <div style={{ display: 'flex', gap: '1rem', alignItems: 'end' }}>
+                    <div style={{ flex: 1 }}>
+                      <label htmlFor="teacher-input_remove-edit" style={{ color: 'white', fontWeight: '500', marginBottom: '0.5rem', display: 'block' }}>
+                        Teacher Name
+                      </label>
                       <input
                         type="text"
                         className="form-control"
                         id="teacher-input_remove-edit"
+                        placeholder="KIM JONG UN"
                         value={editTeacherName}
                         onChange={(e) => setEditTeacherName(removeDotsLive(e.target.value))}
                         autoComplete="off"
+                        style={{ 
+                          background: 'rgba(255, 255, 255, 0.1)', 
+                          border: '1px solid rgba(255, 255, 255, 0.2)', 
+                          borderRadius: '15px', 
+                          color: 'white', 
+                          padding: '0.75rem 1rem', 
+                          backdropFilter: 'blur(10px)' 
+                        }}
+                      />
+                      <input
+                        hidden
+                        disabled
+                        type="text"
+                        className="form-control"
+                        id="teacher-input_remove-edit-pre"
+                        placeholder="KIM JONG UN"
+                        autoComplete="off"
                       />
                     </div>
-                    <div style={{ width: '2%' }}></div>
-                    <div style={{ width: '26%' }}>
-                      <label htmlFor="color1-select-edit">Color</label>
+                    <div style={{ flex: '0 0 140px' }}>
+                      <label htmlFor="color1-select-edit" style={{ color: 'white', fontWeight: '500', marginBottom: '0.5rem', display: 'block' }}>
+                        Color
+                      </label>
                       <select
                         id="color1-select-edit"
                         className="form-select"
                         value={editColor}
                         onChange={(e) => setEditColor(e.target.value)}
+                        style={{ 
+                          background: 'rgba(255, 255, 255, 0.1)', 
+                          border: '1px solid rgba(255, 255, 255, 0.2)', 
+                          borderRadius: '15px', 
+                          color: 'white', 
+                          padding: '0.75rem 1rem', 
+                          backdropFilter: 'blur(10px)' 
+                        }}
                       >
-                        <option value="rgb(214, 255, 214)" style={{ backgroundColor: 'rgb(214, 255, 214)' }}>
+                        <option value="rgb(214, 255, 214)" style={{ backgroundColor: 'rgba(0, 0, 0, 0.8)', color: 'white' }}>
                           Green
                         </option>
-                        <option value="rgb(255, 228, 135)" style={{ backgroundColor: 'rgb(255, 228, 135)' }}>
+                        <option value="rgb(255, 228, 135)" style={{ backgroundColor: 'rgba(0, 0, 0, 0.8)', color: 'white' }}>
                           Orange
                         </option>
-                        <option value="rgb(255, 205, 205)" style={{ backgroundColor: 'rgb(255, 205, 205)' }}>
+                        <option value="rgb(255, 205, 205)" style={{ backgroundColor: 'rgba(0, 0, 0, 0.8)', color: 'white' }}>
                           Red
                         </option>
                       </select>
                     </div>
                   </div>
 
-                  <div style={{ display: 'flex', flexDirection: 'row' }}>
-                    <div style={{ width: '58%' }}>
-                      <label style={{ marginTop: '15px' }} htmlFor="slot-input-edit">Slots</label>
+                  <div style={{ display: 'flex', gap: '1rem' }}>
+                    <div style={{ flex: 1 }}>
+                      <label htmlFor="slot-input-edit" style={{ color: 'white', fontWeight: '500', marginBottom: '0.5rem', display: 'block' }}>
+                        Slots
+                      </label>
                       <input
                         id="slot-input-edit"
                         className="form-control text-uppercase"
                         type="text"
-                        style={{ maxWidth: '100%' }}
                         value={editSlots}
                         onChange={(e) => setEditSlots(removeSlotSplCharLive(e.target.value))}
                         autoComplete="off"
+                        placeholder="A1+TA1"
+                        style={{ 
+                          background: 'rgba(255, 255, 255, 0.1)', 
+                          border: '1px solid rgba(255, 255, 255, 0.2)', 
+                          borderRadius: '15px', 
+                          color: 'white', 
+                          padding: '0.75rem 1rem', 
+                          backdropFilter: 'blur(10px)' 
+                        }}
                       />
                     </div>
-
-                    <div style={{ width: '10%' }}></div>
-
-                    <div style={{ width: '30%' }}>
-                      <label style={{ marginTop: '15px' }} htmlFor="venue-input-edit">Venue</label>
+                    <div style={{ flex: '0 0 200px' }}>
+                      <label htmlFor="venue-input-edit" style={{ color: 'white', fontWeight: '500', marginBottom: '0.5rem', display: 'block' }}>
+                        Venue
+                      </label>
                       <input
                         id="venue-input-edit"
                         className="form-control text-uppercase"
                         type="text"
-                        style={{ maxWidth: '100%' }}
                         value={editVenue}
                         onChange={(e) => setEditVenue(e.target.value)}
                         autoComplete="off"
+                        placeholder="SJTG01"
+                        style={{ 
+                          background: 'rgba(255, 255, 255, 0.1)', 
+                          border: '1px solid rgba(255, 255, 255, 0.2)', 
+                          borderRadius: '15px', 
+                          color: 'white', 
+                          padding: '0.75rem 1rem', 
+                          backdropFilter: 'blur(10px)' 
+                        }}
                       />
                     </div>
                   </div>
-                  <span id="span-teacher-edit" style={{ color: teacherMessage.color, fontWeight: 'bold' }}>
+
+                  <span id="span-teacher-edit" style={{ color: '#4ECDCC', fontWeight: '500' }}>
                     {teacherMessage.text}
                   </span>
                   <br id="hide_br_teacher-edit" style={{ display: teacherMessage.text ? 'none' : 'inline' }} />
-                  <hr />
                 </div>
-                <div className="modal-footer">
-                  <button type="button" className="btn btn-danger" onClick={handleDeleteTeacher}>
+                <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'space-between', marginTop: '1rem', borderTop: '1px solid rgba(255, 255, 255, 0.1)', paddingTop: '1rem' }}>
+                  <button
+                    type="button"
+                    className="btn btn-danger btn-sm"
+                    id="deleteTeacherEdit"
+                    onClick={handleDeleteTeacher}
+                  >
                     Delete
                   </button>
-                  <button style={{ width: '30%' }} type="submit" className="btn btn-primary">
+                  <button
+                    type="submit"
+                    className="btn btn-primary btn-sm"
+                    id="saveTeacherEdit"
+                  >
                     Save
                   </button>
                 </div>

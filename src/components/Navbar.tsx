@@ -21,237 +21,142 @@ export default function Navbar() {
   return (
     <>
       {/* Navbar */}
-      <nav className="navbar fixed-top navbar-expand-md navbar-light bg-light">
-        <div className="container-xl px-3 py-1">
-          <a className="navbar-brand" href="/">
-            FFCS Planner
-          </a>
-          <button
-            className="navbar-toggler"
-            type="button"
-            data-bs-toggle="collapse"
-            data-bs-target="#navbar"
-            aria-controls="navbarNavDarkDropdown"
-            aria-expanded="false"
-            aria-label="Toggle navigation"
-            onClick={() => setIsNavbarCollapsed(!isNavbarCollapsed)}
-          >
-            <span className="navbar-toggler-icon"></span>
-          </button>
-
-          <div
-            id="navbar"
-            className={`collapse navbar-collapse justify-content-between ${!isNavbarCollapsed ? 'show' : ''}`}
-            style={{ whiteSpace: 'nowrap' }}
-          >
-            <ul className="navbar-nav">
-              <li className="nav-item dropdown">
-                <a
-                  id="campus"
-                  className="nav-link dropdown-toggle"
-                  role="button"
-                  data-bs-toggle="dropdown"
-                  aria-expanded="false"
-                >
-                  {state.currentCampus} Campus
-                </a>
-                <ul
-                  className="dropdown-menu dropdown-menu-light mb-3"
-                  aria-labelledby="campus"
-                >
-                  <li>
-                    <a
-                      className="dropdown-item"
-                      href="#"
-                      onClick={(e) => {
-                        e.preventDefault();
-                        handleCampusChange('Vellore');
-                      }}
-                    >
-                      Vellore Campus
-                    </a>
-                  </li>
-                  <li>
-                    <a
-                      className="dropdown-item"
-                      href="#"
-                      onClick={(e) => {
-                        e.preventDefault();
-                        handleCampusChange('Chennai');
-                      }}
-                    >
-                      Chennai Campus
-                    </a>
-                  </li>
-                </ul>
-              </li>
-            </ul>
-
-            <div className="navbar-nav flex-row flex-wrap md-auto">
-              {/* User Options - will be implemented with Firebase Auth */}
-              <div id="user-opt" style={{ display: 'none' }}>
-                {  }
-                <div className="dropdown d-inline" style={{ display: 'none' }}>
-                  <a
-                    id="logout-button"
-                    className="btn btn-outline-secondary dropdown-toggle nav-btn-outline"
-                    href="#"
-                    role="button"
-                    data-bs-toggle="dropdown"
-                    aria-expanded="false"
-                  >
-                    <i className="fas fa-user"></i>
-                    {  }User
-                  </a>
-
-                  <ul
-                    className="dropdown-menu dropdown-menu-light"
-                    aria-labelledby="logout-button"
-                  >
-                    <li>
-                      <a
-                        rel="noopener"
-                        className="dropdown-item"
-                        id="logout-link"
-                        href=""
-                        target="_blank"
-                      >
-                        <i className="fas fa-sign-out" aria-hidden="true"></i>
-                        {  }<span>Logout</span>
-                      </a>
-                    </li>
-                    <li>
-                      <a
-                        rel="noopener"
-                        className="dropdown-item"
-                        href={shareUrls.linkedin}
-                        target="_blank"
-                        id="username-edit"
-                      >
-                        <i className="fas fa-edit"></i>
-                        {  }<span>set username</span>
-                      </a>
-                    </li>
-                    <li>
-                      <a
-                        rel="noopener"
-                        className="dropdown-item"
-                        href={shareUrls.twitter}
-                        target="_blank"
-                      >
-                        <i className="fas fa-user-friends"></i>
-                        {  }<span>Friends</span>
-                      </a>
-                    </li>
-                    <li>
-                      <a
-                        className="dropdown-item"
-                        href={shareUrls.whatsapp}
-                        target="_blank"
-                      >
-                        <i className="fas fa-location-arrow"></i>
-                        {  }<span>Track FFCS</span>
-                      </a>
-                    </li>
-                  </ul>
-                </div>
+      <nav className="navbar fixed-top navbar-expand-md">
+        <div className="container-xl px-4 py-2" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          {/* Left side - GDSC Logo and Text */}
+          <div className="navbar-brand d-flex align-items-center" style={{ flex: 1, margin: 0 }}>
+            <div className="d-flex align-items-center">
+              <img src="./images/icons/gdsc.png" alt="GDSC Logo" className="gdsc-logo" style={{ paddingRight: '10px' }} />
+              <div className="d-flex flex-column">
+                <span style={{ color: '#ffffff', fontSize: '14px', fontWeight: 600, lineHeight: 1.2 }}>Google Developer Student Clubs</span>
+                <span style={{ color: '#bdc3c7', fontSize: '12px', fontWeight: 400, lineHeight: 1.2 }}>Vellore Institute of Technology</span>
               </div>
-              
-              {  }
-              <div className="dropdown d-inline">
+            </div>
+          </div>
+
+          {/* Center - FFCS PLANNER Title */}
+          <div style={{ flex: 1, display: 'flex', justifyContent: 'center' }}>
+            <h1 style={{ color: '#ffffff', fontSize: '28px', fontWeight: 700, margin: 0, letterSpacing: '2px', textShadow: '2px 2px 4px rgba(0,0,0,0.3)' }}>FFCS PLANNER</h1>
+          </div>
+
+          {/* Right side - Navigation buttons */}
+          <div className="navbar-nav flex-row" style={{ flex: 1, justifyContent: 'flex-end' }}>
+            <div id="user-opt" style={{ display: 'none' }}>
+              &nbsp;&nbsp;
+              <div className="dropdown d-inline" style={{ display: 'none' }}>
                 <a
-                  id="share-button"
+                  id="logout-button"
                   className="btn btn-outline-secondary dropdown-toggle nav-btn-outline"
                   href="#"
                   role="button"
                   data-bs-toggle="dropdown"
                   aria-expanded="false"
                 >
-                  <i className="fas fa-share"></i>
-                  {  }Share
+                  <i className="fas fa-user"></i>
+                  &nbsp;&nbsp;User
                 </a>
 
                 <ul
-                  className="dropdown-menu dropdown-menu-light"
-                  aria-labelledby="share-button"
+                  className="dropdown-menu dropdown-menu-dark"
+                  aria-labelledby="logout-button"
                 >
                   <li>
                     <a
                       rel="noopener"
                       className="dropdown-item"
-                      href={shareUrls.facebook}
-                      target="_blank"
+                      id="logout-link"
+                      href="#"
+                      data-action="logout"
                     >
-                      <i className="fab fa-facebook"></i>
-                      <span>{  }Facebook</span>
+                      <i className="fas fa-sign-out" aria-hidden="true"></i>
+                      &nbsp;&nbsp;<span>Logout</span>
                     </a>
                   </li>
+
                   <li>
                     <a
                       rel="noopener"
                       className="dropdown-item"
-                      href={shareUrls.linkedin}
-                      target="_blank"
+                      href="#"
+                      id="username-edit"
                     >
-                      <i className="fab fa-linkedin"></i>
-                      <span>{  }LinkedIn</span>
+                      <i className="fas fa-edit"></i>
+                      &nbsp;&nbsp;<span>Settings</span>
                     </a>
                   </li>
+
                   <li>
                     <a
                       rel="noopener"
                       className="dropdown-item"
-                      href={shareUrls.twitter}
-                      target="_blank"
+                      href="./rooms.html"
                     >
-                      <i className="fab fa-twitter"></i>
-                      <span>{  }Twitter</span>
+                      <i className="fas fa-users"></i>
+                      &nbsp;&nbsp;<span>Collaboration Rooms</span>
                     </a>
                   </li>
+
                   <li>
                     <a
                       className="dropdown-item"
-                      href={shareUrls.whatsapp}
+                      href="https://twitter.com/intent/tweet?text=FFCS made hassle free! https://ffcs.sarveshdakhore.in/"
                       target="_blank"
                     >
-                      <i className="fab fa-whatsapp"></i>
-                      <span>{  }WhatsApp</span>
+                      <i className="fas fa-share"></i>
+                      &nbsp;&nbsp;<span>Share App</span>
                     </a>
                   </li>
                 </ul>
               </div>
-
-              <a
-                rel="noopener"
-                href="https://github.com/sarveshdakhore/FFCSonTheGo"
-                target="_blank"
-                hidden
-              >
-                <button
-                  className="btn btn-outline-secondary nav-btn-outline ms-2"
-                  type="button"
-                >
-                  <i className="fab fa-github"></i>{  }GitHub
-                </button>
-              </a>
-
-              <a
-                rel="noopener"
-                href="https://sarveshdakhore.in/rd/how_to_use_ffcs_planner"
-                target="_blank"
-              >
-                <button
-                  className="btn btn-outline-secondary nav-btn-outline ms-2"
-                  type="button"
-                >
-                  <i className="fa fa-bicycle" aria-hidden="true"></i>
-                  {  }How To Use ?
-                </button>
-              </a>
             </div>
+            
+            <button 
+              className="btn" 
+              style={{ 
+                background: 'rgba(255, 255, 255, 0.1)', 
+                border: '1px solid rgba(255, 255, 255, 0.2)', 
+                borderRadius: '15px', 
+                color: 'white', 
+                fontWeight: 500, 
+                padding: '0.75rem 1.5rem', 
+                backdropFilter: 'blur(10px)', 
+                transition: 'all 0.3s ease' 
+              }} 
+              onMouseOver={(e) => {
+                e.currentTarget.style.background = 'rgba(255, 255, 255, 0.2)';
+                e.currentTarget.style.transform = 'translateY(-2px)';
+              }}
+              onMouseOut={(e) => {
+                e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)';
+                e.currentTarget.style.transform = 'translateY(0)';
+              }}
+              id="rooms-button"
+            >
+              <i className="fas fa-lock"></i>&nbsp;&nbsp;Rooms
+            </button>
+            
+            {/* Authentication button for guests */}
+            <a href="./auth.html" className="btn btn-success ms-2" id="auth-button" style={{ display: 'none', borderRadius: '15px', fontWeight: 500, padding: '0.75rem 1.5rem' }}>
+              <i className="fas fa-sign-in-alt"></i>&nbsp;&nbsp;Login
+            </a>
           </div>
         </div>
       </nav>
+      {/* End of navbar */}
+      
+      <div style={{ textAlign: 'center', display: 'none' }} id="mobile_message">
+        <p
+          style={{
+            padding: '6px 6%',
+            margin: '0%',
+            color: 'red',
+            fontWeight: 500,
+          }}
+        >
+          For optimal use of all features, please tilt your device to
+          landscape mode or switch to a larger screen.
+        </p>
+      </div>
     </>
   );
 }
