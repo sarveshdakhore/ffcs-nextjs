@@ -1622,7 +1622,7 @@ export default function CoursePanel() {
             <button
               id="save-panel-button"
               type="button"
-              className="btn btn-light me-1"
+              className="btn btn-success me-1"
               onClick={() => {
                 document.getElementById('download-modal')?.click();
               }}
@@ -1632,7 +1632,7 @@ export default function CoursePanel() {
             <button
               id="load-panel-button"
               type="button"
-              className="btn btn-light me-1"
+              className="btn btn-success me-1"
               onClick={() => {
                 document.getElementById('upload-modal')?.click();
               }}
@@ -1642,7 +1642,7 @@ export default function CoursePanel() {
             <button
               id="clear-course-button"
               type="button"
-              className="btn btn-success"
+              className="btn btn-danger me-1"
               onClick={() => {
                 // Different confirmation messages for normal vs attack mode (like vanilla JS)
                 const confirmMessage = state.ui.attackMode 
