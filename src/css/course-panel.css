@@ -3,8 +3,6 @@
  *  to the course panel
  */
 
-@import 'global/colors.scss';
-
 /* Glassmorphism styling for course panel elements */
 #course-panel input {
     color: var(--input-text-color);
@@ -46,15 +44,15 @@
     background: rgba(255, 255, 255, 0.05);
     color: white;
     transition: all 0.3s ease;
+}
 
-    &:not(.disabled) {
-        background-color: rgba(255, 255, 255, 0.05);
-    }
+.bootstrap-select button.dropdown-toggle:not(.disabled) {
+    background-color: rgba(255, 255, 255, 0.05);
+}
 
-    &:hover {
-        background: rgba(255, 255, 255, 0.08);
-        border-color: rgba(255, 255, 255, 0.25) !important;
-    }
+.bootstrap-select button.dropdown-toggle:hover {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(255, 255, 255, 0.25) !important;
 }
 
 .bootstrap-select .btn-group {

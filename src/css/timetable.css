@@ -1,0 +1,544 @@
+
+#option-buttons .btn {
+    border: none !important;
+    border-radius: 15px !important;
+    padding: 0.75rem 1.5rem !important;
+    font-weight: 500 !important;
+    transition: background-color 0.2s ease, transform 0.2s ease !important;
+}
+
+#option-buttons .btn:hover {
+    transform: translateY(-1px) !important;
+}
+
+#option-buttons .btn-primary {
+    background: rgba(13, 110, 253, 0.8) !important;
+    color: white !important;
+}
+
+#option-buttons .btn-primary:hover {
+    background: rgba(13, 110, 253, 1) !important;
+    transform: translateY(-1px) !important;
+}
+
+#option-buttons .btn-success {
+    background: rgba(76, 175, 80, 0.8) !important;
+    color: white !important;
+}
+
+#option-buttons .btn-success:hover {
+    background: rgba(76, 175, 80, 1) !important;
+    transform: translateY(-1px) !important;
+}
+
+#option-buttons .btn-warning {
+    background: rgba(255, 193, 7, 0.8) !important;
+    color: #212529 !important;
+}
+
+#option-buttons .btn-warning:hover {
+    background: rgba(255, 193, 7, 1) !important;
+    transform: translateY(-1px) !important;
+}
+
+#option-buttons .btn-danger {
+    background: rgba(220, 53, 69, 0.8) !important;
+    color: white !important;
+}
+
+#option-buttons .btn-danger:hover {
+    background: rgba(220, 53, 69, 1) !important;
+    transform: translateY(-1px) !important;
+}
+
+#tt-picker-button {
+    max-width: 180px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+#tt-picker-dropdown {
+    background: rgba(255, 255, 255, 0.15);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 15px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+}
+
+#tt-picker-dropdown a {
+    color: var(--text-color);
+    text-decoration: none;
+    padding: 8px 16px;
+    border-radius: 10px;
+    transition: background-color 0.2s ease;
+}
+
+#tt-picker-dropdown a:hover {
+    color: var(--text-color);
+}
+
+#tt-picker-dropdown .dropdown-item {
+    background: transparent;
+    border: none;
+}
+
+.tt-picker-label {
+    padding-right: 1.2rem;
+    width: 100%;
+    max-width: 180px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    cursor: pointer;
+}
+
+.tt-picker-rename,
+.tt-picker-delete {
+    padding-left: 0.5rem;
+}
+
+.quick-buttons {
+    padding: 0;
+}
+
+.quick-buttons > div {
+    overflow: auto;
+}
+
+.quick-buttons table {
+    margin: auto;
+}
+
+.quick-buttons table :first-child {
+    margin-top: 0.3rem;
+}
+
+.quick-buttons table :last-child {
+    margin-bottom: 0.3rem;
+}
+
+.quick-buttons tr {
+    display: flex;
+    margin: 0 0.3rem;
+}
+
+.quick-buttons .quick-button {
+    flex-grow: 1;
+    width: fit-content;
+    margin: 0.3rem;
+    background: rgba(255, 149, 0, 1);
+    border: 1px solid rgba(255, 149, 0, 1);
+    border-radius: 20px;
+    padding: 8px 16px;
+    transition: background-color 0.2s ease, transform 0.2s ease;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.quick-buttons .quick-button:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 3px 12px rgba(0, 0, 0, 0.15);
+    background: rgba(255, 149, 0, 1);
+    border-color: rgba(255, 149, 0, 1);
+    color: white;
+}
+
+.quick-buttons .quick-button.highlight {
+    background: rgba(76, 175, 80, 1);
+    border-color: rgba(76, 175, 80, 1);
+    box-shadow: 0 3px 12px rgba(76, 175, 80, 0.2);
+}
+
+#timetable {
+    background: rgba(0, 0, 0, 0.6);
+    border-radius: 16px;
+    padding: 1.5rem;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    margin: 1rem 0;
+    will-change: auto;
+}
+
+#timetable .table-responsive {
+    border-radius: 12px;
+    overflow: hidden;
+    background: transparent;
+}
+
+#timetable .table {
+    background: transparent;
+    border: none;
+    overflow: hidden;
+    border-collapse: separate;
+    border-spacing: 4px;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+/* Override global table styles for glassmorphic design */
+#timetable .table th,
+#timetable .table td {
+    border: none !important;
+    text-align: center;
+    vertical-align: middle;
+    white-space: nowrap;
+}
+
+/* Day labels (left column) */
+#timetable .table .day {
+    background: #0c0d24 !important;
+    border-radius: 8px !important;
+    color: white !important;
+    font-weight: 600;
+    font-size: 0.8rem;
+    padding: 12px 8px !important;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    text-align: center;
+    vertical-align: middle;
+}
+
+/* Time headers (top row) */
+#timetable .table tr:first-child td:not(.day) {
+    background: #131444 !important;
+    border-radius: 8px !important;
+    color: white !important;
+    font-weight: 700;
+    font-size: 0.75rem;
+    padding: 8px 4px !important;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    text-align: center;
+    vertical-align: middle;
+}
+
+/* Lab hours time headers (second row) */
+#timetable .table tr:nth-child(2) td:not(.day) {
+    background: #0a2051 !important;
+    border-radius: 8px !important;
+    color: white !important;
+    font-weight: 700;
+    font-size: 0.75rem;
+    padding: 8px 4px !important;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    text-align: center;
+    vertical-align: middle;
+}
+
+/* Regular timetable cells */
+#timetable .table td:not(.day) {
+    background: #382f5e !important;
+    border-radius: 8px !important;
+    margin: 2px;
+    padding: 12px 6px !important;
+    transition: background-color 0.2s ease, border-color 0.2s ease;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
+    position: relative;
+    border: 1px solid rgba(255, 255, 255, 0.08) !important;
+    color: rgba(255, 255, 255, 0.9);
+    font-size: 0.7rem;
+    font-weight: 500;
+    min-height: 50px;
+    text-align: center;
+    vertical-align: middle;
+}
+
+#timetable .table td:not(.day):hover {
+    background: rgba(56, 47, 94, 0.8) !important;
+    border-color: rgba(255, 255, 255, 0.12) !important;
+    color: white;
+}
+
+/* Filled cells with courses */
+#timetable .table .tt-slot-filled {
+    background: rgba(76, 175, 80, 0.9) !important;
+    color: white !important;
+    font-weight: 600;
+    font-size: 0.7rem;
+    border: 1px solid rgba(76, 175, 80, 0.5) !important;
+    box-shadow: 0 1px 6px rgba(76, 175, 80, 0.3);
+}
+
+#timetable .table .tt-slot-filled:hover {
+    background: rgba(76, 175, 80, 1) !important;
+}
+
+/* Lab cells styling */
+#timetable .table .lab-slot {
+    background: rgba(33, 150, 243, 0.9) !important;
+    color: white !important;
+    font-weight: 600;
+    font-size: 0.7rem;
+    border: 1px solid rgba(33, 150, 243, 0.5) !important;
+}
+
+#timetable .table .lab-slot:hover {
+    background: rgba(33, 150, 243, 1) !important;
+}
+
+/* Lunch break styling */
+#timetable .table .lunch-cell {
+    background: #0a2051 !important;
+    color: white !important;
+    font-weight: 700;
+    font-size: 0.7rem;
+    border: 1px solid rgba(10, 32, 81, 0.4) !important;
+}
+
+#timetable .table .lunch-cell:hover {
+    background: rgba(10, 32, 81, 0.8) !important;
+}
+
+/* Empty slots */
+#timetable .table .empty-slot {
+    background: #382f5e !important;
+    color: rgba(255, 255, 255, 0.4);
+}
+
+#timetable .table .empty-slot:hover {
+    background: rgba(56, 47, 94, 0.7) !important;
+    color: rgba(255, 255, 255, 0.7);
+}
+
+/* Selected cells */
+#timetable .table .selected-cell {
+    background: rgba(78, 205, 196, 0.9) !important;
+    color: white !important;
+    border: 2px solid rgba(78, 205, 196, 1) !important;
+    box-shadow: 0 0 8px rgba(78, 205, 196, 0.4);
+}
+
+#timetable .table tr {
+    border: none;
+}
+
+#timetable .table tr:first-child td:first-child {
+    border-top-left-radius: 15px;
+}
+
+#timetable .table tr:first-child td:last-child {
+    border-top-right-radius: 15px;
+}
+
+#timetable .table tr:last-child td:first-child {
+    border-bottom-left-radius: 15px;
+}
+
+#timetable .table tr:last-child td:last-child {
+    border-bottom-right-radius: 15px;
+}
+
+#timetable td div {
+    font-size: 0.9em;
+    font-weight: 500;
+}
+
+#timetable td.lab-hour {
+    font-weight: 700;
+    background: #0a2051 !important;
+    border: 1px solid rgba(10, 32, 81, 0.4) !important;
+    cursor: default;
+    color: #ffffff;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
+}
+
+#timetable td.lab-hour:hover {
+    background: rgba(10, 32, 81, 0.8) !important;
+}
+
+#timetable td.theory-hour {
+    font-weight: 700;
+    background: #0a2051 !important;
+    border: 1px solid rgba(10, 32, 81, 0.4) !important;
+    cursor: default;
+    color: #ffffff;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
+}
+
+#timetable td.theory-hour:hover {
+    background: rgba(10, 32, 81, 0.8) !important;
+}
+
+#timetable td.day,
+#timetable td.lunch {
+    font-weight: 700;
+    background: #0a2051 !important;
+    border: 1px solid rgba(10, 32, 81, 0.5) !important;
+    cursor: default;
+    color: white;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
+}
+
+#timetable td.day:hover,
+#timetable td.lunch:hover {
+    background: rgba(10, 32, 81, 0.8) !important;
+}
+
+#timetable td.period {
+    text-transform: uppercase;
+    color: var(--text-light-color);
+    background: rgba(42, 42, 42, 0.6) !important;
+    border: 1px solid rgba(42, 42, 42, 0.7) !important;
+    cursor: pointer;
+    transition: background-color 0.2s ease, border-color 0.2s ease;
+    font-weight: 500;
+}
+
+#timetable td.period:hover {
+    color: var(--text-color);
+    background: rgba(76, 175, 80, 0.4) !important;
+    border-color: rgba(76, 175, 80, 0.5) !important;
+}
+
+#timetable td.period.highlight {
+    color: var(--text-color);
+    background: rgba(76, 175, 80, 0.4) !important;
+    border-color: rgba(76, 175, 80, 0.5) !important;
+    box-shadow: 0 2px 8px rgba(76, 175, 80, 0.2);
+}
+
+#timetable td.period.highlight:hover {
+    background: rgba(76, 175, 80, 0.5) !important;
+    border-color: rgba(76, 175, 80, 0.6) !important;
+}
+
+#timetable td.period[disabled] {
+    text-transform: capitalize;
+    color: var(--text-light-color);
+    background: rgba(42, 42, 42, 0.3) !important;
+    border-color: rgba(42, 42, 42, 0.4) !important;
+    cursor: default;
+    opacity: 0.7;
+}
+
+#timetable td.period[disabled]:hover {
+    background: rgba(42, 42, 42, 0.3) !important;
+}
+
+#timetable td.clash {
+    background: rgba(255, 68, 68, 0.4) !important;
+    border-color: rgba(255, 68, 68, 0.5) !important;
+    color: #ffffff !important;
+    box-shadow: 0 2px 8px rgba(255, 68, 68, 0.3) !important;
+    animation: pulse-clash 2s infinite;
+}
+
+#timetable td.clash:hover {
+    background: rgba(255, 68, 68, 0.5) !important;
+}
+
+/* Pulse animation for clash cells - simplified for better performance */
+@keyframes pulse-clash {
+    0% {
+        box-shadow: 0 2px 8px rgba(255, 68, 68, 0.3);
+    }
+    50% {
+        box-shadow: 0 4px 12px rgba(255, 68, 68, 0.4);
+    }
+    100% {
+        box-shadow: 0 2px 8px rgba(255, 68, 68, 0.3);
+    }
+}
+
+/* Container styling for better visual integration */
+.container-xxl {
+    padding: 2rem 1rem;
+}
+
+.container-xxl .table-responsive {
+    background: transparent;
+    border-radius: 12px;
+    padding: 0;
+    backdrop-filter: none;
+    box-shadow: none;
+}
+
+@media screen and (max-width: 400px) {
+    /*
+        Making quick buttons, timetable full-width on smaller screens
+    */
+    #option-buttons {
+        justify-content: center !important;
+    }
+}
+
+@media screen and (max-width: 1000px) {
+    /*
+        Hiding the text in the option buttons if the screen
+        width is not big enough
+    */
+    #option-buttons button span {
+        display: none;
+    }
+}
+
+/* Enhanced responsive styles for mobile devices */
+@media screen and (max-width: 768px) {
+    #timetable {
+        padding: 1rem;
+        border-radius: 15px;
+    }
+    
+    #timetable .table {
+        border-spacing: 4px;
+    }
+    
+    #timetable .table td:not(.day) {
+        padding: 8px 4px !important;
+        font-size: 0.7rem;
+        min-height: 40px;
+    }
+    
+    #timetable .table .day {
+        padding: 8px 6px !important;
+        font-size: 0.75rem;
+    }
+    
+    #timetable .table tr:first-child td:not(.day) {
+        padding: 8px 4px !important;
+        font-size: 0.7rem;
+    }
+    
+    .container-xxl {
+        padding: 1rem 0.5rem;
+    }
+}
+
+@media screen and (max-width: 576px) {
+    #timetable {
+        padding: 0.5rem;
+    }
+    
+    #timetable .table {
+        border-spacing: 2px;
+    }
+    
+    #timetable .table td:not(.day) {
+        padding: 6px 2px !important;
+        font-size: 0.65rem;
+        min-height: 35px;
+        border-radius: 8px !important;
+    }
+    
+    #timetable .table .day {
+        padding: 6px 4px !important;
+        font-size: 0.7rem;
+        border-radius: 8px !important;
+    }
+}
+
+#timetable {
+    background: transparent;
+    backdrop-filter: none;
+    border: none;
+    box-shadow: none;
+    padding: 0;
+}
+
+#tt-picker-button {
+    border-radius: 0 !important;
+}
+
+.btn-group {
+    border-radius: 0 !important;
+}

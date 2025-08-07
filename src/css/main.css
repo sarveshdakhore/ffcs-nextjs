@@ -4,7 +4,15 @@
  *  or that doesn't fit into any particular section
  */
 
-@import 'global/colors.scss';
+/* Loading animation keyframes */
+@keyframes loading-bounce {
+    0%, 80%, 100% {
+        transform: scale(0);
+    }
+    40% {
+        transform: scale(1);
+    }
+}
 
 body {
     padding-top: 5rem;
@@ -17,7 +25,6 @@ body {
 /*
     Navigation bar
  */
-
 
 .navbar {
     background: rgba(58, 58, 58, 0.7) !important;
@@ -149,7 +156,6 @@ footer {
     border: none;
     color: var(--text-color);
 }
-
 
 /* Override Bootstrap default styles for dark theme */
 .card-body {
@@ -897,9 +903,6 @@ body::before {
     z-index: -1;
 }
 
-/* Enhanced glassmorphism for better visibility - ONLY for course preferences */
-/* This section is now handled above with more specific selectors */
-
 /* Better contrast for form elements in the right panel */
 .right-box .form-control,
 .right-box .form-select,
@@ -935,8 +938,6 @@ body::before {
     display: flex;
     flex-direction: column;
 }
-
-/* Remove specific right-box button styling to allow universal styles */
 
 /* Style labels in the right panel */
 .right-box label {
@@ -1101,7 +1102,6 @@ body::before {
 }
 
 .dropdown-list {
-    // background: rgba(0, 0, 0, 0.85) !important;
     border: none !important;
     border-radius: 0 0 15px 15px !important;
     backdrop-filter: blur(20px);
@@ -1121,7 +1121,6 @@ body::before {
 }
 
 .dropdown-list li {
-    // background: rgba(40, 40, 40, 0.8) !important;
     color: white !important;
     padding: 0.75rem 1rem !important;
     border-radius: 10px !important;
@@ -1256,7 +1255,6 @@ body::before {
     border: 2px solid rgba(255, 255, 255, 0.4);
 }
 
-
 .container-xl .card {
     background: #232323 !important;
     backdrop-filter: blur(16px);
@@ -1347,10 +1345,10 @@ body::before {
     background: #1f1f1f !important;
 }
 
-
 .h2s {
     border: 2px solid rgba(255, 255, 255, 1) !important;
 }
+
 .dropdown-heading .h2s {
     border: 2px solid rgba(255, 255, 255, 0.5) !important;
     background: #161616 !important;

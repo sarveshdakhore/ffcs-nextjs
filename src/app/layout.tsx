@@ -6,10 +6,11 @@ import 'bootstrap/scss/bootstrap.scss';
 import '@fortawesome/fontawesome-free/scss/fontawesome.scss';
 import '@fortawesome/fontawesome-free/scss/solid.scss';
 import '@fortawesome/fontawesome-free/scss/brands.scss';
-import '../scss/main.scss';
-import '../scss/course-panel.scss';
-import '../scss/course-list.scss';
-import '../scss/timetable.scss';
+import '../css/global/colors.css';
+import '../css/main.css';
+import '../css/course-panel.css';
+import '../css/course-list.css';
+import '../css/timetable.css';
 
 export const metadata: Metadata = {
   title: "FFCS Planner",

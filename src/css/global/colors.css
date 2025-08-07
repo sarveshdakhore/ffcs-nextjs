@@ -1,0 +1,37 @@
+/*
+ *  These are the colours used throughout the application
+ *  confined in one place so that they can be changed easily
+ */
+
+:root {
+    --primary-color: #4ecdc4;
+    --primary-dark-color: #35a09a;
+    --primary-light-color: #5fd6d680;
+    --background-color: #1a1a1a;
+    --text-color: #e0e0e0;
+    --text-light-color: #b0b0b0;
+    --table-border-color: #444444;
+    --input-text-color: #e0e0e0;
+    --input-border-color: #555555;
+    --input-border-active-color: #4ecdc4;
+    --input-border-shadow-color: rgba(78, 205, 196, 0.25);
+    --slot-button-selected-color: #6b3d6b;
+    --quick-button-color: #ff9500;
+    --quick-button-highlight-color: #4caf50;
+    --lab-color: #2e5cb8;
+    --theory-color: #4a4a8a;
+    --day-lunch-color: #404040;
+    --period-color: #2a2a2a;
+    --period-highlight-color: #4caf50;
+    --period-clash-color: #ff4444;
+    --on-clash-color: #ffffff;
+    --course-list-header-hover-color: #2d4332;
+}
+
+input::placeholder,
+input::-webkit-input-placeholder,
+input::-moz-placeholder,
+input:-ms-input-placeholder,
+input:-moz-placeholder {
+    opacity: 0.55 !important;
+}
