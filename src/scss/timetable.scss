@@ -77,18 +77,12 @@
         transition: background-color 0.2s ease;
         
         &:hover {
-            color: var(--text-color);
-            background: rgba(255, 255, 255, 0.1);
-        }
+            color: var(--text-color);        }
     }
     
     .dropdown-item {
         background: transparent;
         border: none;
-        
-        &:hover {
-            background: rgba(255, 255, 255, 0.05);
-        }
     }
 }
 

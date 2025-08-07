@@ -662,11 +662,11 @@ export default function Timetable() {
                               title="Rename"
                               style={{ padding: '2px 6px', fontSize: '12px' }}
                             >
-                              <i className="fas fa-edit"></i>
+                              <i className="fas fa-edit text-white"></i>
                             </button>
                             {state.timetableStoragePref.length > 1 && (
                               <button
-                                className="btn btn-sm btn-outline-danger"
+                                className="btn btn-sm btn-outline-secondary"
                                 onClick={(e) => {
                                   e.preventDefault();
                                   e.stopPropagation();
@@ -675,7 +675,7 @@ export default function Timetable() {
                                 title="Delete"
                                 style={{ padding: '2px 6px', fontSize: '12px' }}
                               >
-                                <i className="fas fa-trash"></i>
+                                <i className="fas fa-trash text-white"></i>
                               </button>
                             )}
                           </div>
