@@ -335,16 +335,23 @@ function ffcsReducer(state: FFCSState, action: FFCSAction): FFCSState {
         timetableStoragePref: updatedTables,
         activeTable: newTable,
         currentTableId: newTableId,
+        totalCredits: 0, // New table starts with 0 credits
       };
 
-    case 'SWITCH_TABLE':
+    case 'SWITCH_TABLE': {
       const selectedTable = state.timetableStoragePref.find(t => t.id === action.payload);
       if (!selectedTable) return state;
+      
+      // Recalculate totalCredits based on the selected table's data
+      const totalCredits = selectedTable.data.reduce((sum, course) => sum + course.credits, 0);
+      
       return {
         ...state,
         activeTable: selectedTable,
         currentTableId: action.payload,
+        totalCredits
       };
+    }
 
     case 'RENAME_TABLE':
       const renamedTables = state.timetableStoragePref.map(table =>
@@ -361,18 +368,24 @@ function ffcsReducer(state: FFCSState, action: FFCSAction): FFCSState {
         activeTable: renamedActive,
       };
 
-    case 'DELETE_TABLE':
+    case 'DELETE_TABLE': {
       if (state.timetableStoragePref.length === 1) return state; // Can't delete last table
       const filteredTables = state.timetableStoragePref.filter(t => t.id !== action.payload);
       const newCurrentTable = action.payload === state.currentTableId 
         ? filteredTables[0] 
         : state.activeTable;
+      
+      // Recalculate totalCredits for the new active table
+      const totalCredits = newCurrentTable.data.reduce((sum, course) => sum + course.credits, 0);
+      
       return {
         ...state,
         timetableStoragePref: filteredTables,
         activeTable: newCurrentTable,
         currentTableId: newCurrentTable.id,
+        totalCredits
       };
+    }
 
     case 'RESET_TABLE':
       // Clear only selections, not the course/subject data (like vanilla JS clearTimetable + courseRemove)
@@ -404,11 +417,20 @@ function ffcsReducer(state: FFCSState, action: FFCSAction): FFCSState {
         ui: { ...state.ui, ...action.payload },
       };
 
-    case 'LOAD_DATA':
-      return {
+    case 'LOAD_DATA': {
+      const newState = {
         ...state,
         ...action.payload,
       };
+      
+      // Recalculate totalCredits based on the loaded activeTable data
+      const totalCredits = newState.activeTable?.data?.reduce((sum, course) => sum + course.credits, 0) || 0;
+      
+      return {
+        ...newState,
+        totalCredits
+      };
+    }
 
     case 'CLEAR_ALL':
       return initialState;
