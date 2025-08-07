@@ -119,115 +119,292 @@ export default function CourseList() {
   const sortedCourses = getSortedCourses();
 
   return (
-    <div className="container-xxl">
-      <blockquote>
-        <p className="text-black-50 px-3 fs-6 fw-light">
-          Double click a course in the list below to load it back into
-          the course panel.
-        </p>
-      </blockquote>
+    <div className="container-xxl" style={{ marginTop: '3rem', position: 'relative' }}>
+      {/* Decorative pins for Course List */}
+      <img 
+        src="./images/doodles/yellowpin.svg" 
+        alt="" 
+        style={{ 
+          position: 'absolute', 
+          top: '45px', 
+          left: '100px', 
+          width: '40px', 
+          height: '40px', 
+          opacity: 1.0, 
+          zIndex: 100, 
+          transform: 'rotate(18deg)', 
+          filter: 'drop-shadow(0 3px 6px rgba(0,0,0,0.4))' 
+        }} 
+      />
+      <img 
+        src="./images/doodles/redpin.svg" 
+        alt="" 
+        style={{ 
+          position: 'absolute', 
+          top: '50px', 
+          right: '100px', 
+          width: '36px', 
+          height: '36px', 
+          opacity: 1.0, 
+          zIndex: 100, 
+          transform: 'rotate(-28deg)', 
+          filter: 'drop-shadow(0 3px 6px rgba(0,0,0,0.4))' 
+        }} 
+      />
+      
+      <div style={{
+        background: 'rgba(35, 35, 35, 0.95)',
+        borderRadius: '20px',
+        backdropFilter: 'blur(20px)',
+        WebkitBackdropFilter: 'blur(20px)',
+        border: '2px solid rgba(255, 255, 255, 0.5)',
+        boxShadow: '0 8px 32px rgba(0, 0, 0, 0.3)',
+        overflow: 'hidden',
+        margin: '2rem auto',
+        maxWidth: '1200px'
+      }}>
+        
+        {/* Header */}
+        <div style={{ padding: '1.5rem 2rem' }}>
+          <h3 style={{
+            color: 'white',
+            fontWeight: 600,
+            margin: 0,
+            fontSize: '1.4rem'
+          }}>
+            Selected Course List
+          </h3>
+        </div>
 
-      <div id="course-list" className="table-responsive">
-        <table className="table table-hover mb-0">
-          <thead>
-            <tr className="table-success noselect">
-              <th 
-                onClick={() => handleSort('slots')}
-                style={{ cursor: 'pointer' }}
-                className={sortColumn === 'slots' ? sortDirection : ''}
-              >
-                Slot{getSortIcon('slots')}
-              </th>
-              <th 
-                onClick={() => handleSort('courseCode')}
-                style={{ cursor: 'pointer' }}
-                className={sortColumn === 'courseCode' ? sortDirection : ''}
-              >
-                Course Code{getSortIcon('courseCode')}
-              </th>
-              <th 
-                onClick={() => handleSort('courseTitle')}
-                style={{ cursor: 'pointer' }}
-                className={sortColumn === 'courseTitle' ? sortDirection : ''}
-              >
-                Course Title{getSortIcon('courseTitle')}
-              </th>
-              <th 
-                onClick={() => handleSort('faculty')}
-                style={{ cursor: 'pointer' }}
-                className={sortColumn === 'faculty' ? sortDirection : ''}
-              >
-                Faculty{getSortIcon('faculty')}
-              </th>
-              <th 
-                onClick={() => handleSort('venue')}
-                style={{ cursor: 'pointer' }}
-                className={sortColumn === 'venue' ? sortDirection : ''}
-              >
-                Venue{getSortIcon('venue')}
-              </th>
-              <th 
-                onClick={() => handleSort('credits')}
-                style={{ cursor: 'pointer' }}
-                className={sortColumn === 'credits' ? sortDirection : ''}
-              >
-                Credits{getSortIcon('credits')}
-              </th>
-              <th></th>
-            </tr>
-          </thead>
-
-          <tbody id="courseList-tbody">
-            {sortedCourses.length === 0 ? (
-              <tr>
-                <td colSpan={7} className="text-center text-muted py-4">
-                  No courses selected yet. Click on teachers in the Course Preferences panel to add them.
-                </td>
-              </tr>
-            ) : (
-              sortedCourses.map((course) => (
-                <tr 
-                  key={`course${course.courseId}`}
-                  data-course={`course${course.courseId}`}
-                  data-is-project={course.isProject}
+        <div className="table-responsive" style={{ background: 'transparent', padding: '20px' }}>
+          <table 
+            id="course-list" 
+            className="table table-hover mb-0" 
+            style={{
+              background: 'transparent',
+              color: 'white',
+              margin: 0,
+              border: '2px solid rgba(255, 255, 255, 0.5)',
+              borderRadius: '20px',
+              borderCollapse: 'separate',
+              borderSpacing: 0
+            }}
+          >
+            <thead>
+              <tr style={{
+                background: 'rgba(20, 20, 20, 0.8)',
+                border: 'none',
+                borderTopLeftRadius: '20%',
+                borderTopRightRadius: '20%'
+              }}>
+                <th 
+                  onClick={() => handleSort('slots')}
+                  style={{ 
+                    cursor: 'pointer',
+                    background: 'transparent',
+                    color: 'white',
+                    fontWeight: 600,
+                    fontSize: '0.85rem',
+                    padding: '1rem 1.5rem',
+                    border: 'none',
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.5px',
+                    borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
+                    borderTopLeftRadius: '20px'
+                  }}
+                  className={sortColumn === 'slots' ? sortDirection : ''}
                 >
-                  <td>{course.slots.join('+')}</td>
-                  <td className="fw-bold">{course.courseCode}</td>
-                  <td>{course.courseTitle}</td>
-                  <td>{course.faculty}</td>
-                  <td>{course.venue}</td>
-                  <td>{course.credits}</td>
-                  <td>
-                    <button
-                      className="btn btn-sm btn-outline-danger"
-                      onClick={() => handleRemoveCourse(course.courseId)}
-                      title="Remove course"
-                    >
-                      <i className="fas fa-times"></i>
-                    </button>
+                  Slot{getSortIcon('slots')}
+                </th>
+                <th 
+                  onClick={() => handleSort('courseCode')}
+                  style={{ 
+                    cursor: 'pointer',
+                    background: 'transparent',
+                    color: 'white',
+                    fontWeight: 600,
+                    fontSize: '0.85rem',
+                    padding: '1rem 1.5rem',
+                    border: 'none',
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.5px',
+                    borderBottom: '1px solid rgba(255, 255, 255, 0.1)'
+                  }}
+                  className={sortColumn === 'courseCode' ? sortDirection : ''}
+                >
+                  Course Code{getSortIcon('courseCode')}
+                </th>
+                <th 
+                  onClick={() => handleSort('courseTitle')}
+                  style={{ 
+                    cursor: 'pointer',
+                    background: 'transparent',
+                    color: 'white',
+                    fontWeight: 600,
+                    fontSize: '0.85rem',
+                    padding: '1rem 1.5rem',
+                    border: 'none',
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.5px',
+                    borderBottom: '1px solid rgba(255, 255, 255, 0.1)'
+                  }}
+                  className={sortColumn === 'courseTitle' ? sortDirection : ''}
+                >
+                  Course Title{getSortIcon('courseTitle')}
+                </th>
+                <th 
+                  onClick={() => handleSort('faculty')}
+                  style={{ 
+                    cursor: 'pointer',
+                    background: 'transparent',
+                    color: 'white',
+                    fontWeight: 600,
+                    fontSize: '0.85rem',
+                    padding: '1rem 1.5rem',
+                    border: 'none',
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.5px',
+                    borderBottom: '1px solid rgba(255, 255, 255, 0.1)'
+                  }}
+                  className={sortColumn === 'faculty' ? sortDirection : ''}
+                >
+                  Faculty{getSortIcon('faculty')}
+                </th>
+                <th 
+                  onClick={() => handleSort('venue')}
+                  style={{ 
+                    cursor: 'pointer',
+                    background: 'transparent',
+                    color: 'white',
+                    fontWeight: 600,
+                    fontSize: '0.85rem',
+                    padding: '1rem 1.5rem',
+                    border: 'none',
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.5px',
+                    borderBottom: '1px solid rgba(255, 255, 255, 0.1)'
+                  }}
+                  className={sortColumn === 'venue' ? sortDirection : ''}
+                >
+                  Venue{getSortIcon('venue')}
+                </th>
+                <th 
+                  onClick={() => handleSort('credits')}
+                  style={{ 
+                    cursor: 'pointer',
+                    background: 'transparent',
+                    color: 'white',
+                    fontWeight: 600,
+                    fontSize: '0.85rem',
+                    padding: '1rem 1.5rem',
+                    border: 'none',
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.5px',
+                    borderBottom: '1px solid rgba(255, 255, 255, 0.1)'
+                  }}
+                  className={sortColumn === 'credits' ? sortDirection : ''}
+                >
+                  Credits{getSortIcon('credits')}
+                </th>
+                <th style={{
+                  background: 'transparent',
+                  color: 'white',
+                  fontWeight: 600,
+                  fontSize: '0.85rem',
+                  padding: '1rem 1.5rem',
+                  border: 'none',
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.5px',
+                  borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
+                  borderTopRightRadius: '20px'
+                }}></th>
+              </tr>
+            </thead>
+
+            <tbody id="courseList-tbody" style={{ background: 'transparent' }}>
+              {sortedCourses.length === 0 ? (
+                <tr>
+                  <td colSpan={7} className="text-center text-muted py-4" style={{ color: 'rgba(255, 255, 255, 0.7) !important' }}>
+                    No courses selected yet. Click on teachers in the Course Preferences panel to add them.
                   </td>
                 </tr>
-              ))
-            )}
-          </tbody>
+              ) : (
+                sortedCourses.map((course) => (
+                  <tr 
+                    key={`course${course.courseId}`}
+                    data-course={`course${course.courseId}`}
+                    data-is-project={course.isProject}
+                    style={{
+                      background: 'transparent',
+                      color: 'white'
+                    }}
+                  >
+                    <td style={{ padding: '1rem 1.5rem', border: 'none', borderBottom: '1px solid rgba(255, 255, 255, 0.05)' }}>
+                      {course.slots.join('+')}
+                    </td>
+                    <td className="fw-bold" style={{ padding: '1rem 1.5rem', border: 'none', borderBottom: '1px solid rgba(255, 255, 255, 0.05)' }}>
+                      {course.courseCode}
+                    </td>
+                    <td style={{ padding: '1rem 1.5rem', border: 'none', borderBottom: '1px solid rgba(255, 255, 255, 0.05)' }}>
+                      {course.courseTitle}
+                    </td>
+                    <td style={{ padding: '1rem 1.5rem', border: 'none', borderBottom: '1px solid rgba(255, 255, 255, 0.05)' }}>
+                      {course.faculty}
+                    </td>
+                    <td style={{ padding: '1rem 1.5rem', border: 'none', borderBottom: '1px solid rgba(255, 255, 255, 0.05)' }}>
+                      {course.venue}
+                    </td>
+                    <td style={{ padding: '1rem 1.5rem', border: 'none', borderBottom: '1px solid rgba(255, 255, 255, 0.05)' }}>
+                      {course.credits}
+                    </td>
+                    <td style={{ padding: '1rem 1.5rem', border: 'none', borderBottom: '1px solid rgba(255, 255, 255, 0.05)' }}>
+                      <button
+                        className="btn btn-sm btn-outline-danger"
+                        onClick={() => handleRemoveCourse(course.courseId)}
+                        title="Remove course"
+                        style={{
+                          borderColor: 'rgba(220, 53, 69, 0.5)',
+                          color: '#dc3545',
+                          background: 'transparent'
+                        }}
+                      >
+                        <i className="fas fa-times"></i>
+                      </button>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
 
-          <tfoot>
-            <tr className="table-active">
-              <td colSpan={7}>
-                <strong>
-                  Total Credits:{' '}
-                  <span id="total-credits">
-                    {state.ui.attackMode 
-                      ? state.activeTable.attackData.reduce((sum, course) => sum + course.credits, 0)
-                      : state.totalCredits
-                    }
-                  </span>
-                  {state.ui.attackMode && <span className="text-warning"> (Attack Mode)</span>}
-                </strong>
-              </td>
-            </tr>
-          </tfoot>
-        </table>
+            <tfoot>
+              <tr style={{ background: 'rgba(20, 20, 20, 0.9)', border: 'none' }}>
+                <td colSpan={7} style={{
+                  background: 'transparent',
+                  color: 'white',
+                  fontWeight: 600,
+                  fontSize: '1.1rem',
+                  textAlign: 'center',
+                  padding: '1rem',
+                  border: 'none',
+                  borderTop: '1px solid rgba(255, 255, 255, 0.2)',
+                  borderBottomLeftRadius: '20px',
+                  borderBottomRightRadius: '20px'
+                }}>
+                  <strong>
+                    Total Credits:{' '}
+                    <span id="total-credits">
+                      {state.ui.attackMode 
+                        ? state.activeTable.attackData.reduce((sum, course) => sum + course.credits, 0)
+                        : state.totalCredits
+                      }
+                    </span>
+                    {state.ui.attackMode && <span className="text-warning"> (Attack Mode)</span>}
+                  </strong>
+                </td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
       </div>
     </div>
   );

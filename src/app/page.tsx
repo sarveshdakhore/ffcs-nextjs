@@ -270,35 +270,8 @@ export default function Home() {
 
         <br />
 
-        {/* Course List */}
-        <div className="container-xxl" style={{ marginTop: '3rem', position: 'relative' }}>
-          {/* Decorative pins for Course List */}
-          <img src="/images/doodles/yellowpin.svg" alt="" style={{
-            position: 'absolute',
-            top: '45px',
-            left: '100px',
-            width: '40px',
-            height: '40px',
-            opacity: 1.0,
-            zIndex: 100,
-            transform: 'rotate(18deg)',
-            filter: 'drop-shadow(0 3px 6px rgba(0,0,0,0.4))'
-          }} />
-          <img src="/images/doodles/redpin.svg" alt="" style={{
-            position: 'absolute',
-            top: '50px',
-            right: '100px',
-            width: '36px',
-            height: '36px',
-            opacity: 1.0,
-            zIndex: 100,
-            transform: 'rotate(-28deg)',
-            filter: 'drop-shadow(0 3px 6px rgba(0,0,0,0.4))'
-          }} />
-          
+        
           <CourseList />
-        </div>
-
         <Footer />
         
         <Modals />

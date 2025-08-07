@@ -20,7 +20,7 @@ const clashMap: { [key: string]: string[] } = {
   L19: ['D1'], L20: ['B1'], L21: ['G1'], L22: ['TE1', 'G1'], L23: ['TCC1', 'TE1'], L24: ['TCC1'],
   L25: ['E1'], L26: ['C1'], L27: ['TA1'], L28: ['TF1', 'TA1'], L29: ['TD1', 'TF1'], L30: ['TD1']
 };
-import { slotsExistInNonLectureFormat, clashMap } from '@/constants/timetableConstants';
+import { slotsExistInNonLectureFormat } from '@/constants/timetableConstants';
 
 // Types
 export interface Course {
@@ -681,7 +681,7 @@ function ffcsReducer(state: FFCSState, action: FFCSAction): FFCSState {
           
           // Check if any of these slots are currently highlighted (with third parameter true)
           const hasHighlighted = slotsToToggle.some(([r, c]) => 
-            currentQuick.some((entry) => {
+            currentQuick.some((entry: any[]) => {
               if (entry.length === 3) {
                 // Entry with third parameter [row, col, true] from QV tile
                 return entry[0] === r && entry[1] === c && entry[2] === true;
@@ -693,7 +693,7 @@ function ffcsReducer(state: FFCSState, action: FFCSAction): FFCSState {
           let newQuick;
           if (hasHighlighted) {
             // Remove all QV-highlighted slots with this theory slot
-            newQuick = currentQuick.filter((entry) => {
+            newQuick = currentQuick.filter((entry: any[]) => {
               if (entry.length === 3 && entry[2] === true) {
                 // This is a QV highlight, check if it matches our slot
                 return !slotsToToggle.some(([r, c]) => entry[0] === r && entry[1] === c);
@@ -738,7 +738,7 @@ function ffcsReducer(state: FFCSState, action: FFCSAction): FFCSState {
           
           // Check if any of these positions are currently highlighted (with third parameter true)
           const hasHighlighted = positions.some(([r, c]) => 
-            currentQuick.some((entry) => {
+            currentQuick.some((entry: any[]) => {
               if (entry.length === 3) {
                 // Entry with third parameter [row, col, true] from QV tile
                 return entry[0] === r && entry[1] === c && entry[2] === true;
@@ -750,7 +750,7 @@ function ffcsReducer(state: FFCSState, action: FFCSAction): FFCSState {
           let newQuick;
           if (hasHighlighted) {
             // Remove all QV-highlighted slots with this theory slot
-            newQuick = currentQuick.filter((entry) => {
+            newQuick = currentQuick.filter((entry: any[]) => {
               if (entry.length === 3 && entry[2] === true) {
                 // This is a QV highlight, check if it matches our slot positions
                 return !positions.some(([r, c]) => entry[0] === r && entry[1] === c);
@@ -785,10 +785,36 @@ function ffcsReducer(state: FFCSState, action: FFCSAction): FFCSState {
     }
 
     case 'CLEAR_QV_HIGHLIGHTS': {
-      // Clear all highlighting when QV is disabled
+      // Clear QV highlights (entries with third parameter true) but keep individual cell highlights
+      const updatedTables = state.timetableStoragePref.map(table => {
+        if (table.id === state.currentTableId) {
+          // Filter out QV highlights (length 3 with third parameter true), keep individual highlights (length 2)
+          const newQuick = (table.quick || []).filter((entry: any[]) => {
+            return entry.length === 2; // Keep individual cell highlights
+          });
+          const newAttackQuick = (table.attackQuick || []).filter((entry: any[]) => {
+            return entry.length === 2; // Keep individual cell highlights
+          });
+          
+          return {
+            ...table,
+            quick: newQuick,
+            attackQuick: newAttackQuick
+          };
+        }
+        return table;
+      });
+      
+      const updatedActive = {
+        ...state.activeTable,
+        quick: updatedTables.find(t => t.id === state.currentTableId)?.quick || [],
+        attackQuick: updatedTables.find(t => t.id === state.currentTableId)?.attackQuick || []
+      };
+      
       return {
         ...state,
-        timetable: {}
+        timetableStoragePref: updatedTables,
+        activeTable: updatedActive
       };
     }
 

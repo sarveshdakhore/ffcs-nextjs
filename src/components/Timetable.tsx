@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useFFCS } from '@/context/FFCSContext';
 import velloreSchema from '@/data/schemas/vellore.json';
 import chennaiSchema from '@/data/schemas/chennai.json';
@@ -25,6 +25,47 @@ export default function Timetable() {
   const { state, dispatch } = useFFCS();
   const [currentTable, setCurrentTable] = useState(state.currentTableId);
   const [showQuickButtons, setShowQuickButtons] = useState(false);
+  const [showTableDropdown, setShowTableDropdown] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  // Custom modal states
+  const [showAddTableModal, setShowAddTableModal] = useState(false);
+  const [showRenameTableModal, setShowRenameTableModal] = useState(false);
+  const [showDeleteTableModal, setShowDeleteTableModal] = useState(false);
+  const [newTableName, setNewTableName] = useState('');
+  const [renameTableName, setRenameTableName] = useState('');
+  const [tableToRename, setTableToRename] = useState<number | null>(null);
+  const [tableToDelete, setTableToDelete] = useState<{ id: number; name: string } | null>(null);
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setShowTableDropdown(false);
+      }
+    };
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setShowAddTableModal(false);
+        setShowRenameTableModal(false);
+        setShowDeleteTableModal(false);
+        setShowTableDropdown(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    document.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, []);
+
+  // Sync local currentTable state with global state
+  useEffect(() => {
+    setCurrentTable(state.currentTableId);
+  }, [state.currentTableId]);
 
   // Get the appropriate schema based on campus
   const getTimetableSchema = (): TimetableSchema => {
@@ -33,13 +74,57 @@ export default function Timetable() {
 
   const handleTableSwitch = (tableId: number) => {
     dispatch({ type: 'SWITCH_TABLE', payload: tableId });
-    setCurrentTable(tableId);
+    // No need to manually update currentTable - it will be synced via useEffect
   };
 
   const handleAddTable = () => {
-    const tableName = prompt('Enter table name:');
-    if (tableName) {
-      dispatch({ type: 'CREATE_TABLE', payload: tableName });
+    setNewTableName('');
+    setShowAddTableModal(true);
+  };
+
+  const confirmAddTable = () => {
+    if (newTableName.trim()) {
+      dispatch({ type: 'CREATE_TABLE', payload: newTableName.trim() });
+      setShowAddTableModal(false);
+      setNewTableName('');
+      // No need to manually update currentTable - it will be synced via useEffect
+    }
+  };
+
+  const handleRenameTable = (tableId: number, currentName: string) => {
+    setTableToRename(tableId);
+    setRenameTableName(currentName);
+    setShowRenameTableModal(true);
+    setShowTableDropdown(false);
+  };
+
+  const confirmRenameTable = () => {
+    if (tableToRename !== null && renameTableName.trim()) {
+      dispatch({ type: 'RENAME_TABLE', payload: { id: tableToRename, name: renameTableName.trim() } });
+      setShowRenameTableModal(false);
+      setRenameTableName('');
+      setTableToRename(null);
+    }
+  };
+
+  const handleDeleteTable = (tableId: number, tableName: string) => {
+    if (state.timetableStoragePref.length === 1) {
+      // Show a simple alert modal for this case
+      alert('Cannot delete the last remaining table.');
+      return;
+    }
+    
+    setTableToDelete({ id: tableId, name: tableName });
+    setShowDeleteTableModal(true);
+    setShowTableDropdown(false);
+  };
+
+  const confirmDeleteTable = () => {
+    if (tableToDelete) {
+      dispatch({ type: 'DELETE_TABLE', payload: tableToDelete.id });
+      // The DELETE_TABLE action in context handles switching to another table automatically
+      setShowDeleteTableModal(false);
+      setTableToDelete(null);
     }
   };
 
@@ -157,9 +242,12 @@ export default function Timetable() {
             mon: 2, tue: 3, wed: 4, thu: 5, fri: 6, sat: 7, sun: 8
           };
           const currentRow = dayRowMap[day];
-          const currentCol = index;
+          // Calculate actual column in table accounting for lunch column
+          // Columns 0-5 in dayRowsData map to columns 1-6 in table
+          // Columns 6-12 in dayRowsData map to columns 8-14 in table (skip lunch at column 7)
+          const currentCol = index < 6 ? index + 1 : index + 2;
           
-          const isQuickHighlighted = quickArray.some((entry: number[]) => {
+          const isQuickHighlighted = quickArray.some((entry: any[]) => {
             if (entry.length === 2) {
               // Individual cell highlight [row, col]
               return entry[0] === currentRow && entry[1] === currentCol;
@@ -195,14 +283,14 @@ export default function Timetable() {
                     `${course.courseCode}-${course.courseTitle}` : 
                     course.courseTitle;
                   const teacherData = state.activeTable.subject[subjectName]?.teacher[course.faculty];
-                  const backgroundColor = teacherData?.color || 'rgb(255, 228, 135)';
+                  // const backgroundColor = teacherData?.color || 'rgb(255, 228, 135)';
                   
                   return (
                     <div 
                       key={`${course.courseId}-${courseIndex}`}
                       data-course={`course${course.courseId}`}
                       style={{ 
-                        backgroundColor,
+                        // backgroundColor,
                         marginBottom: courseIndex < coursesInSlot.length - 1 ? '2px' : '0'
                       }}
                     >
@@ -213,7 +301,7 @@ export default function Timetable() {
                 })
               ) : isQuickHighlighted ? (
                 // Show empty highlighted slot from quick array
-                <div style={{ backgroundColor: 'rgba(212, 237, 218, 0.3)' }}>
+                <div >
                   {slotText}
                 </div>
               ) : (
@@ -251,42 +339,68 @@ export default function Timetable() {
   const renderQuickButtons = () => {
     const handleQuickButtonClick = (slot: string) => {
       // QV tile click - find ALL cells with this theory slot and highlight them
-      // This matches vanilla JS: $(`#timetable .${slot}`).each((i, el) => { ... })
+      // Use the predefined mapping instead of DOM querying for accuracy
       
-      const activeTableToUpdate = state.ui.attackMode ? 'attackQuick' : 'quick';
-      const currentQuick = state.ui.attackMode ? state.activeTable.attackQuick : state.activeTable.quick;
+      // Define where each theory slot appears in the timetable based on dayRowsData
+      // Row indices: theory=0, lab=1, mon=2, tue=3, wed=4, thu=5, fri=6, sat=7, sun=8
+      // Column mapping: dayRowsData index 0-5 -> table col 1-6, index 6-12 -> table col 8-14 (lunch at col 7)
+      const slotPositions: { [key: string]: [number, number][] } = {
+        // First period slots (dayRowsData indices 0-5 -> table columns 1-6)
+        'A1': [[2, 1], [4, 2]], // MON index 0 -> col 1, WED index 1 -> col 2
+        'F1': [[2, 2], [4, 3]], // MON index 1 -> col 2, WED index 2 -> col 3
+        'D1': [[2, 3], [5, 1]], // MON index 2 -> col 3, THU index 0 -> col 1
+        'TB1': [[2, 4]], // MON index 3 -> col 4
+        'TG1': [[2, 5]], // MON index 4 -> col 5
+        
+        'B1': [[3, 1], [5, 2]], // TUE index 0 -> col 1, THU index 1 -> col 2
+        'G1': [[3, 2], [5, 3]], // TUE index 1 -> col 2, THU index 2 -> col 3
+        'E1': [[3, 3], [6, 1]], // TUE index 2 -> col 3, FRI index 0 -> col 1
+        'TC1': [[3, 4]], // TUE index 3 -> col 4
+        'TAA1': [[3, 5]], // TUE index 4 -> col 5
+        
+        'C1': [[4, 1], [6, 2]], // WED index 0 -> col 1, FRI index 1 -> col 2
+        'V1': [[4, 4]], // WED index 3 -> col 4
+        'V2': [[4, 5]], // WED index 4 -> col 5
+        
+        'TE1': [[5, 4]], // THU index 3 -> col 4
+        'TCC1': [[5, 5]], // THU index 4 -> col 5
+        
+        'TA1': [[6, 3]], // FRI index 2 -> col 3
+        'TF1': [[6, 4]], // FRI index 3 -> col 4
+        'TD1': [[6, 5]], // FRI index 4 -> col 5
+        
+        // Second period slots (dayRowsData indices 6-12 -> table columns 8-14)
+        'A2': [[2, 8], [4, 9]], // MON index 6 -> col 8, WED index 7 -> col 9
+        'F2': [[2, 9], [4, 10]], // MON index 7 -> col 9, WED index 8 -> col 10
+        'D2': [[2, 10], [5, 8]], // MON index 8 -> col 10, THU index 6 -> col 8
+        'TB2': [[2, 11]], // MON index 9 -> col 11
+        'TG2': [[2, 12]], // MON index 10 -> col 12
+        'V3': [[2, 14]], // MON index 12 -> col 14
+        
+        'B2': [[3, 8], [5, 9]], // TUE index 6 -> col 8, THU index 7 -> col 9
+        'G2': [[3, 9], [5, 10]], // TUE index 7 -> col 9, THU index 8 -> col 10
+        'E2': [[3, 10], [6, 8]], // TUE index 8 -> col 10, FRI index 6 -> col 8
+        'TC2': [[3, 11]], // TUE index 9 -> col 11
+        'TAA2': [[3, 12]], // TUE index 10 -> col 12
+        'V4': [[3, 14]], // TUE index 12 -> col 14
+        
+        'C2': [[4, 8], [6, 9]], // WED index 6 -> col 8, FRI index 7 -> col 9
+        'TD2': [[4, 11]], // WED index 9 -> col 11
+        'TBB2': [[4, 12]], // WED index 10 -> col 12
+        'V5': [[4, 14]], // WED index 12 -> col 14
+        
+        'TE2': [[5, 11]], // THU index 9 -> col 11
+        'TCC2': [[5, 12]], // THU index 10 -> col 12
+        'V6': [[5, 14]], // THU index 12 -> col 14
+        
+        'TA2': [[6, 10]], // FRI index 8 -> col 10
+        'TF2': [[6, 11]], // FRI index 9 -> col 11
+        'TDD2': [[6, 12]], // FRI index 10 -> col 12
+        'V7': [[6, 14]], // FRI index 12 -> col 14
+      };
       
-      // Find all cells with this theory slot class in the DOM
-      const cellsWithSlot: [number, number][] = [];
-      const timetableRows = document.querySelectorAll('#timetable tbody tr');
-      
-      timetableRows.forEach((row, rowIndex) => {
-        const cells = row.querySelectorAll('td');
-        cells.forEach((cell, colIndex) => {
-          // Check if this cell has the theory slot class and no course content
-          if (cell.classList.contains(slot) && 
-              cell.classList.contains('period') && 
-              !cell.classList.contains('clash') && 
-              cell.querySelector('div[data-course]') === null) {
-            cellsWithSlot.push([rowIndex, colIndex]);
-          }
-        });
-      });
-      
-      if (cellsWithSlot.length === 0) return; // No valid cells found
-      
-      // Check if any of these positions are currently highlighted (with third parameter true)
-      const hasHighlighted = cellsWithSlot.some(([r, c]) => 
-        currentQuick.some((entry: number[]) => {
-          if (entry.length === 3) {
-            return entry[0] === r && entry[1] === c && entry[2] === true;
-          }
-          return false;
-        })
-      );
-      
-      // Create the positions array for the action
-      const positions = cellsWithSlot.map(([r, c]) => [r, c] as [number, number]);
+      const positions = slotPositions[slot] || [];
+      if (positions.length === 0) return; // No positions found for this slot
       
       dispatch({ 
         type: 'PROCESS_QV_SLOT_HIGHLIGHT', 
@@ -298,23 +412,27 @@ export default function Timetable() {
       // Check if this slot is highlighted in quick array (QV tile highlights have third parameter true)
       const quickArray = state.ui.attackMode ? state.activeTable.attackQuick : state.activeTable.quick;
       
-      // Find cells with this theory slot class to check if they're highlighted
-      const cellsWithSlot: [number, number][] = [];
-      if (typeof document !== 'undefined') {
-        const timetableRows = document.querySelectorAll('#timetable tbody tr');
-        timetableRows.forEach((row, rowIndex) => {
-          const cells = row.querySelectorAll('td');
-          cells.forEach((cell, colIndex) => {
-            if (cell.classList.contains(slot) && cell.classList.contains('period')) {
-              cellsWithSlot.push([rowIndex, colIndex]);
-            }
-          });
-        });
-      }
+      // Define where each theory slot appears in the timetable based on dayRowsData
+      // Column mapping: dayRowsData index 0-5 -> table col 1-6, index 6-12 -> table col 8-14 (lunch at col 7)
+      const slotPositions: { [key: string]: [number, number][] } = {
+        // First period slots
+        'A1': [[2, 1], [4, 2]], 'F1': [[2, 2], [4, 3]], 'D1': [[2, 3], [5, 1]], 'TB1': [[2, 4]], 'TG1': [[2, 5]],
+        'B1': [[3, 1], [5, 2]], 'G1': [[3, 2], [5, 3]], 'E1': [[3, 3], [6, 1]], 'TC1': [[3, 4]], 'TAA1': [[3, 5]],
+        'C1': [[4, 1], [6, 2]], 'V1': [[4, 4]], 'V2': [[4, 5]], 'TE1': [[5, 4]], 'TCC1': [[5, 5]],
+        'TA1': [[6, 3]], 'TF1': [[6, 4]], 'TD1': [[6, 5]],
+        // Second period slots
+        'A2': [[2, 8], [4, 9]], 'F2': [[2, 9], [4, 10]], 'D2': [[2, 10], [5, 8]], 'TB2': [[2, 11]], 'TG2': [[2, 12]], 'V3': [[2, 14]],
+        'B2': [[3, 8], [5, 9]], 'G2': [[3, 9], [5, 10]], 'E2': [[3, 10], [6, 8]], 'TC2': [[3, 11]], 'TAA2': [[3, 12]], 'V4': [[3, 14]],
+        'C2': [[4, 8], [6, 9]], 'TD2': [[4, 11]], 'TBB2': [[4, 12]], 'V5': [[4, 14]],
+        'TE2': [[5, 11]], 'TCC2': [[5, 12]], 'V6': [[5, 14]],
+        'TA2': [[6, 10]], 'TF2': [[6, 11]], 'TDD2': [[6, 12]], 'V7': [[6, 14]],
+      };
+      
+      const cellsWithSlot = slotPositions[slot] || [];
       
       // Check if any of this slot's positions are QV-highlighted
       const isQVHighlighted = cellsWithSlot.some(([r, c]) => 
-        quickArray.some((entry: number[]) => {
+        quickArray.some((entry: any[]) => {
           return entry.length === 3 && entry[0] === r && entry[1] === c && entry[2] === true;
         })
       );
@@ -379,42 +497,27 @@ export default function Timetable() {
   const renderQuickButtonsBelow = () => {
     const handleQuickButtonClick = (slot: string) => {
       // QV tile click - find ALL cells with this theory slot and highlight them
-      // This matches vanilla JS: $(`#timetable .${slot}`).each((i, el) => { ... })
+      // Use the predefined mapping instead of DOM querying for accuracy
       
-      const activeTableToUpdate = state.ui.attackMode ? 'attackQuick' : 'quick';
-      const currentQuick = state.ui.attackMode ? state.activeTable.attackQuick : state.activeTable.quick;
+      // Define where each theory slot appears in the timetable based on dayRowsData
+      // Row indices: theory=0, lab=1, mon=2, tue=3, wed=4, thu=5, fri=6, sat=7, sun=8
+      // Column indices: day=0, then periods 1-13 (but lunch column is added after period 6)
+      const slotPositions: { [key: string]: [number, number][] } = {
+        // First period slots (columns 1-6 in dayRowsData become columns 1-6 in table)
+        'A1': [[2, 1], [4, 2]], 'F1': [[2, 2], [4, 3]], 'D1': [[2, 3], [5, 1]], 'TB1': [[2, 4]], 'TG1': [[2, 5]],
+        'B1': [[3, 1], [5, 2]], 'G1': [[3, 2], [5, 3]], 'E1': [[3, 3], [6, 1]], 'TC1': [[3, 4]], 'TAA1': [[3, 5]],
+        'C1': [[4, 1], [6, 2]], 'V1': [[4, 4]], 'V2': [[4, 5]], 'TE1': [[5, 4]], 'TCC1': [[5, 5]],
+        'TA1': [[6, 3]], 'TF1': [[6, 4]], 'TD1': [[6, 5]],
+        // Second period slots (columns 6-12 in dayRowsData become columns 8-14 in table, accounting for lunch)
+        'A2': [[2, 8], [4, 9]], 'F2': [[2, 9], [4, 10]], 'D2': [[2, 10], [5, 8]], 'TB2': [[2, 11]], 'TG2': [[2, 12]], 'V3': [[2, 13]],
+        'B2': [[3, 8], [5, 9]], 'G2': [[3, 9], [5, 10]], 'E2': [[3, 10], [6, 8]], 'TC2': [[3, 11]], 'TAA2': [[3, 12]], 'V4': [[3, 13]],
+        'C2': [[4, 8], [6, 9]], 'TD2': [[4, 11]], 'TBB2': [[4, 12]], 'V5': [[4, 13]],
+        'TE2': [[5, 11]], 'TCC2': [[5, 12]], 'V6': [[5, 13]],
+        'TA2': [[6, 10]], 'TF2': [[6, 11]], 'TDD2': [[6, 12]], 'V7': [[6, 13]],
+      };
       
-      // Find all cells with this theory slot class in the DOM
-      const cellsWithSlot: [number, number][] = [];
-      const timetableRows = document.querySelectorAll('#timetable tbody tr');
-      
-      timetableRows.forEach((row, rowIndex) => {
-        const cells = row.querySelectorAll('td');
-        cells.forEach((cell, colIndex) => {
-          // Check if this cell has the theory slot class and no course content
-          if (cell.classList.contains(slot) && 
-              cell.classList.contains('period') && 
-              !cell.classList.contains('clash') && 
-              cell.querySelector('div[data-course]') === null) {
-            cellsWithSlot.push([rowIndex, colIndex]);
-          }
-        });
-      });
-      
-      if (cellsWithSlot.length === 0) return; // No valid cells found
-      
-      // Check if any of these positions are currently highlighted (with third parameter true)
-      const hasHighlighted = cellsWithSlot.some(([r, c]) => 
-        currentQuick.some((entry: number[]) => {
-          if (entry.length === 3) {
-            return entry[0] === r && entry[1] === c && entry[2] === true;
-          }
-          return false;
-        })
-      );
-      
-      // Create the positions array for the action
-      const positions = cellsWithSlot.map(([r, c]) => [r, c] as [number, number]);
+      const positions = slotPositions[slot] || [];
+      if (positions.length === 0) return; // No positions found for this slot
       
       dispatch({ 
         type: 'PROCESS_QV_SLOT_HIGHLIGHT', 
@@ -426,23 +529,28 @@ export default function Timetable() {
       // Check if this slot is highlighted in quick array (QV tile highlights have third parameter true)
       const quickArray = state.ui.attackMode ? state.activeTable.attackQuick : state.activeTable.quick;
       
-      // Find cells with this theory slot class to check if they're highlighted
-      const cellsWithSlot: [number, number][] = [];
-      if (typeof document !== 'undefined') {
-        const timetableRows = document.querySelectorAll('#timetable tbody tr');
-        timetableRows.forEach((row, rowIndex) => {
-          const cells = row.querySelectorAll('td');
-          cells.forEach((cell, colIndex) => {
-            if (cell.classList.contains(slot) && cell.classList.contains('period')) {
-              cellsWithSlot.push([rowIndex, colIndex]);
-            }
-          });
-        });
-      }
+      // Define where each theory slot appears in the timetable based on dayRowsData
+      // Row indices: theory=0, lab=1, mon=2, tue=3, wed=4, thu=5, fri=6, sat=7, sun=8
+      // Column mapping: dayRowsData index 0-5 -> table col 1-6, index 6-12 -> table col 8-14 (lunch at col 7)
+      const slotPositions: { [key: string]: [number, number][] } = {
+        // First period slots
+        'A1': [[2, 1], [4, 2]], 'F1': [[2, 2], [4, 3]], 'D1': [[2, 3], [5, 1]], 'TB1': [[2, 4]], 'TG1': [[2, 5]],
+        'B1': [[3, 1], [5, 2]], 'G1': [[3, 2], [5, 3]], 'E1': [[3, 3], [6, 1]], 'TC1': [[3, 4]], 'TAA1': [[3, 5]],
+        'C1': [[4, 1], [6, 2]], 'V1': [[4, 4]], 'V2': [[4, 5]], 'TE1': [[5, 4]], 'TCC1': [[5, 5]],
+        'TA1': [[6, 3]], 'TF1': [[6, 4]], 'TD1': [[6, 5]],
+        // Second period slots
+        'A2': [[2, 8], [4, 9]], 'F2': [[2, 9], [4, 10]], 'D2': [[2, 10], [5, 8]], 'TB2': [[2, 11]], 'TG2': [[2, 12]], 'V3': [[2, 14]],
+        'B2': [[3, 8], [5, 9]], 'G2': [[3, 9], [5, 10]], 'E2': [[3, 10], [6, 8]], 'TC2': [[3, 11]], 'TAA2': [[3, 12]], 'V4': [[3, 14]],
+        'C2': [[4, 8], [6, 9]], 'TD2': [[4, 11]], 'TBB2': [[4, 12]], 'V5': [[4, 14]],
+        'TE2': [[5, 11]], 'TCC2': [[5, 12]], 'V6': [[5, 14]],
+        'TA2': [[6, 10]], 'TF2': [[6, 11]], 'TDD2': [[6, 12]], 'V7': [[6, 14]],
+      };
+      
+      const cellsWithSlot = slotPositions[slot] || [];
       
       // Check if any of this slot's positions are QV-highlighted
       const isQVHighlighted = cellsWithSlot.some(([r, c]) => 
-        quickArray.some((entry: number[]) => {
+        quickArray.some((entry: any[]) => {
           return entry.length === 3 && entry[0] === r && entry[1] === c && entry[2] === true;
         })
       );
@@ -516,50 +624,66 @@ export default function Timetable() {
         <div id="option-buttons" className="row justify-content-between">
           <div className="col-auto mb-2 text-center">
             <div className="btn-group" role="group">
-              <div className="btn-group">
+                            <div className="btn-group" ref={dropdownRef}>
                 <button
                   id="tt-picker-button"
                   className="btn btn-primary dropdown-toggle"
                   type="button"
-                  data-bs-toggle="dropdown"
-                  aria-expanded="false"
+                  onClick={() => setShowTableDropdown(!showTableDropdown)}
+                  aria-expanded={showTableDropdown}
                 >
                   {state.timetableStoragePref.find(t => t.id === currentTable)?.name || 'Default Table'}
                 </button>
-                <ul id="tt-picker-dropdown" className="dropdown-menu">
-                  {state.timetableStoragePref.map((table) => (
-                    <li key={table.id}>
-                      <div className="dropdown-item d-flex justify-content-between">
-                        <a
-                          href="#"
-                          onClick={(e) => {
-                            e.preventDefault();
-                            handleTableSwitch(table.id);
-                          }}
-                        >
-                          {table.name}
-                        </a>
-                        <a
-                          className="tt-picker-rename"
-                          href="#"
-                          onClick={(e) => {
-                            e.preventDefault();
-                            const newName = prompt('Enter new name:', table.name);
-                            if (newName) {
-                              dispatch({ 
-                                type: 'RENAME_TABLE', 
-                                payload: { id: table.id, name: newName } 
-                              });
-                            }
-                          }}
-                          title="Rename"
-                        >
-                          <i className="fas fa-pencil-alt"></i>
-                        </a>
-                      </div>
-                    </li>
-                  ))}
-                </ul>
+                {showTableDropdown && (
+                  <ul id="tt-picker-dropdown" className="dropdown-menu show" style={{ position: 'absolute', top: '100%', left: 0, zIndex: 1000, minWidth: '250px' }}>
+                    {state.timetableStoragePref.map((table) => (
+                      <li key={table.id}>
+                        <div className="dropdown-item d-flex justify-content-between align-items-center px-3 py-2">
+                          <a
+                            href="#"
+                            className="flex-grow-1 text-start"
+                            onClick={(e) => {
+                              e.preventDefault();
+                              handleTableSwitch(table.id);
+                              setShowTableDropdown(false);
+                            }}
+                            style={{ textDecoration: 'none', color: 'inherit', marginRight: '10px' }}
+                          >
+                            {table.name}
+                          </a>
+                          <div className="d-flex gap-1">
+                            <button
+                              className="btn btn-sm btn-outline-secondary"
+                              onClick={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                handleRenameTable(table.id, table.name);
+                              }}
+                              title="Rename"
+                              style={{ padding: '2px 6px', fontSize: '12px' }}
+                            >
+                              <i className="fas fa-edit"></i>
+                            </button>
+                            {state.timetableStoragePref.length > 1 && (
+                              <button
+                                className="btn btn-sm btn-outline-danger"
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  e.stopPropagation();
+                                  handleDeleteTable(table.id, table.name);
+                                }}
+                                title="Delete"
+                                style={{ padding: '2px 6px', fontSize: '12px' }}
+                              >
+                                <i className="fas fa-trash"></i>
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                )}
               </div>
 
               <button
@@ -588,12 +712,12 @@ export default function Timetable() {
             
             <button
               id="quick-toggle"
-              className={`btn ms-1 me-1 ${showQuickButtons ? 'btn-warning' : 'btn-outline-warning'}`}
+              className={`btn ms-1 me-1 btn-warning text-white`}
               type="button"
               onClick={handleQuickToggle}
             >
-              <i className="fas fa-eye"></i>
-              <span>&nbsp;&nbsp;
+              <i className="fas fa-eye text-white"></i>
+              <span className='text-white'>&nbsp;&nbsp;
                 {showQuickButtons ? 'Disable' : 'Enable'} Quick Visualization
               </span>
             </button>
@@ -628,6 +752,180 @@ export default function Timetable() {
 
       {/* Quick selection tiles - Below timetable */}
       {renderQuickButtonsBelow()}
+
+      {/* Custom Modals */}
+      
+      {/* Add Table Modal */}
+      {showAddTableModal && (
+        <div 
+          className="modal show d-block" 
+          tabIndex={-1}
+          onClick={(e) => {
+            if (e.target === e.currentTarget) {
+              setShowAddTableModal(false);
+            }
+          }}
+        >
+          <div className="modal-dialog">
+            <div className="modal-content">
+              <div className="modal-header">
+                <h5 className="modal-title">Add New Table</h5>
+                <button
+                  type="button"
+                  className="btn-close"
+                  onClick={() => setShowAddTableModal(false)}
+                ></button>
+              </div>
+              <div className="modal-body">
+                <form onSubmit={(e) => { e.preventDefault(); confirmAddTable(); }}>
+                  <div className="mb-3">
+                    <label htmlFor="new-table-name" className="col-form-label">
+                      Table Name
+                    </label>
+                    <input
+                      id="new-table-name"
+                      className="form-control"
+                      type="text"
+                      autoComplete="off"
+                      placeholder="Enter table name"
+                      value={newTableName}
+                      onChange={(e) => setNewTableName(e.target.value)}
+                      autoFocus
+                    />
+                  </div>
+                </form>
+              </div>
+              <div className="modal-footer">
+                <button
+                  type="button"
+                  className="btn btn-secondary"
+                  onClick={() => setShowAddTableModal(false)}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-primary"
+                  onClick={confirmAddTable}
+                  disabled={!newTableName.trim()}
+                >
+                  Add Table
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Rename Table Modal */}
+      {showRenameTableModal && (
+        <div 
+          className="modal show d-block" 
+          tabIndex={-1}
+          onClick={(e) => {
+            if (e.target === e.currentTarget) {
+              setShowRenameTableModal(false);
+            }
+          }}
+        >
+          <div className="modal-dialog">
+            <div className="modal-content">
+              <div className="modal-header">
+                <h5 className="modal-title">Rename Table</h5>
+                <button
+                  type="button"
+                  className="btn-close"
+                  onClick={() => setShowRenameTableModal(false)}
+                ></button>
+              </div>
+              <div className="modal-body">
+                <form onSubmit={(e) => { e.preventDefault(); confirmRenameTable(); }}>
+                  <div className="mb-3">
+                    <label htmlFor="rename-table-name" className="col-form-label">
+                      Table Name
+                    </label>
+                    <input
+                      id="rename-table-name"
+                      className="form-control"
+                      type="text"
+                      autoComplete="off"
+                      placeholder="Enter new table name"
+                      value={renameTableName}
+                      onChange={(e) => setRenameTableName(e.target.value)}
+                      autoFocus
+                    />
+                  </div>
+                </form>
+              </div>
+              <div className="modal-footer">
+                <button
+                  type="button"
+                  className="btn btn-secondary"
+                  onClick={() => setShowRenameTableModal(false)}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-success"
+                  onClick={confirmRenameTable}
+                  disabled={!renameTableName.trim()}
+                >
+                  Rename
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Table Modal */}
+      {showDeleteTableModal && tableToDelete && (
+        <div 
+          className="modal show d-block" 
+          tabIndex={-1}
+          onClick={(e) => {
+            if (e.target === e.currentTarget) {
+              setShowDeleteTableModal(false);
+            }
+          }}
+        >
+          <div className="modal-dialog">
+            <div className="modal-content">
+              <div className="modal-header">
+                <h5 className="modal-title">Delete Table</h5>
+                <button
+                  type="button"
+                  className="btn-close"
+                  onClick={() => setShowDeleteTableModal(false)}
+                ></button>
+              </div>
+              <div className="modal-body">
+                <p>
+                  Are you sure you want to delete <strong>"{tableToDelete.name}"</strong>? 
+                  This action cannot be undone and all data in this table will be lost.
+                </p>
+              </div>
+              <div className="modal-footer">
+                <button
+                  type="button"
+                  className="btn btn-secondary"
+                  onClick={() => setShowDeleteTableModal(false)}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-danger"
+                  onClick={confirmDeleteTable}
+                >
+                  Yes, Delete Table
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Sticky anchor for scroll button */}
       <a

@@ -41,7 +41,6 @@
                 
                 // Remove button styling
                 .btn, button {
-                    background: rgba(220, 53, 69, 0.8) !important;
                     border: none !important;
                     border-radius: 50% !important;
                     width: 28px;
@@ -53,7 +52,6 @@
                     transition: all 0.3s ease;
                     
                     &:hover {
-                        background: rgba(220, 53, 69, 1) !important;
                         transform: scale(1.1);
                     }
                 }
