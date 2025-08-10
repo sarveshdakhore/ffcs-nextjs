@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { useFFCS } from '@/context/FFCSContext';
-// eslint-disable-next-line @typescript-eslint/no-var-requires
+// Using require() for socket.io-client due to TypeScript import compatibility issues
 const { io } = require('socket.io-client');
 import { useRouter } from 'next/navigation';
 import '@/css/collaboration-room.css';
