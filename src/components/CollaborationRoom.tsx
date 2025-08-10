@@ -4,11 +4,13 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { useFFCS } from '@/context/FFCSContext';
 import { io, Socket } from 'socket.io-client';
+import { useRouter } from 'next/navigation';
 import '@/css/collaboration-room.css';
 
 export default function CollaborationRoom() {
-  const { state: authState } = useAuth();
+  const { state: authState, logout } = useAuth();
   const { state: ffcsState, dispatch: ffcsDispatch, forceUpdate } = useFFCS();
+  const router = useRouter();
   
   const socketRef = useRef<Socket | null>(null);
   const [connected, setConnected] = useState(false);
@@ -43,10 +45,25 @@ export default function CollaborationRoom() {
 
   // Simple socket connection
   useEffect(() => {
-    if (!authState.isAuthenticated || !authState.user?.token) return;
+    if (!authState.isAuthenticated || !authState.user?.token) {
+      console.log('❌ Cannot connect - not authenticated or no token');
+      return;
+    }
+
+    // Additional check: if token looks invalid, logout immediately
+    if (authState.user.token.length < 10) {
+      console.log('🔑 Token appears invalid - logging out');
+      logout();
+      router.push('/login');
+      return;
+    }
 
     const socket = io('http://localhost:3001', {
-      auth: { token: authState.user.token },
+      auth: { 
+        token: authState.user.token,
+        userId: authState.user.username,
+        isGDSC: authState.user.isGDSC || false
+      },
       transports: ['websocket'],
       upgrade: false,
       forceNew: true
@@ -107,6 +124,36 @@ export default function CollaborationRoom() {
     socket.on('connect_error', (error) => {
       setConnected(false);
       console.error('❌ Connection error:', error);
+      
+      // Handle invalid token specifically
+      if (error.message.includes('Invalid token') || error.message.includes('No token')) {
+        console.log('🔑 Invalid token detected - logging out and redirecting to login');
+        
+        // Clear all collaboration state
+        setCurrentRoom(null);
+        setRoomMembers([]);
+        setJoinRequests([]);
+        saveRoomState(null);
+        
+        // Clear global socket reference
+        if (typeof window !== 'undefined') {
+          (window as any).collaborationSocket = null;
+          (window as any).collaborationUserId = null;
+        }
+        
+        // Show message before logout
+        setMessage({ type: 'error', text: 'Session expired. Please log in again.' });
+        
+        // Logout and redirect after a short delay to show the message
+        setTimeout(() => {
+          logout(); // This will clear localStorage and auth state
+          router.push('/login');
+        }, 1500);
+        
+        return;
+      }
+      
+      // Handle other connection errors
       setMessage({ type: 'error', text: `Connection failed: ${error.message}` });
     });
 
@@ -574,12 +621,46 @@ export default function CollaborationRoom() {
       }
       socket.disconnect();
     };
-  }, [authState.isAuthenticated, authState.user?.token]);
+  }, [authState.isAuthenticated, authState.user?.token, logout, router]);
 
   // Helper function to gracefully disconnect and reset state
   const handleCollaborationError = (error: any) => {
     console.error('❌ Collaboration error occurred:', error);
     
+    // Check if it's a token-related error
+    const errorMessage = error?.message || error?.toString() || '';
+    if (errorMessage.includes('Invalid token') || errorMessage.includes('No token') || errorMessage.includes('Unauthorized')) {
+      console.log('🔑 Token-related error detected - logging out and redirecting');
+      
+      // Clear all collaboration state
+      setCurrentRoom(null);
+      setRoomMembers([]);
+      setJoinRequests([]);
+      setConnected(false);
+      saveRoomState(null);
+      
+      // Clear global socket reference
+      if (typeof window !== 'undefined') {
+        (window as any).collaborationSocket = null;
+        (window as any).collaborationUserId = null;
+      }
+      
+      // Disconnect socket
+      if (socketRef.current?.connected) {
+        socketRef.current.disconnect();
+      }
+      
+      // Show message and logout
+      setMessage({ type: 'error', text: 'Session expired. Please log in again.' });
+      setTimeout(() => {
+        logout();
+        router.push('/login');
+      }, 1500);
+      
+      return;
+    }
+    
+    // Handle other errors normally
     // Disconnect socket
     if (socketRef.current?.connected) {
       socketRef.current.disconnect();
@@ -756,8 +837,13 @@ export default function CollaborationRoom() {
 
         {/* Message */}
         {message && (
-          <div className={`message ${message.type}`}>
+          <div className={`message ${message.type} ${message.text.includes('Session expired') ? 'urgent' : ''}`}>
             {message.text}
+            {message.text.includes('Session expired') && (
+              <div style={{ marginTop: '8px', fontSize: '14px', opacity: 0.9 }}>
+                Redirecting to login page...
+              </div>
+            )}
           </div>
         )}
 

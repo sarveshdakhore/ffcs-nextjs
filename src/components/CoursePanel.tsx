@@ -468,7 +468,8 @@ export default function CoursePanel() {
         setTimeout(() => {
           if (typeof window !== 'undefined' && (window as any).collaborationSocket) {
             console.log('🔄 Syncing teacher deselection to collaboration room');
-            // Don't force update here - let the natural sync handle it
+            // Force an auto-sync by triggering a state update
+            dispatch({ type: 'FORCE_UPDATE' });
           }
         }, 100);
       }
@@ -555,7 +556,8 @@ export default function CoursePanel() {
       setTimeout(() => {
         if (typeof window !== 'undefined' && (window as any).collaborationSocket) {
           console.log('🔄 Syncing teacher selection to collaboration room');
-          // Don't force update here - let the natural sync handle it
+          // Force an auto-sync by triggering a state update
+          dispatch({ type: 'FORCE_UPDATE' });
         }
       }, 100);
 

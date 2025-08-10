@@ -69,7 +69,8 @@ export default function CourseList() {
       setTimeout(() => {
         if (typeof window !== 'undefined' && (window as any).collaborationSocket) {
           console.log('🔄 Syncing course removal to collaboration room');
-          // Don't force update here - let the natural sync handle it
+          // Force an auto-sync by triggering a state update
+          dispatch({ type: 'FORCE_UPDATE' });
         }
       }, 100);
     }
