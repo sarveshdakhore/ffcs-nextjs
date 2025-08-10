@@ -105,7 +105,7 @@ export default function LoginPage() {
           {/* Header */}
           <div className="text-center mb-4">
             <div className="d-flex justify-content-center align-items-center mb-3">
-              <img src="/images/icons/gdsc.png" alt="GDSC Logo" style={{ width: '50px', height: '50px', marginRight: '15px' }} />
+              <img src="/images/icons/gdsc.png" alt="GDSC Logo" style={{ height: '50px', marginRight: '15px' }} />
               <div>
                 <h2 style={{ color: 'white', margin: 0, fontSize: '1.5rem', fontWeight: 'bold' }}>FFCS Planner</h2>
                 <p style={{ color: '#bdc3c7', margin: 0, fontSize: '0.9rem' }}>Login to your account</p>
@@ -171,25 +171,7 @@ export default function LoginPage() {
               />
             </div>
 
-            {/* GDSC Login Toggle */}
-            <div className="mb-4">
-              <div className="form-check">
-                <input
-                  type="checkbox"
-                  id="gdscLogin"
-                  className="form-check-input"
-                  checked={isGDSC}
-                  onChange={(e) => setIsGDSC(e.target.checked)}
-                  style={{
-                    background: isGDSC ? '#4285F4' : 'rgba(255, 255, 255, 0.1)',
-                    border: '1px solid rgba(255, 255, 255, 0.2)',
-                  }}
-                />
-                <label htmlFor="gdscLogin" className="form-check-label" style={{ color: 'white', marginLeft: '0.5rem' }}>
-                  Login as GDSC Member
-                </label>
-              </div>
-            </div>
+            
 
             {/* Submit Button */}
             <button
