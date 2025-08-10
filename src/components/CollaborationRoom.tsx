@@ -3,7 +3,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { useFFCS } from '@/context/FFCSContext';
-import { io, Socket } from 'socket.io-client';
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const { io } = require('socket.io-client');
 import { useRouter } from 'next/navigation';
 import '@/css/collaboration-room.css';
 
@@ -12,7 +13,7 @@ export default function CollaborationRoom() {
   const { state: ffcsState, dispatch: ffcsDispatch, forceUpdate } = useFFCS();
   const router = useRouter();
   
-  const socketRef = useRef<Socket | null>(null);
+  const socketRef = useRef<any>(null);
   const [connected, setConnected] = useState(false);
   const [currentRoom, setCurrentRoom] = useState<any>(null);
   const [roomMembers, setRoomMembers] = useState<any[]>([]);
@@ -121,7 +122,7 @@ export default function CollaborationRoom() {
       // Don't clear room state on disconnect - allow reconnection
     });
 
-    socket.on('connect_error', (error) => {
+    socket.on('connect_error', (error: any) => {
       setConnected(false);
       console.error('❌ Connection error:', error);
       
@@ -157,7 +158,7 @@ export default function CollaborationRoom() {
       setMessage({ type: 'error', text: `Connection failed: ${error.message}` });
     });
 
-    socket.on('joined-room', ({ roomId, roomTt }) => {
+    socket.on('joined-room', ({ roomId, roomTt }: { roomId: any; roomTt: any }) => {
       const members = Object.values(roomTt) as any[];
       const roomData = { roomId, adminId: (members[0] as any)?.id };
       setCurrentRoom(roomData);
@@ -322,12 +323,12 @@ export default function CollaborationRoom() {
       });
     });
 
-    socket.on('user-joined', ({ userId, roomTt }) => {
+    socket.on('user-joined', ({ userId, roomTt }: { userId: any; roomTt: any }) => {
       setRoomMembers(Object.values(roomTt));
       setMessage({ type: 'info', text: `${userId} joined` });
     });
 
-    socket.on('timetable-updated', ({ userId, roomTt }) => {
+    socket.on('timetable-updated', ({ userId, roomTt }: { userId: any; roomTt: any }) => {
       try {
         console.log('📨 Received timetable-updated event:', {
           fromUserId: userId,
@@ -591,17 +592,17 @@ export default function CollaborationRoom() {
       }
     });
 
-    socket.on('join-request', ({ userId }) => {
+    socket.on('join-request', ({ userId }: { userId: any }) => {
       setJoinRequests(prev => [...prev, { userId }]);
       setMessage({ type: 'info', text: `${userId} wants to join` });
     });
 
-    socket.on('server-message', ({ error, message: msg }) => {
+    socket.on('server-message', ({ error, message: msg }: { error: any; message: any }) => {
       if (error) setMessage({ type: 'error', text: error });
       if (msg) setMessage({ type: 'info', text: msg });
     });
 
-    socket.on('user-left', ({ userId }) => {
+    socket.on('user-left', ({ userId }: { userId: any }) => {
       if (userId === authState.user?.username) {
         // Current user was removed from room
         setCurrentRoom(null);
