@@ -58,7 +58,7 @@ export default function CollaborationRoom() {
       return;
     }
 
-    const socket = io('http://localhost:3001', {
+    const socket = io('https://gdscffsc.onrender.com', {
       auth: { 
         token: authState.user.token,
         userId: authState.user.username,
