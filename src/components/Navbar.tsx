@@ -2,13 +2,21 @@
 
 import { useState, useEffect } from 'react';
 import { useFFCS } from '@/context/FFCSContext';
+import { useAuth } from '@/context/AuthContext';
+import { useRouter } from 'next/navigation';
 
 export default function Navbar() {
   const { state, dispatch } = useFFCS();
+  const { state: authState, logout } = useAuth();
+  const router = useRouter();
   const [isNavbarCollapsed, setIsNavbarCollapsed] = useState(true);
 
   const handleCampusChange = (campus: 'Vellore' | 'Chennai') => {
     dispatch({ type: 'SWITCH_CAMPUS', payload: campus });
+  };
+
+  const handleLogout = () => {
+    logout();
   };
 
   const shareUrls = {
@@ -41,104 +49,99 @@ export default function Navbar() {
 
           {/* Right side - Navigation buttons */}
           <div className="navbar-nav flex-row" style={{ flex: 1, justifyContent: 'flex-end' }}>
-            <div id="user-opt" style={{ display: 'none' }}>
-              &nbsp;&nbsp;
-              <div className="dropdown d-inline" style={{ display: 'none' }}>
-                <a
-                  id="logout-button"
-                  className="btn btn-outline-secondary dropdown-toggle nav-btn-outline"
-                  href="#"
-                  role="button"
-                  data-bs-toggle="dropdown"
-                  aria-expanded="false"
-                >
-                  <i className="fas fa-user"></i>
-                  &nbsp;&nbsp;User
-                </a>
-
-                <ul
-                  className="dropdown-menu dropdown-menu-dark"
-                  aria-labelledby="logout-button"
-                >
-                  <li>
+            {authState.isAuthenticated ? (
+              // Show user dropdown when authenticated
+              <>
+                <div id="user-opt">
+                  <div className="dropdown d-inline">
                     <a
-                      rel="noopener"
-                      className="dropdown-item"
-                      id="logout-link"
+                      id="logout-button"
+                      className="btn btn-outline-secondary dropdown-toggle nav-btn-outline"
                       href="#"
-                      data-action="logout"
+                      role="button"
+                      data-bs-toggle="dropdown"
+                      aria-expanded="false"
+                      style={{
+                        background: 'rgba(255, 255, 255, 0.1)',
+                        border: '1px solid rgba(255, 255, 255, 0.2)',
+                        borderRadius: '15px',
+                        color: 'white',
+                        fontWeight: 500,
+                        padding: '0.75rem 1.5rem',
+                        backdropFilter: 'blur(10px)',
+                        textDecoration: 'none'
+                      }}
                     >
-                      <i className="fas fa-sign-out" aria-hidden="true"></i>
-                      &nbsp;&nbsp;<span>Logout</span>
+                      <i className="fas fa-user"></i>
+                      &nbsp;&nbsp;{authState.user?.name || 'User'}
                     </a>
-                  </li>
 
-                  <li>
-                    <a
-                      rel="noopener"
-                      className="dropdown-item"
-                      href="#"
-                      id="username-edit"
+                    <ul
+                      className="dropdown-menu dropdown-menu-dark"
+                      aria-labelledby="logout-button"
                     >
-                      <i className="fas fa-edit"></i>
-                      &nbsp;&nbsp;<span>Settings</span>
-                    </a>
-                  </li>
+                      <li>
+                        <a
+                          rel="noopener"
+                          className="dropdown-item"
+                          href="#"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            handleLogout();
+                          }}
+                        >
+                          <i className="fas fa-sign-out" aria-hidden="true"></i>
+                          &nbsp;&nbsp;<span>Logout</span>
+                        </a>
+                      </li>
 
-                  <li>
-                    <a
-                      rel="noopener"
-                      className="dropdown-item"
-                      href="./rooms.html"
-                    >
-                      <i className="fas fa-users"></i>
-                      &nbsp;&nbsp;<span>Collaboration Rooms</span>
-                    </a>
-                  </li>
+                      <li>
+                        <a
+                          rel="noopener"
+                          className="dropdown-item"
+                          href="#"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            alert('Settings feature coming soon!');
+                          }}
+                        >
+                          <i className="fas fa-edit"></i>
+                          &nbsp;&nbsp;<span>Settings</span>
+                        </a>
+                      </li>
 
-                  <li>
-                    <a
-                      className="dropdown-item"
-                      href="https://twitter.com/intent/tweet?text=FFCS made hassle free! https://ffcs.sarveshdakhore.in/"
-                      target="_blank"
-                    >
-                      <i className="fas fa-share"></i>
-                      &nbsp;&nbsp;<span>Share App</span>
-                    </a>
-                  </li>
-                </ul>
-              </div>
-            </div>
-            
-            <button 
-              className="btn" 
-              style={{ 
-                background: 'rgba(255, 255, 255, 0.1)', 
-                border: '1px solid rgba(255, 255, 255, 0.2)', 
-                borderRadius: '15px', 
-                color: 'white', 
-                fontWeight: 500, 
-                padding: '0.75rem 1.5rem', 
-                backdropFilter: 'blur(10px)', 
-                transition: 'all 0.3s ease' 
-              }} 
-              onMouseOver={(e) => {
-                e.currentTarget.style.background = 'rgba(255, 255, 255, 0.2)';
-                e.currentTarget.style.transform = 'translateY(-2px)';
-              }}
-              onMouseOut={(e) => {
-                e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)';
-                e.currentTarget.style.transform = 'translateY(0)';
-              }}
-              id="rooms-button"
-            >
-              <i className="fas fa-lock"></i>&nbsp;&nbsp;Rooms
-            </button>
-            
-            {/* Authentication button for guests */}
-            <a href="./auth.html" className="btn btn-success ms-2" id="auth-button" style={{ display: 'none', borderRadius: '15px', fontWeight: 500, padding: '0.75rem 1.5rem' }}>
-              <i className="fas fa-sign-in-alt"></i>&nbsp;&nbsp;Login
-            </a>
+                      <li>
+                        <a
+                          className="dropdown-item"
+                          href="https://twitter.com/intent/tweet?text=FFCS made hassle free! https://ffcs.sarveshdakhore.in/"
+                          target="_blank"
+                        >
+                          <i className="fas fa-share"></i>
+                          &nbsp;&nbsp;<span>Share App</span>
+                        </a>
+                      </li>
+                    </ul>
+                  </div>
+                </div>
+              </>
+            ) : (
+              // Show login button when not authenticated
+              <>
+                <button 
+                  className="btn btn-success" 
+                  style={{ 
+                    borderRadius: '15px', 
+                    fontWeight: 500, 
+                    padding: '0.75rem 1.5rem',
+                    background: 'linear-gradient(135deg, #4285F4 0%, #34A853 100%)',
+                    border: 'none'
+                  }}
+                  onClick={() => router.push('/login')}
+                >
+                  <i className="fas fa-sign-in-alt"></i>&nbsp;&nbsp;Login
+                </button>
+              </>
+            )}
           </div>
         </div>
       </nav>

@@ -6,8 +6,8 @@ import CoursePanel from '@/components/CoursePanel';
 import Timetable from '@/components/Timetable';
 import CourseList from '@/components/CourseList';
 import Footer from '@/components/Footer';
-import ScrollButton from '@/components/ScrollButton';
 import Modals from '@/components/Modals';
+import CollaborationRoom from '@/components/CollaborationRoom';
 import { FFCSProvider } from '@/context/FFCSContext';
 
 export default function Home() {
@@ -243,6 +243,9 @@ export default function Home() {
             </p>
           </div>
         )}
+
+        {/* Collaboration Room */}
+        <CollaborationRoom />
 
         {/* Course Panel */}
         <div className="container-xl cardnew" style={{ marginTop: '100px', position: 'relative' }}>

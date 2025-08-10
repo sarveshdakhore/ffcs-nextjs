@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { useFFCS } from '@/context/FFCSContext';
 import velloreSchema from '@/data/schemas/vellore.json';
 import chennaiSchema from '@/data/schemas/chennai.json';
@@ -22,11 +22,18 @@ interface TimetableSchema {
 const DAYS = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
 
 export default function Timetable() {
-  const { state, dispatch } = useFFCS();
+  const { state, dispatch, forceUpdate } = useFFCS();
   const [currentTable, setCurrentTable] = useState(state.currentTableId);
   const [showQuickButtons, setShowQuickButtons] = useState(false);
   const [showTableDropdown, setShowTableDropdown] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+
+  // Create a stable key for React re-rendering based on actual data changes
+  const dataKey = useMemo(() => {
+    const dataString = JSON.stringify(state.activeTable?.data);
+    const subjectString = JSON.stringify(state.activeTable?.subject);
+    return `${state.activeTable?.id}-${dataString}-${subjectString}-${state.forceUpdateCounter}`;
+  }, [state.activeTable?.id, state.activeTable?.data, state.activeTable?.subject, state.forceUpdateCounter]);
 
   // Custom modal states
   const [showAddTableModal, setShowAddTableModal] = useState(false);
@@ -37,7 +44,51 @@ export default function Timetable() {
   const [tableToRename, setTableToRename] = useState<number | null>(null);
   const [tableToDelete, setTableToDelete] = useState<{ id: number; name: string } | null>(null);
 
-  // Close dropdown when clicking outside
+  // Add socket listener for collaboration updates with AGGRESSIVE re-rendering
+  useEffect(() => {
+    if (typeof window !== 'undefined' && (window as any).collaborationSocket) {
+      const socket = (window as any).collaborationSocket;
+      
+      const handleCollaborationUpdate = (data: any) => {
+        console.log('🔄 Timetable: Received collaboration update', data);
+        
+        // Only trigger update if this is not our own change
+        if (data.userId !== (window as any).collaborationUserId) {
+          console.log('🚨 Timetable: FORCING AGGRESSIVE UPDATE');
+          
+          // Multiple immediate updates
+          if (forceUpdate) {
+            forceUpdate();
+            forceUpdate();
+            forceUpdate();
+          }
+          
+          // Force state update with timeouts
+          setTimeout(() => {
+            if (forceUpdate) forceUpdate();
+          }, 10);
+          
+          setTimeout(() => {
+            if (forceUpdate) forceUpdate();
+          }, 50);
+        }
+      };
+
+      // Listen for timetable updates
+      socket.on('timetable-updated', handleCollaborationUpdate);
+      socket.on('user-joined', handleCollaborationUpdate);
+      socket.on('joined-room', handleCollaborationUpdate);
+
+      return () => {
+        // Cleanup listeners
+        socket.off('timetable-updated', handleCollaborationUpdate);
+        socket.off('user-joined', handleCollaborationUpdate);
+        socket.off('joined-room', handleCollaborationUpdate);
+      };
+    }
+  }, []);
+
+    // Close dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
@@ -48,9 +99,6 @@ export default function Timetable() {
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
         setShowAddTableModal(false);
-        setShowRenameTableModal(false);
-        setShowDeleteTableModal(false);
-        setShowTableDropdown(false);
       }
     };
 
@@ -618,7 +666,7 @@ export default function Timetable() {
   };
 
   return (
-    <>
+    <div key={`timetable-${dataKey}`}>
       {/* Option buttons for the timetable */}
       <div className="container-sm px-4">
         <div id="option-buttons" className="row justify-content-between">
@@ -934,6 +982,6 @@ export default function Timetable() {
         id="course_list11"
         title="Go to Course List"
       ></a>
-    </>
+    </div>
   );
 }

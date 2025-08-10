@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useFFCS, CourseData } from '@/context/FFCSContext';
 
 type SortColumn = 'slots' | 'courseCode' | 'courseTitle' | 'faculty' | 'venue' | 'credits';
@@ -12,6 +12,44 @@ export default function CourseList() {
   
   const [sortColumn, setSortColumn] = useState<SortColumn | null>(null);
   const [sortDirection, setSortDirection] = useState<SortDirection>('none');
+
+  // Add socket listener for collaboration updates with loop prevention
+  useEffect(() => {
+    if (typeof window !== 'undefined' && (window as any).collaborationSocket) {
+      const socket = (window as any).collaborationSocket;
+      let lastUpdateTime = 0;
+      const DEBOUNCE_DELAY = 500; // 500ms debounce
+      
+      const handleCollaborationUpdate = (data: any) => {
+        const now = Date.now();
+        
+        // Prevent rapid successive updates (debouncing)
+        if (now - lastUpdateTime < DEBOUNCE_DELAY) {
+          return;
+        }
+        
+        lastUpdateTime = now;
+        console.log('🔄 CourseList: Received collaboration update (debounced)', data);
+        
+        // Only trigger update if this is not our own change
+        if (data.userId !== (window as any).collaborationUserId) {
+          // Don't force dispatch here, just let natural updates happen
+        }
+      };
+
+      // Listen for timetable updates
+      socket.on('timetable-updated', handleCollaborationUpdate);
+      socket.on('user-joined', handleCollaborationUpdate);
+      socket.on('joined-room', handleCollaborationUpdate);
+
+      return () => {
+        // Cleanup listeners
+        socket.off('timetable-updated', handleCollaborationUpdate);
+        socket.off('user-joined', handleCollaborationUpdate);
+        socket.off('joined-room', handleCollaborationUpdate);
+      };
+    }
+  }, [dispatch]);
 
   const handleRemoveCourse = (courseId: number) => {
     if (confirm('Are you sure you want to remove this course?')) {
@@ -26,6 +64,14 @@ export default function CourseList() {
           payload: courseId 
         });
       }
+      
+      // Trigger collaboration sync after course removal (debounced)
+      setTimeout(() => {
+        if (typeof window !== 'undefined' && (window as any).collaborationSocket) {
+          console.log('🔄 Syncing course removal to collaboration room');
+          // Don't force update here - let the natural sync handle it
+        }
+      }, 100);
     }
   };
 

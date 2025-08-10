@@ -229,3 +229,9 @@
         padding: 0.75rem 1rem;
     }
 }
+
+.collab-room * {
+  all: unset;
+  all: revert; /* Use revert to reset to browser defaults */
+  box-sizing: border-box;
+}

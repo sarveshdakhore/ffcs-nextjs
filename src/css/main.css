@@ -1368,3 +1368,16 @@ body::before {
     border-top-left-radius: 0% !important;
     border-bottom-left-radius: 0% !important;
 }
+
+.collab-room * {
+  all: unset;
+  all: revert; /* Use revert to reset to browser defaults */
+  box-sizing: border-box;
+}
+.collab-room select,
+.collab-room input {
+  background: none !important;
+}
+.collab-room {
+  background-image: none !important;
+}

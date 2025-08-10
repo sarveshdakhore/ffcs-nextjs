@@ -1,6 +1,6 @@
 'use client';
 
-import React, { createContext, useContext, useReducer, useEffect, ReactNode } from 'react';
+import React, { createContext, useContext, useReducer, useEffect, useRef, ReactNode } from 'react';
 import localforage from 'localforage';
 
 // Clash map from vanilla JS - used for slot conflict detection
@@ -100,6 +100,9 @@ export interface FFCSState {
   activeTable: TimetableData;
   currentTableId: number;
   
+  // Force update counter for React re-renders
+  forceUpdateCounter: number;
+  
   // Legacy fields for compatibility
   courses: Course[];
   selectedCourses: Course[];
@@ -161,7 +164,8 @@ type FFCSAction =
   | { type: 'ADD_COURSE_TO_TIMETABLE'; payload: CourseData }
   | { type: 'REMOVE_COURSE_FROM_TIMETABLE'; payload: number }
   | { type: 'ADD_COURSE_TO_ATTACK_DATA'; payload: CourseData }
-  | { type: 'REMOVE_COURSE_FROM_ATTACK_DATA'; payload: number };
+  | { type: 'REMOVE_COURSE_FROM_ATTACK_DATA'; payload: number }
+  | { type: 'FORCE_UPDATE' };
 
 // Initial state matching vanilla JS structure
 const defaultTable: TimetableData = {
@@ -178,6 +182,9 @@ const initialState: FFCSState = {
   timetableStoragePref: [defaultTable],
   activeTable: defaultTable,
   currentTableId: 0,
+  
+  // Force update counter
+  forceUpdateCounter: 0,
   
   // Legacy fields
   courses: [],
@@ -213,6 +220,12 @@ const initialState: FFCSState = {
 // Reducer
 function ffcsReducer(state: FFCSState, action: FFCSAction): FFCSState {
   switch (action.type) {
+    case 'FORCE_UPDATE':
+      return {
+        ...state,
+        forceUpdateCounter: state.forceUpdateCounter + 1
+      };
+
     case 'ADD_COURSE':
       const newCourses = [...state.courses, action.payload];
       return {
@@ -421,6 +434,8 @@ function ffcsReducer(state: FFCSState, action: FFCSAction): FFCSState {
       const newState = {
         ...state,
         ...action.payload,
+        // Always increment forceUpdateCounter when loading data to trigger component re-renders
+        forceUpdateCounter: state.forceUpdateCounter + 1
       };
       
       // Recalculate totalCredits based on the loaded activeTable data
@@ -977,6 +992,48 @@ const FFCSContext = createContext<{
 // Provider component
 export function FFCSProvider({ children }: { children: ReactNode }) {
   const [state, dispatch] = useReducer(ffcsReducer, initialState);
+  
+  // Track if we're currently receiving collaboration data to prevent sync loops
+  const isReceivingCollaboration = useRef(false);
+
+  // Helper function to trigger collaboration sync
+  const triggerCollaborationSync = () => {
+    // Don't sync if we're currently receiving collaboration data
+    if (isReceivingCollaboration.current) {
+      console.log('🔄 Skipping auto-sync - receiving collaboration data');
+      return;
+    }
+    
+    // Small delay to ensure state is updated before syncing
+    setTimeout(() => {
+      try {
+        if (typeof window !== 'undefined' && (window as any).collaborationSocket) {
+          const socket = (window as any).collaborationSocket;
+          
+          // Send the current user's timetable data to other room members
+          const timetableData = {
+            data: state.activeTable.data || [],
+            subject: state.activeTable.subject || {},
+            quick: state.activeTable.quick || [],
+            attackData: state.activeTable.attackData || [],
+            attackQuick: state.activeTable.attackQuick || []
+          };
+          
+          console.log('📤 Auto-syncing timetable update:', timetableData);
+          socket.emit('update-timetable', timetableData);
+        }
+      } catch (error) {
+        console.error('❌ Auto-sync failed:', error);
+      }
+    }, 100);
+  };
+
+  // Store isReceivingCollaboration flag globally for CollaborationRoom to use
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      (window as any).ffcsCollaborationState = { isReceivingCollaboration };
+    }
+  }, []);
 
   // Load data from localforage on mount
   useEffect(() => {
@@ -1010,8 +1067,36 @@ export function FFCSProvider({ children }: { children: ReactNode }) {
         .catch((error) => {
           console.error('Error saving data to localforage:', error);
         });
+      
+      // Also save to localStorage for immediate access
+      try {
+        localStorage.setItem('ffcs-timetables', JSON.stringify(state.timetableStoragePref));
+        console.log('Timetable data saved to localStorage');
+      } catch (error) {
+        console.error('Failed to save to localStorage:', error);
+      }
     }
-  }, [state.timetableStoragePref]);
+  }, [state.timetableStoragePref, state.activeTable]);
+
+  // Auto-sync with collaboration when important data changes
+  useEffect(() => {
+    // Don't auto-sync from context if we're in a collaboration room
+    // (CollaborationRoom component handles its own sync)
+    if (typeof window !== 'undefined' && (window as any).collaborationSocket) {
+      console.log('🔄 Skipping context auto-sync - in collaboration room');
+      return;
+    }
+    
+    // Only sync when we have meaningful data changes (not just loading)
+    if (state.activeTable.data.length > 0 || Object.keys(state.activeTable.subject).length > 0) {
+      triggerCollaborationSync();
+    }
+  }, [
+    state.activeTable.data, 
+    state.activeTable.subject, 
+    state.activeTable.attackData,
+    state.forceUpdateCounter // Sync on manual updates too
+  ]);
 
   return (
     <FFCSContext.Provider value={{ state, dispatch }}>
@@ -1027,17 +1112,50 @@ export function useFFCS() {
     throw new Error('useFFCS must be used within a FFCSProvider');
   }
   
+  // Helper function to force component updates
+  const forceUpdate = () => {
+    context.dispatch({ type: 'FORCE_UPDATE' });
+  };
+
+  // Collaboration sync function - sends timetable updates to other users
+  const sendTimetableUpdate = () => {
+    try {
+      // Check if we're in a browser environment and have a global socket
+      if (typeof window !== 'undefined' && (window as any).collaborationSocket) {
+        const socket = (window as any).collaborationSocket;
+        
+        // Send the current user's timetable data to other room members
+        const timetableData = {
+          data: context.state.activeTable.data || [],
+          subject: context.state.activeTable.subject || {},
+          quick: context.state.activeTable.quick || [],
+          attackData: context.state.activeTable.attackData || [],
+          attackQuick: context.state.activeTable.attackQuick || []
+        };
+        
+        console.log('📤 Sending timetable update:', timetableData);
+        socket.emit('update-timetable', timetableData);
+      } else {
+        console.log('⚠️ No collaboration socket available for sync');
+      }
+    } catch (error) {
+      console.error('❌ Failed to send timetable update:', error);
+    }
+  };
+  
   // Add to window for debugging
   if (typeof window !== 'undefined') {
     (window as any).ffcsDebug = {
       state: context.state,
       dispatch: context.dispatch,
       activeTable: context.state.activeTable,
-      timetableStoragePref: context.state.timetableStoragePref
+      timetableStoragePref: context.state.timetableStoragePref,
+      forceUpdate,
+      sendTimetableUpdate
     };
   }
   
-  return context;
+  return { ...context, forceUpdate, sendTimetableUpdate };
 }
 
 // Export clashMap for use in other components

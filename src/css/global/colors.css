@@ -35,3 +35,9 @@ input:-ms-input-placeholder,
 input:-moz-placeholder {
     opacity: 0.55 !important;
 }
+
+.collab-room * {
+  all: unset;
+  all: revert; /* Use revert to reset to browser defaults */
+  box-sizing: border-box;
+}

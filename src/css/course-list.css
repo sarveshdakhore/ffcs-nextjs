@@ -172,3 +172,9 @@
         font-size: 0.85rem;
     }
 }
+
+.collab-room * {
+  all: unset;
+  all: revert; /* Use revert to reset to browser defaults */
+  box-sizing: border-box;
+}

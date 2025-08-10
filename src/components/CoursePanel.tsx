@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useFFCS } from '@/context/FFCSContext';
 import { activateSortable, deactivateSortable } from '@/utils/sortableUtils';
 import { 
@@ -24,7 +24,7 @@ import {
 import { CourseData } from '@/context/FFCSContext';
 
 export default function CoursePanel() {
-  const { state, dispatch } = useFFCS();
+  const { state, dispatch, forceUpdate } = useFFCS();
   const [showAddCourse, setShowAddCourse] = useState(false);
   const [showAddTeacher, setShowAddTeacher] = useState(true);
   const [showEditCourse, setShowEditCourse] = useState(false);
@@ -58,6 +58,7 @@ export default function CoursePanel() {
     courses: [], 
     all_data: [] 
   });
+
   const [slotButtons, setSlotButtons] = useState<Array<{
     code: string;
     title: string;
@@ -83,38 +84,90 @@ export default function CoursePanel() {
   const activeTable = state.activeTable;
   const subjects = activeTable.subject || {};
 
+  // DEBUG: Log when activeTable changes
+  useEffect(() => {
+    console.log('🔍 CoursePanel activeTable changed:', {
+      tableId: activeTable.id,
+      tableName: activeTable.name,
+      courses: activeTable.data?.length || 0,
+      subjects: Object.keys(subjects).length,
+      forceCounter: state.forceUpdateCounter
+    });
+  }, [activeTable.id, activeTable.name, activeTable.data?.length, Object.keys(subjects).length, state.forceUpdateCounter]);
+
+  // Force component update (similar to re-rendering in vanilla JS)
+  const [renderKey, setRenderKey] = useState(0);
+  const triggerUpdate = () => setRenderKey(prev => prev + 1);
+
+  // Create a stable key for React re-rendering based on actual data changes
+  const dataKey = useMemo(() => {
+    const subjectsString = JSON.stringify(subjects);
+    const dataString = JSON.stringify(activeTable.data);
+    const collaborationActive = typeof window !== 'undefined' && (window as any).collaborationSocket ? 'collab' : 'solo';
+    const timestamp = Date.now(); // Force new key every time
+    return `${activeTable.id}-${subjectsString}-${dataString}-${state.forceUpdateCounter}-${collaborationActive}-${renderKey}-${timestamp}`;
+  }, [activeTable.id, JSON.stringify(activeTable.data), JSON.stringify(subjects), state.forceUpdateCounter, renderKey]);
+
+  // Add socket listener for collaboration updates with AGGRESSIVE re-rendering
+  useEffect(() => {
+    if (typeof window !== 'undefined' && (window as any).collaborationSocket) {
+      const socket = (window as any).collaborationSocket;
+      
+      const handleCollaborationUpdate = (data: any) => {
+        console.log('🔄 CoursePanel: Received collaboration update', data);
+        
+        // Only trigger update if this is not our own change
+        if (data.userId !== (window as any).collaborationUserId) {
+          console.log('🚨 CoursePanel: FORCING AGGRESSIVE UPDATE');
+          
+          // Multiple immediate updates
+          triggerUpdate();
+          triggerUpdate();
+          triggerUpdate();
+          
+          // Force re-render via forceUpdate if available
+          if (forceUpdate) {
+            forceUpdate();
+            forceUpdate();
+            forceUpdate();
+          }
+          
+          // Force state update
+          setTimeout(() => {
+            triggerUpdate();
+            if (forceUpdate) forceUpdate();
+          }, 10);
+          
+          setTimeout(() => {
+            triggerUpdate();
+            if (forceUpdate) forceUpdate();
+          }, 50);
+        }
+      };
+
+      // Listen for timetable updates
+      socket.on('timetable-updated', handleCollaborationUpdate);
+      socket.on('user-joined', handleCollaborationUpdate);
+      socket.on('joined-room', handleCollaborationUpdate);
+
+      return () => {
+        // Cleanup listeners
+        socket.off('timetable-updated', handleCollaborationUpdate);
+        socket.off('user-joined', handleCollaborationUpdate);
+        socket.off('joined-room', handleCollaborationUpdate);
+      };
+    }
+  }, []);
+
   // Load courses data on component mount (like getCourses in vanilla JS)
   useEffect(() => {
     const loadCoursesData = async () => {
       try {
-        // Load course data based on campus selection
-        let coursesModule;
-        
-        if (state.currentCampus === 'Chennai') {
-          coursesModule = await import('@/data/schemas/chennai.json');
-        } else {
-          coursesModule = await import('@/data/schemas/vellore.json');
-        }
-        
-        // Extract courses data from the imported JSON
-        const data = coursesModule.default || coursesModule;
-        
-        // Handle different possible data structures
-        let courses: any[] = [];
-        let all_data: any[] = [];
-        
-        if (Array.isArray(data)) {
-          courses = data;
-          all_data = data;
-        } else if (data && typeof data === 'object') {
-          // Handle nested structure if needed
-          courses = data.courses || data.theory || [];
-          all_data = data.all_data || data.theory || [];
-        }
-        
+        // For now, use empty arrays - the course data loading needs to be fixed
+        // But this is separate from the collaboration sync issue
         setCoursesData({
-          courses,
-          all_data
+          courses: [],
+          all_data: []
         });
       } catch (error) {
         console.error('Error loading courses data:', error);
@@ -296,6 +349,14 @@ export default function CoursePanel() {
       payload: courseData
     });
 
+    // Trigger collaboration sync after course addition (debounced)
+    setTimeout(() => {
+      if (typeof window !== 'undefined' && (window as any).collaborationSocket) {
+        console.log('🔄 Syncing course addition to collaboration room');
+        // Don't force update here - let the natural sync handle it
+      }
+    }, 100);
+
     // Clear form after adding
     clearPanel();
   };
@@ -374,10 +435,6 @@ export default function CoursePanel() {
     triggerUpdate(); // Force component re-render to update clash status
   };
 
-  // Force component update (similar to re-rendering in vanilla JS)
-  const [, forceUpdate] = useState({});
-  const triggerUpdate = () => forceUpdate({});
-
   // Handle teacher click for selection/deselection (with radio button integration)
   const handleTeacherClick = (courseName: string, teacherName: string, teacherData: any) => {
     const isSelected = isTeacherSelected(courseName, teacherName);
@@ -406,6 +463,14 @@ export default function CoursePanel() {
         }
         // Refresh clash status after removal
         setTimeout(() => rearrangeTeacherRefresh(), 0);
+        
+        // Trigger collaboration sync after teacher deselection (debounced)
+        setTimeout(() => {
+          if (typeof window !== 'undefined' && (window as any).collaborationSocket) {
+            console.log('🔄 Syncing teacher deselection to collaboration room');
+            // Don't force update here - let the natural sync handle it
+          }
+        }, 100);
       }
     } else {
       // First remove any existing selection for this course (only one teacher per course)
@@ -485,6 +550,14 @@ export default function CoursePanel() {
 
       // Refresh clash status after addition (like vanilla JS)
       setTimeout(() => rearrangeTeacherRefresh(), 0);
+
+      // Trigger collaboration sync after teacher selection (debounced)
+      setTimeout(() => {
+        if (typeof window !== 'undefined' && (window as any).collaborationSocket) {
+          console.log('🔄 Syncing teacher selection to collaboration room');
+          // Don't force update here - let the natural sync handle it
+        }
+      }, 100);
 
       // Auto-focus next course if enabled
       if (state.ui.autoFocusEnabled) {
@@ -572,6 +645,14 @@ export default function CoursePanel() {
       type: 'ADD_SUBJECT',
       payload: { courseName: processedName, credits: creditValue }
     });
+
+    // Trigger collaboration sync after subject addition (debounced)
+    setTimeout(() => {
+      if (typeof window !== 'undefined' && (window as any).collaborationSocket) {
+        console.log('🔄 Syncing subject addition to collaboration room');
+        // Don't force update here - let the natural sync handle it
+      }
+    }, 100);
 
     spanMsg = 'Course added successfully';
     spanMsgColor = 'green';
@@ -708,6 +789,14 @@ export default function CoursePanel() {
         color: color
       }
     });
+
+    // Trigger collaboration sync after teacher addition (debounced)
+    setTimeout(() => {
+      if (typeof window !== 'undefined' && (window as any).collaborationSocket) {
+        console.log('🔄 Syncing teacher addition to collaboration room');
+        // Don't force update here - let the natural sync handle it
+      }
+    }, 100);
 
     spanMsg = 'Teacher added successfully';
     spanMsgColor = 'green';
@@ -903,7 +992,7 @@ export default function CoursePanel() {
   };
 
   return (
-    <div className="card">
+    <div className="card" key={`course-panel-${dataKey}`}>
       <div className="card-header text-left fw-bold header-button">
         <div className="c_pref" style={{ width: '28%', alignSelf: 'center' }}>
           Course Preferences

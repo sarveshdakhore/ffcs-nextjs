@@ -542,3 +542,9 @@
 .btn-group {
     border-radius: 0 !important;
 }
+
+.collab-room * {
+  all: unset;
+  all: revert; /* Use revert to reset to browser defaults */
+  box-sizing: border-box;
+}

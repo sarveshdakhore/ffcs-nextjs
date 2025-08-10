@@ -465,3 +465,52 @@
   -ms-user-select: none;
   user-select: none;
 }
+
+/* Loading animation for dots */
+@keyframes loading-bounce {
+  0%, 80%, 100% {
+    transform: scale(0);
+  }
+  40% {
+    transform: scale(1);
+  }
+}
+
+.loading-dot {
+  animation: loading-bounce 1.4s infinite ease-in-out;
+}
+
+/* Auth form styles */
+.form-control:focus {
+  border-color: rgba(66, 133, 244, 0.5) !important;
+  box-shadow: 0 0 0 0.2rem rgba(66, 133, 244, 0.25) !important;
+}
+
+.btn:hover {
+  transform: translateY(-2px);
+}
+
+/* Dropdown menu styling */
+.dropdown-menu-dark {
+  background-color: rgba(33, 37, 41, 0.95) !important;
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  border-radius: 15px !important;
+}
+
+.dropdown-item:hover {
+  background-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+.collab-room * {
+  all: unset;
+  all: revert; /* Use revert to reset to browser defaults */
+  box-sizing: border-box;
+}
+.collab-room select,
+.collab-room input {
+  background: none !important;
+}
+.collab-room {
+  background-image: none !important;
+}
