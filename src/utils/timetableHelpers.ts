@@ -1,6 +1,6 @@
 // Timetable helper functions from vanilla JS
 
-import { CourseData, SubjectData } from '@/context/FFCSContext';
+import { CourseData } from '@/context/FFCSContext';
 import { clashMap, slotsExistInNonLectureFormat } from '@/constants/timetableConstants';
 
 // Process raw course name
@@ -8,7 +8,7 @@ export function processRawCourseName(courseInput: string): string {
   try {
     courseInput = courseInput.trim();
     courseInput = trimSign(courseInput, '-');
-    var courseListStr = courseInput.split('-');
+    const courseListStr = courseInput.split('-');
     let courseName = '';
     for (let i = 0; i < courseListStr.length; i++) {
       if (courseListStr[i].trim() === '') {
@@ -16,8 +16,8 @@ export function processRawCourseName(courseInput: string): string {
       }
     }
     if (courseListStr.length > 1 && courseListStr[0] !== '') {
-      var part2 = '';
-      for (var i = 1; i < courseListStr.length; i++) {
+      let part2 = '';
+      for (let i = 1; i < courseListStr.length; i++) {
         if (courseListStr[i].trim() !== '') {
           part2 += '-' + courseListStr[i].trim();
         }
@@ -51,10 +51,9 @@ export function trimSign(slotString: string, sign: string): string {
 // Clean slot string
 export function cleanSlotString(slotString: string): string {
   // Remove consecutive plus signs
-  var cleanedSlotString = slotString.replace(/\++/g, '+');
+  const cleanedSlotString = slotString.replace(/\++/g, '+');
   // Remove spaces
-  cleanedSlotString = cleanedSlotString.replace(/\s/g, '');
-  return cleanedSlotString;
+  return cleanedSlotString.replace(/\s/g, '');
 }
 
 // Remove duplicate slots
@@ -63,10 +62,10 @@ export function removeDuplicateSlots(slotString: string): string {
   slotString = slotString.toUpperCase();
   slotString = trimSign(slotString, '+');
   slotString = cleanSlotString(slotString);
-  var slotsArray = slotString.split('+');
+  const slotsArray = slotString.split('+');
 
   // Create a new array to store unique slots
-  var uniqueSlotsArray: string[] = [];
+  const uniqueSlotsArray: string[] = [];
 
   // Iterate over the original array
   slotsArray.forEach(function (slot) {
@@ -77,7 +76,7 @@ export function removeDuplicateSlots(slotString: string): string {
   });
 
   // Join the array back into a string
-  var uniqueSlotString = uniqueSlotsArray.join('+');
+  const uniqueSlotString = uniqueSlotsArray.join('+');
 
   return uniqueSlotString;
 }
@@ -100,7 +99,7 @@ export function removeSlotSplCharLive(inputValue: string): string {
 
 // Parse credit value
 export function parseCreditValue(input: string | number): number {
-  let number = parseFloat(String(input));
+  const number = parseFloat(String(input));
   if (!isNaN(number)) {
     if (number % 1 !== 0) {
       // Check if it's a float
@@ -113,24 +112,25 @@ export function parseCreditValue(input: string | number): number {
 
 // Get course code and course title
 export function getCourseCodeAndCourseTitle(courseName: string): [string, string] {
-  var courseNameParts = courseName.split('-');
+  const courseNameParts = courseName.split('-');
   if (courseNameParts.length > 1) {
-    var courseCode = courseNameParts[0].trim();
-    var part2 = '';
-    for (var i = 1; i < courseNameParts.length; i++) {
+    const courseCode = courseNameParts[0].trim();
+    let part2 = '';
+    for (let i = 1; i < courseNameParts.length; i++) {
       part2 += courseNameParts[i].trim() + '-';
     }
-    var courseTitle = part2.slice(0, -1);
+    const courseTitle = part2.slice(0, -1);
+    return [courseCode, courseTitle];
   } else {
-    var courseTitle = courseNameParts[0].trim();
-    var courseCode = '';
+    const courseTitle = courseNameParts[0].trim();
+    const courseCode = '';
+    return [courseCode, courseTitle];
   }
-  return [courseCode, courseTitle];
 }
 
 // Get course name from course data
 export function getCourseNameFromCourseData(courseData: CourseData): string {
-  var courseName = '';
+  let courseName = '';
   if (courseData.courseCode === '') {
     courseName = courseData.courseTitle;
   } else {
@@ -156,8 +156,8 @@ export function isSlotExist(slotsArray: string | string[]): boolean {
 
 // Slots processing for course list
 export function slotsProcessingForCourseList(slotString: string): string[] {
-  var slots = (function () {
-    var set = new Set<string>();
+  const slots = (function () {
+    const set = new Set<string>();
 
     try {
       slotString.split(/\s*\+\s*/).forEach(function (el) {
@@ -165,7 +165,7 @@ export function slotsProcessingForCourseList(slotString: string): string[] {
           set.add(el);
         }
       });
-    } catch (error) {
+    } catch {
       set.clear();
     }
 
@@ -176,9 +176,9 @@ export function slotsProcessingForCourseList(slotString: string): string[] {
 
 // Update slots using clashMap
 export function updateSlots(slots: string[]): string[] {
-  var allSlots = slots;
-  var thSlots: string[] = [];
-  var labSlots: string[] = [];
+  const allSlots = slots;
+  const thSlots: string[] = [];
+  const labSlots: string[] = [];
   allSlots.forEach((slot) => {
     if (clashMap[slot]) {
       if (slot.includes('L')) {
@@ -186,7 +186,7 @@ export function updateSlots(slots: string[]): string[] {
       } else {
         thSlots.push(slot);
       }
-      for (var i = 0; i < clashMap[slot].length; i++) {
+      for (let i = 0; i < clashMap[slot].length; i++) {
         if (clashMap[slot][i].includes('L')) {
           labSlots.push(clashMap[slot][i]);
         } else {
@@ -200,7 +200,7 @@ export function updateSlots(slots: string[]): string[] {
 
 // Check if there's a common slot between two arrays
 export function isCommonSlot(arr1: string[], arr2: string[]): boolean {
-  var result = false;
+  let result = false;
   arr1.forEach((el) => {
     if (arr2.includes(el)) {
       result = true;
@@ -223,7 +223,7 @@ export function subtractArray(arr1: string[], arr2: string[]): string[] {
 
 // Check if slot is theory
 export function isTheory(slots: string): boolean {
-  let slot = slots.split('+')[0];
+  const slot = slots.split('+')[0];
   if (slot.match(/[A-KM-Z]\d+/)) {
     return true;
   }
@@ -233,19 +233,19 @@ export function isTheory(slots: string): boolean {
 // Check if morning theory
 export function isMorningTheory(slots: string): boolean | null {
   let isMTheory: boolean | null = null;
-  let slotArray = slots.split('+');
-  for (let slot of slotArray) {
-    slot = slot.trim();
-    if (slot.includes('V')) {
-      const num = parseInt(slot.slice(1));
+  const slotArray = slots.split('+');
+  for (const slot of slotArray) {
+    const trimmedSlot = slot.trim();
+    if (trimmedSlot.includes('V')) {
+      const num = parseInt(trimmedSlot.slice(1));
       if (num === 1 || num === 2) {
         if (isMTheory === false) {
           return null;
         }
         isMTheory = true;
       }
-    } else if (slot.startsWith('L')) {
-      const num = parseInt(slot.slice(1));
+    } else if (trimmedSlot.startsWith('L')) {
+      const num = parseInt(trimmedSlot.slice(1));
       if (num >= 1 && num <= 30) {
         if (isMTheory === true) {
           return null;
@@ -257,9 +257,9 @@ export function isMorningTheory(slots: string): boolean | null {
         }
         isMTheory = true;
       }
-    } else if (slot.match(/[A-ULW-Z]\d+/)) {
+    } else if (trimmedSlot.match(/[A-ULW-Z]\d+/)) {
       // Check if it's a theory slot and ends with '1' (morning theory)
-      if (slot.endsWith('1')) {
+      if (trimmedSlot.endsWith('1')) {
         if (isMTheory === false) {
           return null;
         }
@@ -272,7 +272,7 @@ export function isMorningTheory(slots: string): boolean | null {
 
 // Check if morning lab
 export function isMorningLab(slots: string): boolean {
-  let slot = slots.split('+')[0];
+  const slot = slots.split('+')[0];
   if (slot.startsWith('L')) {
     // Check if it's a lab slot and is between L1 and L30 (morning lab)
     return parseInt(slot.slice(1)) <= 30;
@@ -281,7 +281,7 @@ export function isMorningLab(slots: string): boolean {
 }
 
 // Get credits from course name (from subject data)
-export function getCreditsFromCourseName(courseName: string, subjects: any): number {
+export function getCreditsFromCourseName(courseName: string, subjects: Record<string, any>): number {
   return subjects[courseName]?.credits || 0;
 }
 
@@ -296,7 +296,7 @@ export function doSlotsMatch(slots1: string[], slots2: string[]): boolean {
 }
 
 // Remove course from course list (helper for course removal)
-export function courseRemove(courseName: string, data: any[]): any[] {
+export function courseRemove(courseName: string, data: Record<string, any>[]): Record<string, any>[] {
   return data.filter(course => {
     const courseFullName = course.courseCode ? 
       `${course.courseCode}-${course.courseTitle}` : 
@@ -306,7 +306,7 @@ export function courseRemove(courseName: string, data: any[]): any[] {
 }
 
 // Get slots from all selected courses (like vanilla JS getSlots())
-export function getSlots(data: any[]): string[] {
+export function getSlots(data: Record<string, any>[]): string[] {
   const slots: string[] = [];
   data.forEach(course => {
     course.slots.forEach((slot: string) => {
@@ -319,7 +319,7 @@ export function getSlots(data: any[]): string[] {
 }
 
 // Get slots for a specific course from SELECTED courses (like vanilla JS getSlotsOfCourse())
-export function getSlotsOfCourse(courseName: string, data: any[]): string[] {
+export function getSlotsOfCourse(courseName: string, data: Record<string, any>[]): string[] {
   const slots: string[] = [];
   data.forEach(course => {
     const courseFullName = course.courseCode ? 
@@ -338,7 +338,7 @@ export function getSlotsOfCourse(courseName: string, data: any[]): string[] {
 }
 
 // Get slots for a specific course from SELECTED courses in attack mode (like vanilla JS getCourseSlotsAttack())
-export function getCourseSlotsAttack(courseName: string, attackData: any[]): string[] {
+export function getCourseSlotsAttack(courseName: string, attackData: Record<string, any>[]): string[] {
   const slots: string[] = [];
   attackData.forEach(course => {
     const courseFullName = course.courseCode ? 
@@ -357,7 +357,7 @@ export function getCourseSlotsAttack(courseName: string, attackData: any[]): str
 }
 
 // Get slots from all selected attack data (like vanilla JS slotsForAttack())
-export function slotsForAttack(attackData: any[]): string[] {
+export function slotsForAttack(attackData: Record<string, any>[]): string[] {
   const slots: string[] = [];
   attackData.forEach(course => {
     slots.push(...course.slots);
