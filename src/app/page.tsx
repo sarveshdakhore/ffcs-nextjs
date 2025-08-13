@@ -245,10 +245,12 @@ export default function Home() {
         )}
 
         {/* Collaboration Room */}
+        <div style={{marginTop: '100px'}}>
         <CollaborationRoom />
+        </div>
 
         {/* Course Panel */}
-        <div className="container-xl cardnew" style={{ marginTop: '100px', position: 'relative' }}>
+        <div className="container-xl cardnew pt-10" style={{ marginTop: '140px', position: 'relative', paddingTop: '2rem' }}>
           {/* Decorative pins for Course Panel */}
           <img src="/images/doodles/bluepin.svg" alt="" style={{
             position: 'absolute',

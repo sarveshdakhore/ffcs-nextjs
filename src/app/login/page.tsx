@@ -36,11 +36,11 @@ export default function LoginPage() {
 
   return (
     <div className="min-vh-100" style={{
-      background: 'linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%)',
+      background: '#090909',
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
-      padding: '2rem'
+	  height: '100vh',
     }}>
       {/* Decorative Doodles */}
       <div className="doodles-container" style={{

@@ -15,7 +15,6 @@
 }
 
 body {
-    padding-top: 5rem;
     background: linear-gradient(135deg, #0c0c0c 0%, #1a1a1a 50%, #0f0f0f 100%);
     background-attachment: fixed;
     color: var(--text-color);
