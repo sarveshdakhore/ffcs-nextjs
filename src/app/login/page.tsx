@@ -91,21 +91,21 @@ export default function LoginPage() {
         }} />
       </div>
 
-      <div className="card" style={{
+      <div className="" style={{
         width: '100%',
         maxWidth: '400px',
         background: 'rgba(255, 255, 255, 0.1)',
         backdropFilter: 'blur(10px)',
-        border: '1px solid rgba(255, 255, 255, 0.2)',
+        // border: '1px solid rgba(255, 255, 255, 0.2)',
         borderRadius: '20px',
         padding: '2rem',
         zIndex: 10
       }}>
-        <div className="card-body">
+        <div className="">
           {/* Header */}
           <div className="text-center mb-4">
             <div className="d-flex justify-content-center align-items-center mb-3">
-              <img src="/images/icons/gdsc.png" alt="GDSC Logo" style={{ height: '50px', marginRight: '15px' }} />
+              <img src="/images/icons/gdsc.png" alt="GDSC Logo" style={{ height: '30px', marginRight: '15px' }} />
               <div>
                 <h2 style={{ color: 'white', margin: 0, fontSize: '1.5rem', fontWeight: 'bold' }}>FFCS Planner</h2>
                 <p style={{ color: '#bdc3c7', margin: 0, fontSize: '0.9rem' }}>Login to your account</p>
@@ -177,17 +177,7 @@ export default function LoginPage() {
             <button
               type="submit"
               disabled={state.isLoading}
-              className="btn w-100"
-              style={{
-                background: 'linear-gradient(135deg, #4285F4 0%, #34A853 100%)',
-                border: 'none',
-                borderRadius: '10px',
-                color: 'white',
-                fontWeight: '600',
-                padding: '0.75rem',
-                fontSize: '1rem',
-                transition: 'all 0.3s ease'
-              }}
+              className="btn btn-success w-100"
             >
               {state.isLoading ? (
                 <div className="d-flex align-items-center justify-content-center">
