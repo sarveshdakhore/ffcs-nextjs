@@ -925,7 +925,7 @@ export default function CollaborationRoom() {
         {/* Create Room Modal */}
         {showCreateModal && (
           <div className="modal-overlay">
-            <div className="modal">
+            <div className="modal2">
               <h3>Create Room</h3>
               <div className="modal-form">
                 <div className="form-group">

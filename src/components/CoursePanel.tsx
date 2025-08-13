@@ -1683,7 +1683,7 @@ export default function CoursePanel() {
       <div className="card-footer">
         <div className="row align-items-center justify-content-between">
           <div className="col-sm-auto my-1">
-            <div className="form-check form-switch attack-toggle" style={{ marginTop: '7px' }}>
+            {/* <div className="form-check form-switch attack-toggle" style={{ marginTop: '7px' }}>
               <label className="form-check-label" htmlFor="attack-toggle">
                 Live FFCS Mode
               </label>
@@ -1694,7 +1694,7 @@ export default function CoursePanel() {
                 checked={state.ui.attackMode}
                 onChange={(e) => dispatch({ type: 'SET_UI_STATE', payload: { attackMode: e.target.checked } })}
               />
-            </div>
+            </div> */}
             <div className="form-check form-switch" style={{ marginTop: '7px' }}>
               <label className="form-check-label" htmlFor="auto-focus-toggle">
                 Auto Focus
