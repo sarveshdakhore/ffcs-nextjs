@@ -671,7 +671,7 @@ export default function Timetable() {
       <div className="container-sm px-4">
         <div id="option-buttons" className="row justify-content-between">
           <div className="col-auto mb-2 text-center">
-            <div className="btn-group" role="group">
+            <div className="btn-group" role="group" style={{gap: '0px'}}>
                             <div className="btn-group" ref={dropdownRef}>
                 <button
                   id="tt-picker-button"
@@ -748,7 +748,7 @@ export default function Timetable() {
 
           <div className="col-auto mb-2 text-center">
             <button
-              className="btn btn-success"
+              className="btn btn-success m-2"
               type="button"
               onClick={() => {
                 document.getElementById('download-modal')?.click();
@@ -760,7 +760,7 @@ export default function Timetable() {
             
             <button
               id="quick-toggle"
-              className={`btn ms-1 me-1 btn-warning text-white`}
+              className={`btn ms-1 me-1 btn-warning text-white m-2`}
               type="button"
               onClick={handleQuickToggle}
             >
@@ -771,7 +771,7 @@ export default function Timetable() {
             </button>
             
             <button
-              className="btn btn-danger"
+              className="btn btn-danger m-2"
               type="button"
               onClick={() => {
                 document.getElementById('reset-modal')?.click();
