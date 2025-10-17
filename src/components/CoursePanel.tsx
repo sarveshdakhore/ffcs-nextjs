@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useFFCS } from '@/context/FFCSContext';
 import { activateSortable, deactivateSortable } from '@/utils/sortableUtils';
 import { 
@@ -21,6 +21,11 @@ import {
   slotsForAttack,
   getSlots
 } from '@/utils/timetableHelpers';
+import { 
+  parseTextToListForMultipleAdd, 
+  validateTeacherData, 
+  processTeacherName 
+} from '@/utils/teacherUtils';
 import { CourseData } from '@/context/FFCSContext';
 
 export default function CoursePanel() {
@@ -38,6 +43,19 @@ export default function CoursePanel() {
   const [slots, setSlots] = useState('');
   const [venue, setVenue] = useState('');
   const [color, setColor] = useState('rgb(255, 228, 135)'); // Default orange
+  
+  // Multiple teachers modal states
+  const [multipleTeachersText, setMultipleTeachersText] = useState('');
+  const [multipleError, setMultipleError] = useState('');
+  const [showMultipleTeachersModal, setShowMultipleTeachersModal] = useState(false);
+  
+  // Live FFCS Mode (Attack Mode) states
+  const [liveFfcsMode, setLiveFfcsMode] = useState(false);
+  const [autoFocus, setAutoFocus] = useState(true);
+  
+  // Modal refs for Bootstrap
+  const modalRef = useRef<HTMLDivElement>(null);
+  const bootstrapModalRef = useRef<any>(null);
   
   // Edit states
   const [editingCourse, setEditingCourse] = useState('');
@@ -993,126 +1011,544 @@ export default function CoursePanel() {
     }
   };
 
-  return (
-    <div className="card" key={`course-panel-${dataKey}`}>
-      <div className="card-header text-left fw-bold header-button">
-        <div className="c_pref" style={{ width: '28%', alignSelf: 'center' }}>
-          Course Preferences
-          {state.ui.attackMode && <span className="badge bg-warning text-dark ms-2">Attack Mode</span>}
-        </div>
-        <div className="text-left header-button-element">
-          <button
-            id="tt-teacher-add"
-            type="button"
-            className="btn btn-success"
-            onClick={showAddTeacherDiv}
-            style={{ display: state.globalVars.editTeacher || state.globalVars.editSub ? 'none' : 'inline-block' }}
-          >
-            <i className="fas fa-plus"></i> Teachers
-          </button>
-          <button
-            id="tt-subject-add"
-            type="button"
-            className="btn btn-primary"
-            onClick={() => {
-              setShowAddCourse(true);
-              setShowAddTeacher(false);
-              setShowEditCourse(false);
-              setShowEditTeacher(false);
-            }}
-            style={{ display: state.globalVars.editTeacher || state.globalVars.editSub ? 'none' : 'inline-block' }}
-          >
-            <i className="fas fa-plus"></i> Course
-          </button>
-          
-          <button
-            id="tt-subject-edit"
-            className="btn btn-warning ms-1 me-1"
-            type="button"
-            onClick={handleEditClick}
-            style={{ display: state.globalVars.editTeacher || state.globalVars.editSub ? 'none' : 'inline-block' }}
-          >
-            <i className="fas fa-pencil"></i>
-            <span>&nbsp;&nbsp;Edit</span>
-          </button>
-          
-          <button
-            id="tt-subject-done"
-            className="btn btn-primary"
-            type="button"
-            onClick={handleDoneClick}
-            style={{ 
-              display: state.globalVars.editSub || state.globalVars.editTeacher ? 'inline-block' : 'none',
-              marginLeft: '0.25rem',
-              marginRight: '0.25rem'
-            }}
-          >
-            <span>Done</span>
-          </button>
-          <button
-            id="tt-subject-collapse"
-            className="btn btn-secondary"
-            type="button"
-            onClick={closeAllDropdowns}
-            style={{ 
-              display: state.globalVars.editSub || state.globalVars.editTeacher ? 'inline-block' : 'none',
-              marginLeft: '0.25rem',
-              marginRight: '0.25rem'
-            }}
-          >
-            <i className="fas fa-chevron-up"></i>
-            <span>&nbsp;&nbsp;Collapse All</span>
-          </button>
-          <div 
-            className="form-check form-switch" 
-            style={{ 
-              marginTop: '7px', 
-              display: state.globalVars.editSub || state.globalVars.editTeacher ? 'inline-block' : 'none',
-              color: 'white'
-            }}
-            id="div-auto-focus"
-          >
-            <label className="form-check-label" htmlFor="tt-auto-focus-switch" style={{ color: 'white' }}>
-              Auto Focus
-            </label>
-            <input
-              className="form-check-input"
-              type="checkbox"
-              role="switch"
-              id="tt-auto-focus-switch"
-              checked={state.ui.autoFocusEnabled}
-              onChange={(e) => dispatch({ type: 'SET_UI_STATE', payload: { autoFocusEnabled: e.target.checked } })}
-              style={{ marginLeft: '0.5rem' }}
-            />
-          </div>
-          <div 
-            className="form-check form-switch" 
-            style={{ 
-              marginTop: '7px', 
-              display: state.globalVars.editSub || state.globalVars.editTeacher ? 'inline-block' : 'none',
-              color: 'white'
-            }}
-            id="tt-sub-edit-switch-div"
-          >
-            <label className="form-check-label" htmlFor="tt-sub-edit-switch" style={{ color: 'white' }}>
-              Course Edit
-            </label>
-            <input
-              className="form-check-input"
-              type="checkbox"
-              role="switch"
-              id="tt-sub-edit-switch"
-              checked={state.globalVars.editSub}
-              onChange={(e) => handleCourseEditSwitch(e.target.checked)}
-              style={{ marginLeft: '0.5rem' }}
-            />
-          </div>
-        </div>
-      </div>
+  // Character filtering functions (from original FFCSonTheGo)
+  const applyOriginalCharacterFiltering = (input: string): string => {
+    let cleanedValue = input.replace(/\./g, ''); // Remove dots
+    cleanedValue = cleanedValue.replace(/\--/g, '-'); // Replace double dashes with single dash
+    cleanedValue = cleanedValue.replace(/\  /g, ' '); // Replace double spaces with single space
+    cleanedValue = cleanedValue.replace(/[^a-zA-Z0-9+ \-()]/g, ''); // Keep only alphanumeric, +, space, -, ()
+    return cleanedValue;
+  };
 
-      <div style={{ padding: '0%', display: 'flex', flexDirection: 'row', minHeight: '400px', maxHeight: 'none', borderRadius: '0 0 20px 20px' }} className="card-body">
+  const applySlotCharacterFiltering = (input: string): string => {
+    let cleanedValue = input.replace(/\./g, ''); // Remove dots
+    cleanedValue = cleanedValue.replace(/[^a-zA-Z0-9+-]/g, ''); // Keep only alphanumeric, +, -
+    return cleanedValue;
+  };
+
+  const applyCourseCodeFiltering = (input: string): string => {
+    // Course codes should be clean already but apply basic filtering
+    // Allow alphanumeric characters for course codes (dashes are handled separately in full course names)
+    return input.replace(/[^a-zA-Z0-9]/g, ''); // Keep only alphanumeric for course codes
+  };
+
+  const trimSign = (str: string, sign: string): string => {
+    while (str.startsWith(sign)) {
+      str = str.slice(1);
+    }
+    while (str.endsWith(sign)) {
+      str = str.slice(0, -1);
+    }
+    return str;
+  };
+
+  const processRawCourseName = (courseInput: string): string => {
+    try {
+      courseInput = courseInput.trim();
+      courseInput = trimSign(courseInput, '-');
+      const courseListStr = courseInput.split('-').filter(part => part.trim() !== '');
+      
+      if (courseListStr.length > 1 && courseListStr[0] !== '') {
+        let part2 = '';
+        for (let i = 1; i < courseListStr.length; i++) {
+          if (courseListStr[i].trim() !== '') {
+            part2 += '-' + courseListStr[i].trim();
+          }
+        }
+        courseInput = courseListStr[0].trim() + part2;
+      } else {
+        courseInput = courseListStr[0]?.trim() || '';
+      }
+      
+      if (courseInput) {
+        courseInput = trimSign(courseInput, '-');
+        courseInput = courseInput.replace(/\s+/g, ' ');
+        return courseInput;
+      }
+      return '';
+    } catch (e) {
+      return courseInput.trim();
+    }
+  };
+
+  // Helper functions for slot type checking (from original FFCSonTheGo)
+  const isTheory = (slots: string): boolean => {
+    const slot = slots.split('+')[0];
+    return /[A-KM-Z]\d+/.test(slot);
+  };
+
+  const isMorningTheory = (slots: string): boolean => {
+    let isMTheory: boolean | null = null;
+    const slotArray = slots.split('+');
+    
+    for (let slot of slotArray) {
+      slot = slot.trim();
+      if (slot.includes('V')) {
+        const num = parseInt(slot.slice(1));
+        if (num === 1 || num === 2) {
+          if (isMTheory === false) {
+            return false;
+          }
+          isMTheory = true;
+        }
+      } else if (slot.startsWith('L')) {
+        const num = parseInt(slot.slice(1));
+        if (num >= 1 && num <= 30) {
+          if (isMTheory === true) {
+            return false;
+          }
+          isMTheory = false;
+        } else {
+          if (isMTheory === false) {
+            return false;
+          }
+          isMTheory = true;
+        }
+      } else if (/[A-ULW-Z]\d+/.test(slot)) {
+        // Check if it's a theory slot and ends with '1' (morning theory)
+        if (slot.endsWith('1')) {
+          if (isMTheory === false) {
+            return false;
+          }
+          isMTheory = true;
+        }
+      }
+    }
+    
+    return isMTheory === true;
+  };
+
+  const isMorningLab = (slots: string): boolean => {
+    const slot = slots.split('+')[0];
+    if (slot.startsWith('L')) {
+      // Check if it's a lab slot and is between L1 and L30 (morning lab)
+      return parseInt(slot.slice(1)) <= 30;
+    }
+    return false;
+  };
+
+  const getTeacherSlots = (courseName: string, teacherName: string): string | null => {
+    const subjectData = state.activeTable.subject[courseName];
+    if (subjectData && subjectData.teacher && subjectData.teacher[teacherName]) {
+      return subjectData.teacher[teacherName].slots;
+    }
+    return null;
+  };
+
+  const updateTeacherSlots = (courseName: string, teacherName: string, newSlots: string): void => {
+    console.log(`🔄 Updating teacher slots: ${teacherName} -> ${newSlots}`);
+    dispatch({
+      type: 'UPDATE_TEACHER_IN_SUBJECT',
+      payload: {
+        courseName,
+        teacherName,
+        slots: newSlots.trim().toUpperCase(),
+        venue: state.activeTable.subject[courseName]?.teacher[teacherName]?.venue || 'VENUE',
+        color: state.activeTable.subject[courseName]?.teacher[teacherName]?.color || color
+      }
+    });
+  };
+
+  // Original FFCSonTheGo combining logic with TH/LO support
+  const checkTeacherAndSlotsMatch = (courseName: string, teacherName: string, slotString: string): string | boolean => {
+    const slots = slotString.split('+');
+    const subjectData = state.activeTable.subject[courseName];
+    
+    if (!subjectData || !subjectData.teacher) {
+      return teacherName; // No existing teachers, use the name as is
+    }
+    
+    const teachers = subjectData.teacher;
+
+    // Helper function to check if slots match
+    const doSlotsMatch = (teacherSlots: string[], inputSlots: string[]): boolean => {
+      const lowerCaseInputSlots = inputSlots.map(slot => slot.toLowerCase());
+      const lowerCaseTeacherSlots = teacherSlots.map(slot => slot.toLowerCase());
+      return lowerCaseInputSlots.every(slot => lowerCaseTeacherSlots.includes(slot));
+    };
+
+    // Recursive helper function to generate a unique name and check slots
+    const generateUniqueNameAndCheckSlots = (baseName: string, counter: number = 1): string | boolean => {
+      const uniqueName = counter === 1 ? baseName : `${baseName} ${counter}`;
+      console.log('🔍 Checking unique name:', uniqueName);
+      
+      const existingTeacher = teachers[uniqueName];
+      const uniqueNameSlots = existingTeacher ? existingTeacher.slots.split('+') : [];
+      
+      console.log('🔍 Existing teacher slots:', uniqueNameSlots);
+      
+      if (doSlotsMatch(uniqueNameSlots, slots)) {
+        // If the slots match, return false (duplicate)
+        console.log('❌ Slots match - this is a duplicate');
+        return false;
+      } else if (teachers.hasOwnProperty(uniqueName)) {
+        // ORIGINAL COMBINING LOGIC: Check for TH/LO merge possibility
+        const existingSlots = getTeacherSlots(courseName, uniqueName);
+        
+        if (!existingSlots) {
+          return false;
+        }
+
+        // Theory and Lab slots are not allowed to merge if theory already contains lab
+        if (isTheory(existingSlots) && existingSlots.includes('L')) {
+          console.log('🔄 Theory and Lab slots already combined, trying next counter');
+          return generateUniqueNameAndCheckSlots(baseName, counter + 1);
+        }
+
+        // Case 1: Existing is Theory, new is Lab
+        if (isTheory(existingSlots) && !isTheory(slotString)) {
+          if (isMorningTheory(existingSlots) && !isMorningLab(slotString)) {
+            // Morning theory + Evening lab = MERGE
+            const mergedSlots = existingSlots + '+' + slotString;
+            console.log('✅ Merging morning theory + evening lab:', mergedSlots);
+            updateTeacherSlots(courseName, uniqueName, mergedSlots);
+            return true;
+          } else if (!isMorningTheory(existingSlots) && isMorningLab(slotString)) {
+            // Evening theory + Morning lab = MERGE
+            const mergedSlots = existingSlots + '+' + slotString;
+            console.log('✅ Merging evening theory + morning lab:', mergedSlots);
+            updateTeacherSlots(courseName, uniqueName, mergedSlots);
+            return true;
+          }
+        } 
+        // Case 2: Existing is Lab, new is Theory
+        else if (!isTheory(existingSlots) && isTheory(slotString)) {
+          if (isMorningTheory(slotString) && !isMorningLab(existingSlots)) {
+            // Morning theory + Evening lab = MERGE (theory first)
+            const mergedSlots = slotString + '+' + existingSlots;
+            console.log('✅ Merging morning theory + evening lab:', mergedSlots);
+            updateTeacherSlots(courseName, uniqueName, mergedSlots);
+            return true;
+          } else if (!isMorningTheory(slotString) && isMorningLab(existingSlots)) {
+            // Evening theory + Morning lab = MERGE (theory first)
+            const mergedSlots = slotString + '+' + existingSlots;
+            console.log('✅ Merging evening theory + morning lab:', mergedSlots);
+            updateTeacherSlots(courseName, uniqueName, mergedSlots);
+            return true;
+          }
+        }
+
+        // If no merge possible, try next counter
+        console.log('🔄 No merge possible, trying next counter');
+        return generateUniqueNameAndCheckSlots(baseName, counter + 1);
+      } else {
+        // Teacher doesn't exist, we can use this name
+        console.log('✅ Unique name found:', uniqueName);
+        return uniqueName;
+      }
+    };
+
+    return generateUniqueNameAndCheckSlots(teacherName);
+  };
+
+  // Live FFCS Mode toggle handler (from original FFCSonTheGo)
+  const handleLiveFfcsModeToggle = (checked: boolean) => {
+    console.log('🎯 Live FFCS Mode toggled:', checked);
+    setLiveFfcsMode(checked);
+    
+    // Update global state
+    dispatch({ type: 'SET_UI_STATE', payload: { liveModeEnabled: checked } });
+    
+    if (checked) {
+      // ENABLE Live FFCS Mode
+      console.log('✅ Enabling Live FFCS Mode - Attack Mode ON');
+      
+      // Hide normal edit/add UI
+      setShowAddCourse(false);
+      setShowAddTeacher(false);
+      setShowEditCourse(false);
+      setShowEditTeacher(false);
+      
+      // Clear timetable to show slot occupancy instead
+      dispatch({ type: 'CLEAR_TIMETABLE' });
+      
+      // Switch to attack data mode
+      dispatch({ type: 'SET_ATTACK_MODE', payload: { enabled: true } });
+      
+    } else {
+      // DISABLE Live FFCS Mode  
+      console.log('❌ Disabling Live FFCS Mode - Normal Mode ON');
+      
+      // Show normal add teacher UI
+      setShowAddTeacher(true);
+      
+      // Switch back to normal data mode
+      dispatch({ type: 'SET_ATTACK_MODE', payload: { enabled: false } });
+      
+      // Regenerate timetable from normal data
+      dispatch({ type: 'REGENERATE_TIMETABLE' });
+    }
+  };
+
+  // Handle Add Multiple Teachers button click
+  const handleAddMultiple = async (e?: React.MouseEvent) => {
+    e?.preventDefault();
+    e?.stopPropagation();
+    
+    console.log('🚀🚀🚀 UPDATED VERSION - Add Multiple button clicked! - VERSION 2.0');
+    console.log('📋 Selected course:', selectedCourse);
+    console.log('🔗 Modal ref current:', modalRef.current);
+    console.log('🌍 Window available:', typeof window !== 'undefined');
+    console.log('🌍 Document available:', typeof document !== 'undefined');
+    
+    // Check if course is selected (exactly like the original)
+    if (!selectedCourse || selectedCourse === '' || selectedCourse === 'Select Course') {
+      console.log('❌ No course selected, showing error');
+      alert('Please select a course first!');
+      setTeacherMessage({ text: 'Please select a course before adding multiple teachers', color: 'red' });
+      setTimeout(() => setTeacherMessage({ text: '', color: '' }), 5000);
+      return;
+    }
+    
+    console.log('✅ Course selected, proceeding with modal...');
+    
+    // Clear any previous errors
+    setMultipleError('');
+    
+    // FORCE React state modal first to test
+    console.log('🔄 FORCING React state fallback modal for testing');
+    setShowMultipleTeachersModal(true);
+    
+    // Also try Bootstrap approach
+    if (modalRef.current && typeof window !== 'undefined') {
+      console.log('✅ Creating Bootstrap modal instance on demand (following original pattern)');
+      try {
+        // @ts-ignore - Bootstrap types not available  
+        const bootstrap = await import('bootstrap');
+        console.log('📦 Bootstrap loaded:', bootstrap);
+        console.log('📦 Bootstrap.Modal constructor:', (bootstrap as any).Modal);
+        
+        // Create modal instance exactly like original
+        const modal = new (bootstrap as any).Modal(modalRef.current);
+        console.log('✅ Modal instance created:', modal);
+        
+        // Show modal exactly like original
+        modal.show();
+        console.log('📖 Modal show() called successfully');
+        
+        // Store reference for later cleanup
+        bootstrapModalRef.current = modal;
+        
+        // Hide React fallback if Bootstrap works
+        setTimeout(() => setShowMultipleTeachersModal(false), 500);
+        
+      } catch (error) {
+        console.error('❌ Error with Bootstrap modal:', error);
+        console.log('🔄 Bootstrap failed, keeping React state fallback');
+      }
+    } else {
+      console.error('❌ No modal ref or not in browser environment');
+      console.log('🔄 Keeping React state fallback');
+    }
+  };
+
+  // Process multiple teachers from VTOP data
+  const processMultipleTeachers = () => {
+    console.log('🔄 Processing multiple teachers...');
+    
+    // Validate inputs
+    if (!selectedCourse) {
+      setMultipleError('Please select a course before adding multiple teachers');
+      return;
+    }
+
+    if (!multipleTeachersText.trim()) {
+      setMultipleError('Please paste the teacher data from VTOP');
+      return;
+    }
+
+    try {
+      // Parse the text input
+      const teacherList = parseTextToListForMultipleAdd(multipleTeachersText);
+      let addedCount = 0;
+      let skippedCount = 0;
+
+      console.log('📝 Parsed teacher list:', teacherList);
+
+      // Process each teacher
+      teacherList.forEach((teacherData, index) => {
+        console.log(`🔄 Processing teacher ${index + 1}:`, teacherData);
+        
+        // Validate teacher data - for VTOP format, we need slots, course code (in venue field), and faculty
+        if (!teacherData.slots.trim() || !teacherData.venue.trim() || !teacherData.faculty.trim()) {
+          console.log(`❌ Invalid teacher data at index ${index}:`, teacherData);
+          skippedCount++;
+          return;
+        }
+
+        // Apply original character filtering rules
+        const rawTeacherName = teacherData.faculty.trim().toUpperCase();
+        const cleanedTeacherName = applyOriginalCharacterFiltering(rawTeacherName);
+        
+        const rawSlots = teacherData.slots.trim().toUpperCase();
+        const cleanedSlots = applySlotCharacterFiltering(rawSlots);
+        
+        // Process teacher name (add (E) for evening classes if needed)
+        const processedTeacherName = processTeacherName(cleanedTeacherName, cleanedSlots);
+
+        // CORRECT: Parse the VTOP format correctly
+        // VTOP data format: SLOTS(0)    VENUE(1)         TEACHER_NAME(2)    TYPE(3)  
+        // Our parser maps to:  slots      venue            faculty           ct
+        // So: venue = VENUE, faculty = TEACHER_NAME (this is correct!)
+        const actualVenue = teacherData.venue.trim() || 'VENUE'; // This is the actual venue
+        
+        console.log('🔍 Venue:', actualVenue);
+        console.log('🔍 Teacher name:', teacherData.faculty);
+        console.log('🔍 Slots:', teacherData.slots);
+        
+        // Add teacher to the SELECTED COURSE (like original FFCSonTheGo)
+        const courseObj = state.courses.find(course => course.code === selectedCourse);
+        const courseName = courseObj?.name || selectedCourse;
+        
+        // Use the SELECTED COURSE for adding teachers
+        const rawFullCourseName = `${selectedCourse} - ${courseName}`;
+        const fullCourseName = processRawCourseName(rawFullCourseName);
+        
+        console.log('🔍 Adding teacher to SELECTED course:', selectedCourse);
+        
+        console.log('📋 Full course name:', fullCourseName);
+
+        // Ensure the course exists in subject data
+        if (!state.activeTable.subject[fullCourseName]) {
+          dispatch({
+            type: 'ADD_SUBJECT',
+            payload: {
+              courseName: fullCourseName,
+              credits: courseObj?.credits || 0
+            }
+          });
+        }
+
+        // Apply original combining logic
+        const uniqueName = checkTeacherAndSlotsMatch(fullCourseName, processedTeacherName, cleanedSlots);
+        
+        if (uniqueName === false) {
+          // This is a duplicate teacher with same slots - skip
+          console.log(`⚠️ Skipping duplicate teacher: ${processedTeacherName} with slots: ${cleanedSlots}`);
+          skippedCount++;
+          return;
+        }
+        
+        if (uniqueName === true) {
+          // This shouldn't happen in our implementation, but handle it
+          console.log(`✅ Teacher already exists: ${processedTeacherName}`);
+          addedCount++;
+          return;
+        }
+
+        // Use the unique name (could be original name or name with counter)
+        const finalTeacherName = uniqueName as string;
+        console.log(`📝 Using final teacher name: ${finalTeacherName}`);
+
+        // Add teacher to subject data
+        dispatch({
+          type: 'ADD_TEACHER_TO_SUBJECT',
+          payload: {
+            courseName: fullCourseName,
+            teacherName: finalTeacherName,
+            slots: cleanedSlots,
+            venue: actualVenue,
+            color: color
+          }
+        });
+
+        // Also add to legacy teacher structure for compatibility
+        const newTeacher = {
+          name: finalTeacherName,
+          slot: cleanedSlots,
+          venue: actualVenue,
+          color: color,
+          course: selectedCourse, // Use the selected course
+        };
+
+        dispatch({
+          type: 'ADD_TEACHER',
+          payload: { courseCode: selectedCourse, teacher: newTeacher }
+        });
+        
+        console.log(`✅ Added teacher: ${finalTeacherName} for course ${selectedCourse}`);
+
+        addedCount++;
+      });
+
+      // Show success/error message
+      if (addedCount > 0) {
+        const successMsg = `✅ Successfully added ${addedCount} teacher${addedCount > 1 ? 's' : ''}${skippedCount > 0 ? ` (⚠️ ${skippedCount} skipped due to invalid data)` : ''}`;
+        setTeacherMessage({ text: successMsg, color: 'green' });
+        console.log('✅ Success:', successMsg);
+      } else {
+        setMultipleError('❌ No valid teachers found in the provided data. Please check the format.');
+      }
+
+      // Close modal and clear form if successful
+      if (addedCount > 0) {
+        // Close Bootstrap modal if it exists
+        if (bootstrapModalRef.current) {
+          bootstrapModalRef.current.hide();
+        }
+        
+        // Close React modal
+        setShowMultipleTeachersModal(false);
+        setMultipleTeachersText('');
+        setMultipleError('');
+        
+        // Clear success message after 5 seconds
+        setTimeout(() => {
+          setTeacherMessage({ text: '', color: '' });
+        }, 5000);
+      }
+
+    } catch (err) {
+      console.error('Error processing multiple teachers:', err);
+      setMultipleError('Error processing teacher data. Please check the format and try again.');
+    }
+  };
+
+  return (
+    <>
+      <div key={`course-panel-${dataKey}`} style={{ 
+        display: 'flex', 
+        gap: '1.5rem', 
+        minHeight: '600px',
+        height: '80vh', // Fixed height for both columns
+        padding: '1rem',
+        width: '100%'
+      }}>
+      {/* Left Column - 60% */}
+      <div style={{ 
+        flex: '0 0 60%',
+        display: 'flex',
+        flexDirection: 'column',
+        height: '100%'
+      }}>
+        {/* Course Preferences Card */}
+        <div className="card" style={{ 
+          height: '100%',
+          display: 'flex',
+          flexDirection: 'column'
+        }}>
+          <div className="card-header text-left fw-bold header-button">
+            <div className="c_pref" style={{ width: '28%', alignSelf: 'center' }}>
+              Course Preferences
+              {state.ui.attackMode && <span className="badge bg-warning text-dark ms-2">Attack Mode</span>}
+            </div>
+          </div>
+
+          <div className="card-body" style={{ 
+            padding: '1rem',
+            flex: 1,
+            overflow: 'hidden',
+            display: 'flex',
+            flexDirection: 'column'
+          }}>
         {/* Subject Area */}
-        <section style={{ flex: 1, minHeight: '400px', overflowY: 'auto', scrollbarWidth: 'none', msOverflowStyle: 'none' }} className="left-border left-box" id="subjectArea">
+        <section style={{ 
+          flex: 1, 
+          overflowY: 'auto', 
+          scrollbarWidth: 'thin',
+          scrollbarColor: '#4a5568 #2d3748',
+          paddingRight: '0.5rem'
+        }} className="left-border left-box" id="subjectArea">
           {Object.entries(subjects).map(([subjectName, subjectData]) => {
             return (
             <div key={subjectName} className="dropdown dropdown-teacher">
@@ -1167,12 +1603,18 @@ export default function CoursePanel() {
                   // Check clash against OTHER courses only
                   const hasClash = isCommonSlot(teacherSlots, consideredSlots);
                   
+                  // Check if this teacher is selected and clashing in normal mode (for red highlighting)
+                  const isSelected = isTeacherSelected(subjectName, teacherName);
+                  const isClashingAndSelected = hasClash && isSelected && !state.ui.attackMode;
+                  
                   return (
                   <li 
                     key={teacherName} 
                     className={hasClash ? 'clashLi' : ''}
                     style={{ 
-                      backgroundColor: teacherData.color, 
+                      backgroundColor: isClashingAndSelected ? '#ff6b6b' : teacherData.color, 
+                      color: isClashingAndSelected ? 'white' : undefined,
+                      fontWeight: isClashingAndSelected ? 'bold' : undefined,
                       cursor: (() => {
                         if (state.globalVars.editTeacher || (!state.globalVars.editSub && !state.globalVars.editTeacher)) {
                           // In attack mode, disable clicking on clashing teachers
@@ -1225,25 +1667,227 @@ export default function CoursePanel() {
             </div>
           );
           })}
-        </section>
+          </section>
+          </div>
+        </div>
 
-        {/* Right Panel */}
-        <section className="left-border right-box" style={{ flex: 1, minHeight: '400px', overflowY: 'auto', scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
-          <h5 
-            id="edit_msg_" 
-            style={{ 
-              padding: '4.5%', 
-              paddingBottom: 0, 
-              display: (showEditCourse || showEditTeacher) ? 'none' : (state.globalVars.editSub || state.globalVars.editTeacher) ? 'block' : 'none',
-              color: 'white'
-            }}
-          >
-            {state.globalVars.editSub ? 'Click on the Course to edit it.' : 'Click on the Teacher to edit it.'}
-          </h5>
+        {/* Live Mode Toggle Card */}
+        <div className="card" style={{ marginTop: '1rem' }}>
+          <div className="card-body" style={{ padding: '1rem' }}>
+            <div className="form-check form-switch">
+              <label className="form-check-label" htmlFor="live-mode-toggle" style={{ color: 'white', fontWeight: '500' }}>
+                Live FFCS Mode
+              </label>
+              <input
+                className="form-check-input"
+                type="checkbox"
+                id="live-mode-toggle"
+                checked={liveFfcsMode}
+                onChange={(e) => handleLiveFfcsModeToggle(e.target.checked)}
+                style={{ marginLeft: '1rem' }}
+              />
+            </div>
+            
+            {/* Autofocus Toggle - Only visible in Live FFCS Mode */}
+            {liveFfcsMode && (
+              <div className="form-check form-switch mt-2">
+                <label className="form-check-label" htmlFor="autofocus-toggle" style={{ color: 'white', fontWeight: '500' }}>
+                  Autofocus
+                </label>
+                <input
+                  className="form-check-input"
+                  type="checkbox"
+                  id="autofocus-toggle"
+                  checked={autoFocus}
+                  onChange={(e) => {
+                    setAutoFocus(e.target.checked);
+                    dispatch({ type: 'SET_UI_STATE', payload: { autoFocusEnabled: e.target.checked } });
+                  }}
+                  style={{ marginLeft: '1rem' }}
+                />
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Right Column - 40% */}
+      <div style={{ 
+        flex: '0 0 40%',
+        display: 'flex',
+        flexDirection: 'column',
+        height: '100%'
+      }}>
+        {/* Top Buttons Card */}
+        <div className="card">
+          <div className="card-body" style={{ padding: '1rem' }}>
+              <button
+                id="tt-teacher-add"
+                type="button"
+                className="btn btn-success"
+                onClick={showAddTeacherDiv}
+                style={{ display: state.globalVars.editTeacher || state.globalVars.editSub ? 'none' : 'inline-block' }}
+              >
+                <i className="fas fa-plus"></i> Teachers
+              </button>
+              <button
+                id="tt-subject-add"
+                type="button"
+                className="btn btn-primary"
+                onClick={() => {
+                  setShowAddCourse(true);
+                  setShowAddTeacher(false);
+                  setShowEditCourse(false);
+                  setShowEditTeacher(false);
+                }}
+                style={{ display: state.globalVars.editTeacher || state.globalVars.editSub ? 'none' : 'inline-block' }}
+              >
+                <i className="fas fa-plus"></i> Course
+              </button>
+              
+              <button
+                id="tt-subject-edit"
+                className="btn btn-warning"
+                type="button"
+                onClick={handleEditClick}
+                style={{ display: state.globalVars.editTeacher || state.globalVars.editSub ? 'none' : 'inline-block' }}
+              >
+                <i className="fas fa-pencil"></i>
+                <span>&nbsp;&nbsp;Edit</span>
+              </button>
+              
+              <button
+                id="tt-subject-done"
+                className="btn btn-primary"
+                type="button"
+                onClick={handleDoneClick}
+                style={{ 
+                  display: state.globalVars.editSub || state.globalVars.editTeacher ? 'inline-block' : 'none'
+                }}
+              >
+                <span>Done</span>
+              </button>
+              <button
+                id="tt-subject-collapse"
+                className="btn btn-secondary"
+                type="button"
+                onClick={closeAllDropdowns}
+                style={{ 
+                  display: state.globalVars.editSub || state.globalVars.editTeacher ? 'inline-block' : 'none'
+                }}
+              >
+                <i className="fas fa-chevron-up"></i>
+                <span>&nbsp;&nbsp;Collapse All</span>
+              </button>
+            </div>
+          </div>
+
+          {/* Add/Edit Course Card */}
+          <div className="card" style={{ 
+            marginTop: '1rem', 
+            flex: 1,
+            display: 'flex',
+            flexDirection: 'column',
+            overflow: 'hidden'
+          }}>
+            <div className="card-body" style={{ 
+              padding: '1.5rem',
+              flex: 1,
+              overflow: 'hidden',
+              display: 'flex',
+              flexDirection: 'column'
+            }}>
+              {/* Scrollable Content Area */}
+              <div style={{
+                flex: 1,
+                overflowY: 'auto',
+                scrollbarWidth: 'thin',
+                scrollbarColor: '#4a5568 #2d3748',
+                paddingRight: '0.5rem'
+              }}>
+                <h5 
+                  id="edit_msg_" 
+                  style={{ 
+                    padding: '4.5%', 
+                    paddingBottom: 0, 
+                    display: (showEditCourse || showEditTeacher) ? 'none' : (state.globalVars.editSub || state.globalVars.editTeacher) ? 'block' : 'none',
+                    color: 'white'
+                  }}
+                >
+                  {state.globalVars.editSub ? 'Click on the Course to edit it.' : 'Click on the Teacher to edit it.'}
+                </h5>
+
+                {/* Live FFCS Mode - Slot Occupancy Display */}
+          {liveFfcsMode && (
+            <div id="div-for-attack-slot" style={{ display: 'block', marginBottom: '1rem' }}>
+              <div style={{ marginBottom: '1rem' }}>
+                <h4 style={{ color: 'white', fontWeight: '600', margin: '0', fontSize: '1.25rem' }}>
+                  <i className="fas fa-bolt" style={{ color: '#ffd700', marginRight: '0.5rem' }}></i>
+                  Live FFCS Mode - Slot Occupancy
+                </h4>
+              </div>
+              
+              <div style={{ backgroundColor: 'rgba(255, 255, 255, 0.1)', borderRadius: '8px', padding: '1rem' }}>
+                <div className="alert alert-info mb-3">
+                  <strong>Live Mode Active:</strong> This mode shows real-time slot availability and automatically focuses on conflicting slots during FFCS registration.
+                </div>
+                
+                {/* Slot Status Grid */}
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(100px, 1fr))', gap: '0.5rem', marginBottom: '1rem' }}>
+                  {/* Theory Slots */}
+                  {['A1', 'A2', 'B1', 'B2', 'C1', 'C2', 'D1', 'D2', 'E1', 'E2', 'F1', 'F2', 'G1', 'G2'].map(slot => (
+                    <div 
+                      key={slot}
+                      style={{
+                        backgroundColor: 'rgba(0, 255, 0, 0.2)',
+                        border: '1px solid rgba(0, 255, 0, 0.5)',
+                        borderRadius: '4px',
+                        padding: '0.25rem',
+                        textAlign: 'center',
+                        fontSize: '0.8rem',
+                        color: 'white'
+                      }}
+                    >
+                      {slot}
+                      <div style={{ fontSize: '0.6rem', opacity: 0.8 }}>Available</div>
+                    </div>
+                  ))}
+                </div>
+                
+                {/* Lab Slots */}
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(100px, 1fr))', gap: '0.5rem' }}>
+                  {['L1', 'L2', 'L3', 'L4', 'L5', 'L6'].map(slot => (
+                    <div 
+                      key={slot}
+                      style={{
+                        backgroundColor: 'rgba(255, 165, 0, 0.2)',
+                        border: '1px solid rgba(255, 165, 0, 0.5)',
+                        borderRadius: '4px',
+                        padding: '0.25rem',
+                        textAlign: 'center',
+                        fontSize: '0.8rem',
+                        color: 'white'
+                      }}
+                    >
+                      {slot}
+                      <div style={{ fontSize: '0.6rem', opacity: 0.8 }}>Lab</div>
+                    </div>
+                  ))}
+                </div>
+                
+                <div style={{ marginTop: '1rem', fontSize: '0.8rem', color: 'rgba(255, 255, 255, 0.8)' }}>
+                  <strong>Legend:</strong> 
+                  <span style={{ color: '#90EE90', marginLeft: '0.5rem' }}>● Available</span>
+                  <span style={{ color: '#FFB347', marginLeft: '0.5rem' }}>● Lab Slots</span>
+                  <span style={{ color: '#FF6B6B', marginLeft: '0.5rem' }}>● Occupied</span>
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Add Course Form */}
           {showAddCourse && !state.globalVars.editSub && !state.globalVars.editTeacher && (
-            <div id="div-for-add-course" style={{ display: 'block', background: 'rgba(0, 0, 0, 0.4)', backdropFilter: 'blur(15px)', borderRadius: '20px', padding: '2rem', margin: '1rem' }}>
+            <div id="div-for-add-course" style={{ display: 'block' }}>
               <div style={{ marginBottom: '1rem' }}>
                 <h4 style={{ color: 'white', fontWeight: '600', margin: '0', fontSize: '1.25rem' }}>
                   Add Course
@@ -1291,7 +1935,7 @@ export default function CoursePanel() {
                   </span>
                   <br style={{ display: courseMessage.text ? 'none' : 'inline' }} id="hide_br" />
                 </div>
-                <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '1rem', borderTop: '1px solid rgba(255, 255, 255, 0.1)', paddingTop: '1rem' }}>
+                <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '1rem', paddingTop: '1rem' }}>
                   <button
                     type="submit"
                     className="btn btn-primary btn-sm"
@@ -1306,7 +1950,7 @@ export default function CoursePanel() {
 
           {/* Edit Course Form */}
           {showEditCourse && state.globalVars.editSub && (
-            <div id="div-for-edit-course" style={{ display: 'block', background: 'rgba(0, 0, 0, 0.4)', backdropFilter: 'blur(15px)', borderRadius: '20px', padding: '2rem', margin: '1rem' }}>
+            <div id="div-for-edit-course" style={{ display: 'block' }}>
               <div style={{ marginBottom: '1rem' }}>
                 <h4 style={{ color: 'white', fontWeight: '600', margin: '0', fontSize: '1.25rem' }}>
                   Edit Course
@@ -1354,7 +1998,7 @@ export default function CoursePanel() {
                   </span>
                   <br style={{ display: courseMessage.text ? 'none' : 'inline' }} id="hide_br-edit" />
                 </div>
-                <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'space-between', marginTop: '1rem', borderTop: '1px solid rgba(255, 255, 255, 0.1)', paddingTop: '1rem' }}>
+                <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'space-between', marginTop: '1rem', paddingTop: '1rem' }}>
                   <button
                     type="button"
                     className="btn btn-danger btn-sm"
@@ -1377,7 +2021,7 @@ export default function CoursePanel() {
 
           {/* Add Teacher Form */}
           {showAddTeacher && !state.globalVars.editSub && !state.globalVars.editTeacher && (
-            <div id="div-for-add-teacher" style={{ background: '#1f1f1f', backdropFilter: 'blur(15px)', borderRadius: '20px', padding: '2rem', margin: '1rem' }}>
+            <div id="div-for-add-teacher">
               <form id="teacherSaveForm" onSubmit={handleAddTeacher}>
                 <div style={{ marginBottom: '1rem' }}>
                   <h4 style={{ color: 'white', fontWeight: '600', margin: '0', fontSize: '1.25rem' }}>
@@ -1483,15 +2127,12 @@ export default function CoursePanel() {
                   </span>
                   <br id="hide_br_teacher" style={{ display: teacherMessage.text ? 'none' : 'inline' }} />
                 </div>
-                <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'flex-end', marginTop: '1rem', borderTop: '1px solid rgba(255, 255, 255, 0.1)', paddingTop: '1rem' }}>
+                <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'flex-end', marginTop: '1rem', paddingTop: '1rem' }}>
                   <button
                     className="btn btn-success btn-sm"
                     type="button"
                     id="addMultipleTeacher"
-                    onClick={() => {
-                      // Add functionality for multiple teachers if needed
-                      console.log('Add Multiple Teachers clicked');
-                    }}
+                    onClick={handleAddMultiple}
                   >
                     <i className="fas fa-plus"></i>
                     <span>&nbsp;&nbsp;Add Multiple</span>
@@ -1510,7 +2151,7 @@ export default function CoursePanel() {
 
           {/* Edit Teacher Form */}
           {showEditTeacher && state.globalVars.editTeacher && !state.globalVars.editSub && (
-            <div id="div-for-edit-teacher" style={{ display: 'block', background: 'rgba(0, 0, 0, 0.4)', backdropFilter: 'blur(15px)', borderRadius: '20px', padding: '2rem', margin: '1rem' }}>
+            <div id="div-for-edit-teacher" style={{ display: 'block' }}>
               <form id="teacherSaveFormEdit" onSubmit={handleSaveTeacherEdit}>
                 <div style={{ marginBottom: '2rem' }}>
                   <h4 style={{ color: 'white', fontWeight: '600', margin: '0', fontSize: '1.5rem' }}>
@@ -1657,7 +2298,7 @@ export default function CoursePanel() {
                   </span>
                   <br id="hide_br_teacher-edit" style={{ display: teacherMessage.text ? 'none' : 'inline' }} />
                 </div>
-                <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'space-between', marginTop: '1rem', borderTop: '1px solid rgba(255, 255, 255, 0.1)', paddingTop: '1rem' }}>
+                <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'space-between', marginTop: '1rem', paddingTop: '1rem' }}>
                   <button
                     type="button"
                     className="btn btn-danger btn-sm"
@@ -1677,79 +2318,122 @@ export default function CoursePanel() {
               </form>
             </div>
           )}
-        </section>
-      </div>
 
-      <div className="card-footer">
-        <div className="row align-items-center justify-content-between">
-          <div className="col-sm-auto my-1">
-            {/* <div className="form-check form-switch attack-toggle" style={{ marginTop: '7px' }}>
-              <label className="form-check-label" htmlFor="attack-toggle">
-                Live FFCS Mode
-              </label>
-              <input
-                className="form-check-input"
-                type="checkbox"
-                id="attack-toggle"
-                checked={state.ui.attackMode}
-                onChange={(e) => dispatch({ type: 'SET_UI_STATE', payload: { attackMode: e.target.checked } })}
-              />
-            </div> */}
-            <div className="form-check form-switch" style={{ marginTop: '7px' }}>
-              <label className="form-check-label" htmlFor="auto-focus-toggle">
-                Auto Focus
-              </label>
-              <input
-                className="form-check-input"
-                type="checkbox"
-                id="auto-focus-toggle"
-                checked={state.ui.autoFocusEnabled}
-                onChange={(e) => dispatch({ type: 'SET_UI_STATE', payload: { autoFocusEnabled: e.target.checked } })}
-              />
+              </div> {/* End Scrollable Content Area */}
+            </div> {/* End card-body */}
+          </div> {/* End Add/Edit Course Card */}
+
+          {/* Bottom Buttons Card */}
+          <div className="card" style={{ marginTop: '1rem' }}>
+            <div className="card-body" style={{ padding: '1rem' }}>
+              <div style={{ display: 'flex', flexDirection: 'row', gap: '0.5rem', flexWrap: 'wrap' }}>
+                <button
+                  id="save-panel-button"
+                  type="button"
+                  className="btn btn-success"
+                  style={{ borderRadius: '12px', padding: '0.5rem 0.75rem', fontWeight: '500', fontSize: '0.875rem', flex: '1' }}
+                  onClick={() => {
+                    document.getElementById('download-modal')?.click();
+                  }}
+                >
+                  Save TT
+                </button>
+                <button
+                  id="load-panel-button"
+                  type="button"
+                  className="btn btn-success"
+                  style={{ borderRadius: '12px', padding: '0.5rem 0.75rem', fontWeight: '500', fontSize: '0.875rem', flex: '1' }}
+                  onClick={() => {
+                    document.getElementById('upload-modal')?.click();
+                  }}
+                >
+                  Upload TT
+                </button>
+                <button
+                  id="clear-course-button"
+                  type="button"
+                  className="btn btn-danger"
+                  style={{ borderRadius: '12px', padding: '0.5rem 0.75rem', fontWeight: '500', fontSize: '0.875rem', flex: '1' }}
+                  onClick={() => {
+                    // Different confirmation messages for normal vs attack mode (like vanilla JS)
+                    const confirmMessage = state.ui.attackMode 
+                      ? 'Are you sure you want to clear the course list and Quick Visualization?'
+                      : 'Are you sure you want to clear the course list?';
+                    
+                    if (confirm(confirmMessage)) {
+                      dispatch({ type: 'RESET_TABLE' });
+                    }
+                  }}
+                >
+                  Clear List
+                </button>
+              </div>
             </div>
-          </div>
-          
-          <div className="col-sm-auto my-1">
-            <button
-              id="save-panel-button"
-              type="button"
-              className="btn btn-success m-2"
-              onClick={() => {
-                document.getElementById('download-modal')?.click();
-              }}
-            >
-              Save TT
-            </button>
-            <button
-              id="load-panel-button"
-              type="button"
-              className="btn btn-success m-2"
-              onClick={() => {
-                document.getElementById('upload-modal')?.click();
-              }}
-            >
-              Upload TT
-            </button>
-            <button
-              id="clear-course-button"
-              type="button"
-              className="btn btn-danger m-2"
-              onClick={() => {
-                // Different confirmation messages for normal vs attack mode (like vanilla JS)
-                const confirmMessage = state.ui.attackMode 
-                  ? 'Are you sure you want to clear the course list and Quick Visualization?'
-                  : 'Are you sure you want to clear the course list?';
-                
-                if (confirm(confirmMessage)) {
-                  dispatch({ type: 'RESET_TABLE' });
-                }
-              }}
-            >
-              Clear List
-            </button>
           </div>
         </div>
       </div>
-    </div>
+
+      {/* Simple Modal for Multiple Teachers */}
+      {showMultipleTeachersModal && (
+        <div 
+          className="modal fade show" 
+          style={{ 
+            display: 'block', 
+            backgroundColor: 'rgba(0, 0, 0, 0.5)',
+            zIndex: 1055
+          }}
+          tabIndex={-1}
+        >
+          <div className="modal-dialog">
+            <div className="modal-content">
+              <div className="modal-header">
+                <h5 className="modal-title">Add Multiple Teachers</h5>
+                <button
+                  type="button"
+                  className="btn-close"
+                  onClick={() => setShowMultipleTeachersModal(false)}
+                ></button>
+              </div>
+              <div className="modal-body">
+                <label htmlFor="teachers-input"><strong>Paste VTOP Data Here:</strong></label>
+                <textarea
+                  className="form-control"
+                  id="teachers-input"
+                  placeholder="Copy the list from your VTOP course allocation and paste it here."
+                  value={multipleTeachersText}
+                  onChange={(e) => setMultipleTeachersText(e.target.value)}
+                ></textarea>
+
+                {multipleError && (
+                  <div className="alert alert-danger mt-2" role="alert">
+                    {multipleError}
+                  </div>
+                )}
+              </div>
+              <div className="modal-footer">
+                <button
+                  type="button"
+                  className="btn btn-secondary"
+                  onClick={() => setShowMultipleTeachersModal(false)}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-primary"
+                  onClick={() => {
+                    processMultipleTeachers();
+                    setShowMultipleTeachersModal(false);
+                  }}
+                >
+                  Add
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
   );
 }
+

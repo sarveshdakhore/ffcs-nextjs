@@ -26,6 +26,7 @@ export default function Timetable() {
   const [currentTable, setCurrentTable] = useState(state.currentTableId);
   const [showQuickButtons, setShowQuickButtons] = useState(false);
   const [showTableDropdown, setShowTableDropdown] = useState(false);
+  const [isLiveModeEnabled, setIsLiveModeEnabled] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   // Create a stable key for React re-rendering based on actual data changes
@@ -115,6 +116,11 @@ export default function Timetable() {
     setCurrentTable(state.currentTableId);
   }, [state.currentTableId]);
 
+  // Sync live mode state
+  useEffect(() => {
+    setIsLiveModeEnabled(state.ui.attackModeEnabled || false);
+  }, [state.ui.attackModeEnabled]);
+
   // Get the appropriate schema based on campus
   const getTimetableSchema = (): TimetableSchema => {
     return state.currentCampus === 'Chennai' ? chennaiSchema as TimetableSchema : velloreSchema as TimetableSchema;
@@ -191,6 +197,16 @@ export default function Timetable() {
     });
   };
 
+  const handleLiveModeToggle = () => {
+    const newLiveModeState = !isLiveModeEnabled;
+    setIsLiveModeEnabled(newLiveModeState);
+    
+    dispatch({ 
+      type: 'SET_ATTACK_MODE', 
+      payload: { enabled: newLiveModeState } 
+    });
+  };
+
   const handleSlotClick = (slot: string) => {
     // Toggle slot highlighting (like the original vanilla JS behavior)
     dispatch({ type: 'TOGGLE_SLOT_HIGHLIGHT', payload: slot });
@@ -207,6 +223,237 @@ export default function Timetable() {
     // Check for overlapping slots in the same time period
     const selectedSlots = Object.values(state.timetable).filter(s => s.isSelected && s.course);
     return selectedSlots.filter(s => s.slot !== slot && s.course?.code !== timetableSlot.course?.code).length > 0;
+  };
+
+  // ==================== CLASHING SYSTEM UTILITIES ====================
+  
+  // Parse slot string like "A1+B2+L3" into array, matching FFCSonTheGo logic
+  const slotsProcessingForCourseList = (slotString: string): string[] => {
+    const slots: string[] = [];
+    const set = new Set<string>();
+    
+    try {
+      slotString.split(/\s*\+\s*/).forEach((slot) => {
+        if (slot && slot.trim()) {
+          // In React, we don't have jQuery DOM check, so we'll validate against known slots
+          const trimmedSlot = slot.trim();
+          if (trimmedSlot !== '' && trimmedSlot !== 'SLOTS') {
+            set.add(trimmedSlot);
+          }
+        }
+      });
+    } catch (error) {
+      set.clear();
+    }
+    
+    return Array.from(set);
+  };
+
+  // Expand slots using clashMap (exact replica of FFCSonTheGo updateSlots function)
+  const updateSlotsWithClashMap = (inputSlots: string[]): string[] => {
+    const clashMap: { [key: string]: string[] } = {
+      A1: ['L1', 'L14'], B1: ['L7', 'L20'], C1: ['L13', 'L26'], D1: ['L3', 'L19', 'L4'],
+      E1: ['L9', 'L25', 'L10'], F1: ['L2', 'L15', 'L16'], G1: ['L8', 'L21', 'L22'],
+      TA1: ['L27', 'L28'], TB1: ['L4', 'L5'], TC1: ['L10', 'L11'], TD1: ['L29', 'L30'],
+      TE1: ['L22', 'L23'], TF1: ['L28', 'L29'], TG1: ['L5', 'L6'], TAA1: ['L11', 'L12'],
+      TCC1: ['L23', 'L24'], A2: ['L31', 'L44'], B2: ['L37', 'L50'], C2: ['L43', 'L56'],
+      D2: ['L33', 'L49', 'L34'], E2: ['L39', 'L55', 'L40'], F2: ['L32', 'L45', 'L46'],
+      G2: ['L38', 'L51', 'L52'], TA2: ['L57', 'L58'], TB2: ['L34', 'L35'], TC2: ['L40', 'L41'],
+      TD2: ['L46', 'L47'], TE2: ['L52', 'L53'], TF2: ['L58', 'L59'], TG2: ['L35', 'L36'],
+      TAA2: ['L41', 'L42'], TBB2: ['L47', 'L48'], TCC2: ['L53', 'L54'], TDD2: ['L59', 'L60'],
+      L1: ['A1'], L2: ['F1'], L3: ['D1'], L4: ['TB1', 'D1'], L5: ['TG1', 'TB1'], L6: ['TG1'],
+      L7: ['B1'], L8: ['G1'], L9: ['E1'], L10: ['TC1', 'E1'], L11: ['TAA1', 'TC1'], L12: ['TAA1'],
+      L13: ['C1'], L14: ['A1'], L15: ['F1'], L16: ['V1', 'F1'], L17: ['V2', 'V1'], L18: ['V2'],
+      L19: ['D1'], L20: ['B1'], L21: ['G1'], L22: ['TE1', 'G1'], L23: ['TCC1', 'TE1'], L24: ['TCC1'],
+      L25: ['E1'], L26: ['C1'], L27: ['TA1'], L28: ['TF1', 'TA1'], L29: ['TD1', 'TF1'], L30: ['TD1'],
+      L31: ['A2'], L32: ['F2'], L33: ['D2'], L34: ['TB2', 'D2'], L35: ['TG2', 'TB2'], L36: ['V3', 'TG2'],
+      L37: ['B2'], L38: ['G2'], L39: ['E2'], L40: ['TC2', 'E2'], L41: ['TAA2', 'TC2'], L42: ['V4', 'TAA2'],
+      L43: ['C2'], L44: ['A2'], L45: ['F2'], L46: ['TD2', 'F2'], L47: ['TBB2', 'TD2'], L48: ['V5', 'TBB2'],
+      L49: ['D2'], L50: ['B2'], L51: ['G2'], L52: ['TE2', 'G2'], L53: ['TCC2', 'TE2'], L54: ['V6', 'TCC2'],
+      L55: ['E2'], L56: ['C2'], L57: ['TA2'], L58: ['TF2', 'TA2'], L59: ['TDD2', 'TF2'], L60: ['V7', 'TDD2'],
+      V1: ['L16', 'L17'], V2: ['L17', 'L18'], V3: ['L36'], V4: ['L42'], V5: ['L48'], V6: ['L54'], V7: ['L60'],
+    };
+
+    const allSlots = [...inputSlots];
+    const thSlots: string[] = [];
+    const labSlots: string[] = [];
+    
+    allSlots.forEach((slot) => {
+      if (clashMap[slot]) {
+        if (slot.includes('L')) {
+          labSlots.push(slot);
+        } else {
+          thSlots.push(slot);
+        }
+        
+        for (let i = 0; i < clashMap[slot].length; i++) {
+          if (clashMap[slot][i].includes('L')) {
+            labSlots.push(clashMap[slot][i]);
+          } else {
+            thSlots.push(clashMap[slot][i]);
+          }
+        }
+      }
+    });
+    
+    return thSlots.concat(labSlots);
+  };
+
+  // Get slots used by a specific course (equivalent to getSlotsOfCourse)
+  const getSlotsOfCourse = (courseName: string, dataSource: any[]): string[] => {
+    const slots: string[] = [];
+    
+    dataSource.forEach((courseData) => {
+      const courseNameFromData = courseData.courseCode ? 
+        `${courseData.courseCode}-${courseData.courseTitle}` : 
+        courseData.courseTitle;
+        
+      if (courseNameFromData.toLowerCase() === courseName.toLowerCase()) {
+        courseData.slots.forEach((slot: string) => {
+          if (slot !== '' && slot !== 'SLOTS' && !slots.includes(slot)) {
+            slots.push(slot);
+          }
+        });
+      }
+    });
+    
+    return updateSlotsWithClashMap(slots);
+  };
+
+  // Get all occupied slots from data source (equivalent to getSlots)
+  const getAllOccupiedSlots = (dataSource: any[]): string[] => {
+    const slots: string[] = [];
+    
+    dataSource.forEach((courseData) => {
+      courseData.slots.forEach((slot: string) => {
+        if (slot !== '' && slot !== 'SLOTS') {
+          slots.push(slot);
+        }
+      });
+    });
+    
+    return updateSlotsWithClashMap(slots);
+  };
+
+  // Subtract arr1 from arr2 (equivalent to subtractArray) - MODIFIES arr2
+  const subtractSlotsArray = (slotsToRemove: string[], allSlots: string[]): string[] => {
+    const result = [...allSlots]; // Work on a copy to avoid mutation
+    
+    slotsToRemove.forEach((slot) => {
+      if (result.includes(slot)) {
+        const index = result.indexOf(slot);
+        if (index !== -1) {
+          result.splice(index, 1);
+        }
+      }
+    });
+    
+    return result;
+  };
+
+  // Check if two slot arrays have common elements (equivalent to isCommonSlot)
+  const isCommonSlot = (slots1: string[], slots2: string[]): boolean => {
+    return slots1.some(slot => slots2.includes(slot));
+  };
+
+  // ==================== CLASH DETECTION ENGINE ====================
+  
+  // Core clash detection function - replicates rearrangeTeacherLiInSubjectArea logic
+  const getClashInfoForCourse = (courseName: string): {
+    clashingTeachers: string[];
+    nonClashingTeachers: string[];
+    consideredSlots: string[];
+  } => {
+    // Determine data source based on mode
+    const dataSource = isLiveModeEnabled ? state.activeTable.attackData : state.activeTable.data;
+    
+    // Step 1: Get slots used by THIS specific course (getSlotsOfCourse equivalent)
+    const slotsOfCourse = getSlotsOfCourse(courseName, dataSource);
+    
+    // Step 2: Get ALL occupied slots across all courses (getSlots equivalent)
+    const allOccupiedSlots = getAllOccupiedSlots(dataSource);
+    
+    // Step 3: THE CRITICAL EXCLUSION LOGIC - subtract this course's slots from global slots
+    // This ensures a course doesn't clash with itself, only with OTHER courses
+    const consideredSlots = subtractSlotsArray(slotsOfCourse, allOccupiedSlots);
+    
+    // Step 4: Get teacher information for this course from subject data
+    const subjectData = state.activeTable.subject[courseName];
+    if (!subjectData) {
+      return { clashingTeachers: [], nonClashingTeachers: [], consideredSlots };
+    }
+    
+    const clashingTeachers: string[] = [];
+    const nonClashingTeachers: string[] = [];
+    
+    // Step 5: Check each teacher against considered slots
+    Object.keys(subjectData.teacher).forEach((teacherName) => {
+      const teacherSlotString = subjectData.teacher[teacherName].slots;
+      
+      // Parse teacher's slots using our utility
+      const teacherSlots = slotsProcessingForCourseList(teacherSlotString);
+      
+      // Check if teacher's slots clash with considered slots (other courses' slots)
+      if (isCommonSlot(teacherSlots, consideredSlots)) {
+        clashingTeachers.push(teacherName);
+      } else {
+        nonClashingTeachers.push(teacherName);
+      }
+    });
+    
+    return { clashingTeachers, nonClashingTeachers, consideredSlots };
+  };
+
+  // Helper function to check if a specific teacher is clashing
+  const isTeacherClashing = (courseName: string, teacherName: string): boolean => {
+    const clashInfo = getClashInfoForCourse(courseName);
+    return clashInfo.clashingTeachers.includes(teacherName);
+  };
+
+  // Helper function to get all clashing teachers across all courses (for red highlighting)
+  const getAllClashingSelections = (): { courseName: string; teacherName: string }[] => {
+    const clashingSelections: { courseName: string; teacherName: string }[] = [];
+    const dataSource = isLiveModeEnabled ? state.activeTable.attackData : state.activeTable.data;
+    
+    // Check each selected course/teacher combination
+    dataSource.forEach((courseData) => {
+      const courseName = courseData.courseCode ? 
+        `${courseData.courseCode}-${courseData.courseTitle}` : 
+        courseData.courseTitle;
+      const teacherName = courseData.faculty;
+      
+      if (isTeacherClashing(courseName, teacherName)) {
+        clashingSelections.push({ courseName, teacherName });
+      }
+    });
+    
+    return clashingSelections;
+  };
+
+  // Calculate occupied slots from attack data (live mode) - Using new utilities
+  const getOccupiedSlots = () => {
+    const attackData = state.activeTable.attackData || [];
+    const expandedSlots = getAllOccupiedSlots(attackData);
+    
+    const thSlots = new Set<string>();
+    const labSlots = new Set<string>();
+
+    // Separate theory and lab slots from expanded slots
+    expandedSlots.forEach((slot) => {
+      if (slot.includes('L')) {
+        labSlots.add(slot);
+      } else {
+        thSlots.add(slot);
+      }
+    });
+
+    // TODO: Add quick visualization slots if enabled
+    // This would require processing attackQuick array similar to the original
+
+    return {
+      theory: Array.from(thSlots).sort(),
+      lab: Array.from(labSlots).sort()
+    };
   };
 
 
@@ -278,14 +525,14 @@ export default function Timetable() {
           const theorySlot = parts[0]?.trim();
           const labSlot = parts[1]?.trim() || null;
           
-          // Check for courses in this slot (attack mode or normal mode)
-          const dataToCheck = state.ui.attackMode ? state.activeTable.attackData : state.activeTable.data;
+          // Check for courses in this slot (live mode or normal mode)
+          const dataToCheck = isLiveModeEnabled ? state.activeTable.attackData : state.activeTable.data;
           const coursesInSlot = dataToCheck.filter(course => 
             course.slots.includes(theorySlot)
           );
           
           // Check if this specific cell is highlighted in quick array
-          const quickArray = state.ui.attackMode ? state.activeTable.attackQuick : state.activeTable.quick;
+          const quickArray = isLiveModeEnabled ? state.activeTable.attackQuick : state.activeTable.quick;
           const dayRowMap: { [key: string]: number } = {
             mon: 2, tue: 3, wed: 4, thu: 5, fri: 6, sat: 7, sun: 8
           };
@@ -306,12 +553,25 @@ export default function Timetable() {
             return false;
           });
           
-          const isHighlighted = isQuickHighlighted || coursesInSlot.length > 0;
+          // Check for clashing selections (red highlighting in normal mode)
+          const allClashingSelections = isLiveModeEnabled ? [] : getAllClashingSelections();
+          const hasClashingSelection = coursesInSlot.some(course => {
+            const courseName = course.courseCode ? 
+              `${course.courseCode}-${course.courseTitle}` : 
+              course.courseTitle;
+            return allClashingSelections.some(clash => 
+              clash.courseName === courseName && clash.teacherName === course.faculty
+            );
+          });
+
+          // Only apply quick highlighting when quickVisualizationEnabled is true (like vanilla JS)
+          const isHighlighted = (state.ui.quickVisualizationEnabled && isQuickHighlighted) || coursesInSlot.length > 0;
           const isClash = coursesInSlot.length > 1; // Multiple courses in same slot
           
           const classNames = ['period', theorySlot].filter(Boolean);
           if (isHighlighted) classNames.push('highlight');
           if (isClash) classNames.push('clash');
+          if (hasClashingSelection) classNames.push('clash-selection'); // Red highlighting for clashing selections
           
           dayRows[day].push(
             <td 
@@ -331,15 +591,25 @@ export default function Timetable() {
                     `${course.courseCode}-${course.courseTitle}` : 
                     course.courseTitle;
                   const teacherData = state.activeTable.subject[subjectName]?.teacher[course.faculty];
-                  // const backgroundColor = teacherData?.color || 'rgb(255, 228, 135)';
+                  
+                  // Check if this specific course has a clashing selection
+                  const isThisCourseClashing = !isLiveModeEnabled && allClashingSelections.some(clash => 
+                    clash.courseName === subjectName && clash.teacherName === course.faculty
+                  );
                   
                   return (
                     <div 
                       key={`${course.courseId}-${courseIndex}`}
                       data-course={`course${course.courseId}`}
+                      className={isThisCourseClashing ? 'clashing-course' : ''}
                       style={{ 
-                        // backgroundColor,
-                        marginBottom: courseIndex < coursesInSlot.length - 1 ? '2px' : '0'
+                        marginBottom: courseIndex < coursesInSlot.length - 1 ? '2px' : '0',
+                        // Red styling for clashing courses in normal mode
+                        backgroundColor: isThisCourseClashing ? '#ff6b6b' : undefined,
+                        color: isThisCourseClashing ? 'white' : undefined,
+                        fontWeight: isThisCourseClashing ? 'bold' : undefined,
+                        borderRadius: isThisCourseClashing ? '3px' : undefined,
+                        padding: isThisCourseClashing ? '2px 4px' : undefined,
                       }}
                     >
                       {course.courseCode || course.courseTitle}
@@ -458,7 +728,7 @@ export default function Timetable() {
 
     const renderButton = (slot: string) => {
       // Check if this slot is highlighted in quick array (QV tile highlights have third parameter true)
-      const quickArray = state.ui.attackMode ? state.activeTable.attackQuick : state.activeTable.quick;
+      const quickArray = isLiveModeEnabled ? state.activeTable.attackQuick : state.activeTable.quick;
       
       // Define where each theory slot appears in the timetable based on dayRowsData
       // Column mapping: dayRowsData index 0-5 -> table col 1-6, index 6-12 -> table col 8-14 (lunch at col 7)
@@ -478,28 +748,29 @@ export default function Timetable() {
       
       const cellsWithSlot = slotPositions[slot] || [];
       
-      // Check if any of this slot's positions are QV-highlighted
-      const isQVHighlighted = cellsWithSlot.some(([r, c]) => 
+      // Check if ALL of this slot's positions are QV-highlighted (not just some)
+      const isQVHighlighted = cellsWithSlot.length > 0 && cellsWithSlot.every(([r, c]) => 
         quickArray.some((entry: any[]) => {
           return entry.length === 3 && entry[0] === r && entry[1] === c && entry[2] === true;
         })
       );
       
-      const dataToCheck = state.ui.attackMode ? state.activeTable.attackData : state.activeTable.data;
+      const dataToCheck = isLiveModeEnabled ? state.activeTable.attackData : state.activeTable.data;
       const hasCoursesInSlot = dataToCheck.some(course => 
         course.slots.includes(slot)
       );
       const shouldHighlight = isQVHighlighted || hasCoursesInSlot;
       
       return (
-        <button 
-          key={slot}
-          type="button"
-          className={`${slot}-tile btn quick-button${shouldHighlight ? ' highlight' : ''}`}
-          onClick={() => handleQuickButtonClick(slot)}
-        >
-          {slot}
-        </button>
+        <td key={slot}>
+          <button 
+            type="button"
+            className={`${slot}-tile btn quick-button${shouldHighlight ? ' highlight' : ''}`}
+            onClick={() => handleQuickButtonClick(slot)}
+          >
+            {slot}
+          </button>
+        </td>
       );
     };
 
@@ -575,7 +846,7 @@ export default function Timetable() {
 
     const renderButton = (slot: string) => {
       // Check if this slot is highlighted in quick array (QV tile highlights have third parameter true)
-      const quickArray = state.ui.attackMode ? state.activeTable.attackQuick : state.activeTable.quick;
+      const quickArray = isLiveModeEnabled ? state.activeTable.attackQuick : state.activeTable.quick;
       
       // Define where each theory slot appears in the timetable based on dayRowsData
       // Row indices: theory=0, lab=1, mon=2, tue=3, wed=4, thu=5, fri=6, sat=7, sun=8
@@ -596,28 +867,29 @@ export default function Timetable() {
       
       const cellsWithSlot = slotPositions[slot] || [];
       
-      // Check if any of this slot's positions are QV-highlighted
-      const isQVHighlighted = cellsWithSlot.some(([r, c]) => 
+      // Check if ALL of this slot's positions are QV-highlighted (not just some)
+      const isQVHighlighted = cellsWithSlot.length > 0 && cellsWithSlot.every(([r, c]) => 
         quickArray.some((entry: any[]) => {
           return entry.length === 3 && entry[0] === r && entry[1] === c && entry[2] === true;
         })
       );
       
-      const dataToCheck = state.ui.attackMode ? state.activeTable.attackData : state.activeTable.data;
+      const dataToCheck = isLiveModeEnabled ? state.activeTable.attackData : state.activeTable.data;
       const hasCoursesInSlot = dataToCheck.some(course => 
         course.slots.includes(slot)
       );
       const shouldHighlight = isQVHighlighted || hasCoursesInSlot;
       
       return (
-        <button 
-          key={slot}
-          type="button"
-          className={`${slot}-tile btn quick-button${shouldHighlight ? ' highlight' : ''}`}
-          onClick={() => handleQuickButtonClick(slot)}
-        >
-          {slot}
-        </button>
+        <td key={slot}>
+          <button 
+            type="button"
+            className={`${slot}-tile btn quick-button${shouldHighlight ? ' highlight' : ''}`}
+            onClick={() => handleQuickButtonClick(slot)}
+          >
+            {slot}
+          </button>
+        </td>
       );
     };
 
@@ -769,6 +1041,18 @@ export default function Timetable() {
                 {showQuickButtons ? 'Disable' : 'Enable'} Quick Visualization
               </span>
             </button>
+
+            <button
+              id="attack-toggle"
+              className={`btn ms-1 me-1 ${isLiveModeEnabled ? 'btn-danger' : 'btn-outline-danger'} m-2`}
+              type="button"
+              onClick={handleLiveModeToggle}
+            >
+              <i className={`fas ${isLiveModeEnabled ? 'fa-broadcast-tower' : 'fa-tower-broadcast'} text-white`}></i>
+              <span className='text-white'>&nbsp;&nbsp;
+                {isLiveModeEnabled ? 'Disable' : 'Enable'} Live FFCS Mode
+              </span>
+            </button>
             
             <button
               className="btn btn-danger m-2"
@@ -800,6 +1084,54 @@ export default function Timetable() {
 
       {/* Quick selection tiles - Below timetable */}
       {renderQuickButtonsBelow()}
+
+      {/* Occupied Slots Display - Only show in Live Mode */}
+      {isLiveModeEnabled && (
+        <div className="container-sm mt-4" id="div-for-attack-slot" style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+          <div className="alert alert-info">
+            <h5 className="alert-heading">
+              <i className="fas fa-broadcast-tower"></i> Live FFCS Mode - Occupied Slots
+            </h5>
+            <div className="row">
+              <div className="col-md-6">
+                <strong>Theory Slots:</strong>
+                <h6 style={{ 
+                  backgroundColor: '#f8f9fa', 
+                  padding: '8px', 
+                  borderRadius: '4px', 
+                  marginTop: '5px',
+                  minHeight: '40px',
+                  border: '1px solid #dee2e6'
+                }}>
+                  {getOccupiedSlots().theory.length > 0 
+                    ? getOccupiedSlots().theory.join(' ,  ') 
+                    : 'No theory slots occupied'
+                  }
+                </h6>
+              </div>
+              <div className="col-md-6">
+                <strong>Lab Slots:</strong>
+                <h6 style={{ 
+                  backgroundColor: '#f8f9fa', 
+                  padding: '8px', 
+                  borderRadius: '4px', 
+                  marginTop: '5px',
+                  minHeight: '40px',
+                  border: '1px solid #dee2e6'
+                }}>
+                  {getOccupiedSlots().lab.length > 0 
+                    ? getOccupiedSlots().lab.join(' ,  ') 
+                    : 'No lab slots occupied'
+                  }
+                </h6>
+              </div>
+            </div>
+            <small className="text-muted">
+              <i className="fas fa-info-circle"></i> This shows slots that are currently occupied based on your live mode course selections.
+            </small>
+          </div>
+        </div>
+      )}
 
       {/* Custom Modals */}
       

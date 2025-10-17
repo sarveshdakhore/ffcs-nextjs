@@ -23,6 +23,12 @@ export default function CollaborationRoom() {
   const [showJoinModal, setShowJoinModal] = useState(false);
   const [roomIdToJoin, setRoomIdToJoin] = useState('');
   const [roomVisibility, setRoomVisibility] = useState<'public' | 'private'>('public');
+  const [showRoomSettings, setShowRoomSettings] = useState(false);
+  const [showPublicRooms, setShowPublicRooms] = useState(false);
+  const [publicRooms, setPublicRooms] = useState<any[]>([]);
+  const [roomDisplayName, setRoomDisplayName] = useState('');
+  const [primaryTimetableUser, setPrimaryTimetableUser] = useState('');
+  const [liveFfcsMode, setLiveFfcsMode] = useState(false);
 
   // Save room state to localStorage
   const saveRoomState = (roomData: any) => {
@@ -59,7 +65,7 @@ export default function CollaborationRoom() {
       return;
     }
 
-    const socket = io('https://gdscffsc.onrender.com', {
+    const socket = io(process.env.NEXT_PUBLIC_SOCKET_URL || 'https://gdscffsc.onrender.com', {
       auth: { 
         token: authState.user.token,
         userId: authState.user.username,
@@ -615,6 +621,14 @@ export default function CollaborationRoom() {
       }
     });
 
+    socket.on('liveMode:changed', ({ userId, liveFfcsMode: remoteLiveMode }: { userId: any; liveFfcsMode: boolean }) => {
+      console.log('🔴 Live FFCS Mode changed by:', userId, '→', remoteLiveMode);
+      setMessage({ 
+        type: 'info', 
+        text: `${userId} ${remoteLiveMode ? 'enabled' : 'disabled'} Live FFCS Mode`
+      });
+    });
+
     return () => {
       // Clear global socket reference before disconnecting
       if (typeof window !== 'undefined') {
@@ -717,14 +731,19 @@ export default function CollaborationRoom() {
       return;
     }
 
+    // Switch data based on Live FFCS Mode
+    const activeData = liveFfcsMode ? (ffcsState.activeTable.attackData || []) : (ffcsState.activeTable.data || []);
+    const activeQuick = liveFfcsMode ? (ffcsState.activeTable.attackQuick || []) : (ffcsState.activeTable.quick || []);
+
     const timetableData = {
       id: authState.user?.username || 'user',
       name: authState.user?.name || 'User',
-      data: ffcsState.activeTable.data || [],
+      data: activeData,
       subject: ffcsState.activeTable.subject || {},
-      quick: ffcsState.activeTable.quick || [],
+      quick: activeQuick,
       attackData: ffcsState.activeTable.attackData || [],
-      attackQuick: ffcsState.activeTable.attackQuick || []
+      attackQuick: ffcsState.activeTable.attackQuick || [],
+      liveFfcsMode: liveFfcsMode // Include mode state for other clients
     };
 
     console.log('🔄 Auto-syncing timetable changes to room:', roomId);
@@ -756,8 +775,29 @@ export default function CollaborationRoom() {
     ffcsState.forceUpdateCounter, // This catches manual force updates
     ffcsState.totalCredits,
     currentRoom?.roomId,
+    liveFfcsMode, // Trigger sync when mode changes
     connected
   ]);
+
+  // Handle Live FFCS Mode changes - notify other room members
+  useEffect(() => {
+    if (currentRoom?.roomId && socketRef.current?.connected) {
+      console.log('🔴 Live FFCS Mode changed:', liveFfcsMode);
+      socketRef.current.emit('liveMode:toggle', {
+        roomId: currentRoom.roomId,
+        userId: authState.user?.username,
+        liveFfcsMode: liveFfcsMode
+      });
+      
+      // Also trigger a sync to update the room with the new data mode
+      if (ffcsState.activeTable) {
+        // Small delay to ensure the sync picks up the new mode state
+        setTimeout(() => {
+          console.log('📡 Triggering sync after mode change');
+        }, 100);
+      }
+    }
+  }, [liveFfcsMode, currentRoom?.roomId, authState.user?.username]);
 
   // Restore room state on mount
   useEffect(() => {
@@ -811,6 +851,113 @@ export default function CollaborationRoom() {
     }
   };
 
+  // Fetch public rooms for browsing
+  const fetchPublicRooms = async () => {
+    try {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL || 'https://gdscffsc.onrender.com'}/api/rooms/public`, {
+        headers: {
+          'Authorization': `Bearer ${authState.user?.token}`,
+        }
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setPublicRooms(data.data?.rooms || []);
+      } else {
+        setMessage({ type: 'error', text: 'Failed to fetch public rooms' });
+      }
+    } catch (error) {
+      setMessage({ type: 'error', text: 'Error fetching public rooms' });
+    }
+  };
+
+  // Remove member from room (admin only)
+  const removeMember = async (userId: string) => {
+    if (!currentRoom || currentRoom.adminId !== authState.user?.username) {
+      setMessage({ type: 'error', text: 'Only admin can remove members' });
+      return;
+    }
+
+    try {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL || 'https://gdscffsc.onrender.com'}/api/room/${currentRoom.roomId}/member/${userId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${authState.user?.token}`,
+        }
+      });
+
+      if (response.ok) {
+        setMessage({ type: 'success', text: `${userId} removed from room` });
+        // Member will be updated via socket events
+      } else {
+        const data = await response.json();
+        setMessage({ type: 'error', text: data.msg || 'Failed to remove member' });
+      }
+    } catch (error) {
+      setMessage({ type: 'error', text: 'Error removing member' });
+    }
+  };
+
+  // Set primary timetable (admin only)
+  const setPrimaryTimetable = async (userId: string) => {
+    if (!currentRoom || currentRoom.adminId !== authState.user?.username) {
+      setMessage({ type: 'error', text: 'Only admin can set primary timetable' });
+      return;
+    }
+
+    try {
+      const response = await fetch(`https://gdscffcs.onrender.com/api/room/${currentRoom.roomId}/timetable/primary`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${authState.user?.token}`,
+        },
+        body: JSON.stringify({ userId })
+      });
+
+      if (response.ok) {
+        setPrimaryTimetableUser(userId);
+        setMessage({ type: 'success', text: `${userId}'s timetable is now primary` });
+      } else {
+        const data = await response.json();
+        setMessage({ type: 'error', text: data.msg || 'Failed to set primary timetable' });
+      }
+    } catch (error) {
+      setMessage({ type: 'error', text: 'Error setting primary timetable' });
+    }
+  };
+
+  // Update room display name (admin only)
+  const updateRoomName = async () => {
+    if (!currentRoom || currentRoom.adminId !== authState.user?.username || !roomDisplayName.trim()) {
+      return;
+    }
+
+    try {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL || 'https://gdscffsc.onrender.com'}/api/room/${currentRoom.roomId}/name`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${authState.user?.token}`,
+        },
+        body: JSON.stringify({ displayName: roomDisplayName.trim() })
+      });
+
+      if (response.ok) {
+        setMessage({ type: 'success', text: 'Room name updated' });
+        setShowRoomSettings(false);
+        setRoomDisplayName('');
+        // Update local room data
+        setCurrentRoom((prev: any) => prev ? { ...prev, displayName: roomDisplayName.trim() } : null);
+      } else {
+        const data = await response.json();
+        setMessage({ type: 'error', text: data.msg || 'Failed to update room name' });
+      }
+    } catch (error) {
+      setMessage({ type: 'error', text: 'Error updating room name' });
+    }
+  };
+
   // Auto-hide messages
   useEffect(() => {
     if (message) {
@@ -853,31 +1000,107 @@ export default function CollaborationRoom() {
           <div className="collab-card">
             <div className="room-header">
               <div className="room-info">
-                <h2>Room {currentRoom.roomId}</h2>
-                <p>{roomMembers.length} member(s)</p>
+                <h2>{currentRoom.displayName || `Room ${currentRoom.roomId}`}</h2>
+                <p>{roomMembers.length} member(s) • {currentRoom.visibility || 'Private'}</p>
+                <span className="room-id">ID: {currentRoom.roomId}</span>
               </div>
-              <button
-                onClick={leaveRoom}
-                className="btn btn-danger"
-              >
-                Leave Room
-              </button>
+              <div className="room-actions">
+                {currentRoom.adminId === authState.user?.username && (
+                  <button
+                    onClick={() => setShowRoomSettings(true)}
+                    className="btn btn-secondary btn-small"
+                    title="Room Settings"
+                  >
+                    ⚙️
+                  </button>
+                )}
+                <button
+                  onClick={leaveRoom}
+                  className="btn btn-danger"
+                >
+                  Leave Room
+                </button>
+              </div>
             </div>
 
-            {/* Members */}
+            {/* Live FFCS Mode Toggle */}
+            <div className="live-mode-section" style={{ marginBottom: '1.5rem', padding: '1rem', backgroundColor: '#374151', borderRadius: '0.5rem', border: '2px solid #4b5563' }}>
+              <div className="form-check form-switch" style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                <input
+                  className="form-check-input"
+                  type="checkbox"
+                  role="switch"
+                  id="live-ffcs-toggle"
+                  checked={liveFfcsMode}
+                  onChange={(e) => setLiveFfcsMode(e.target.checked)}
+                  style={{
+                    backgroundColor: liveFfcsMode ? '#ef4444' : '#6b7280',
+                    borderColor: liveFfcsMode ? '#ef4444' : '#6b7280'
+                  }}
+                />
+                <label
+                  className="form-check-label"
+                  htmlFor="live-ffcs-toggle"
+                  style={{ color: 'white', fontWeight: 500, cursor: 'pointer' }}
+                >
+                  🔴 Live FFCS Mode
+                </label>
+                <span style={{ color: '#d1d5db', fontSize: '0.875rem', fontStyle: 'italic' }}>
+                  {liveFfcsMode ? 'Real-time course selection active' : 'Click to enable real-time mode'}
+                </span>
+              </div>
+              {liveFfcsMode && (
+                <div style={{ marginTop: '0.5rem', padding: '0.5rem', backgroundColor: '#7f1d1d', borderRadius: '0.25rem', fontSize: '0.75rem', color: '#fecaca' }}>
+                  ⚠️ Live mode active! Course selections will be synchronized in real-time with room members.
+                </div>
+              )}
+            </div>
+
+            {/* Enhanced Members List */}
             <div className="member-list">
-              <h3>Members</h3>
+              <div className="member-list-header">
+                <h3>Members</h3>
+                {currentRoom.adminId === authState.user?.username && (
+                  <span className="admin-note">You can manage members as admin</span>
+                )}
+              </div>
               {roomMembers.map((member: any, index) => (
-                <div key={(member as any).id || index} className="member-item">
+                <div key={(member as any).id || index} className="member-item enhanced">
                   <div className="member-info">
                     <span className="member-name">{(member as any).name || (member as any).id}</span>
-                    {(member as any).id === currentRoom.adminId && (
-                      <span className="admin-badge">Admin</span>
+                    <div className="member-badges">
+                      {(member as any).id === currentRoom.adminId && (
+                        <span className="admin-badge">👑 Admin</span>
+                      )}
+                      {(member as any).id === primaryTimetableUser && (
+                        <span className="primary-badge">⭐ Primary</span>
+                      )}
+                    </div>
+                  </div>
+                  <div className="member-actions">
+                    <span className="course-count">
+                      {(member as any).data?.length || 0} courses
+                    </span>
+                    {currentRoom.adminId === authState.user?.username && (member as any).id !== currentRoom.adminId && (
+                      <div className="admin-controls">
+                        <button
+                          onClick={() => setPrimaryTimetable((member as any).id)}
+                          className="btn btn-small btn-success"
+                          title="Set as primary timetable"
+                          disabled={primaryTimetableUser === (member as any).id}
+                        >
+                          ⭐
+                        </button>
+                        <button
+                          onClick={() => removeMember((member as any).id)}
+                          className="btn btn-small btn-danger"
+                          title="Remove member"
+                        >
+                          🗑️
+                        </button>
+                      </div>
                     )}
                   </div>
-                  <span className="course-count">
-                    {(member as any).data?.length || 0} courses
-                  </span>
                 </div>
               ))}
             </div>
@@ -904,18 +1127,28 @@ export default function CollaborationRoom() {
           <div className="collab-card large-card">
             <div className="empty-state">
               <h2>Join or Create a Room</h2>
+              <p>Collaborate with friends on your timetables in real-time</p>
               <div className="btn-group">
                 <button
                   onClick={() => setShowCreateModal(true)}
                   className="btn btn-primary btn-large"
                 >
-                  Create Room
+                  🏠 Create Room
+                </button>
+                <button
+                  onClick={() => {
+                    setShowPublicRooms(true);
+                    fetchPublicRooms();
+                  }}
+                  className="btn btn-success btn-large"
+                >
+                  🌐 Browse Public
                 </button>
                 <button
                   onClick={() => setShowJoinModal(true)}
-                  className="btn btn-success btn-large"
+                  className="btn btn-secondary btn-large"
                 >
-                  Join Room
+                  🔗 Join by ID
                 </button>
               </div>
             </div>
@@ -929,25 +1162,43 @@ export default function CollaborationRoom() {
               <h3>Create Room</h3>
               <div className="modal-form">
                 <div className="form-group">
+                  <label className="form-label">Room Name</label>
+                  <input
+                    type="text"
+                    value={roomDisplayName}
+                    onChange={(e) => setRoomDisplayName(e.target.value)}
+                    placeholder="e.g., CS Semester 5 Planning"
+                    className="form-input"
+                  />
+                </div>
+                <div className="form-group">
                   <label className="form-label">Visibility</label>
                   <select
                     value={roomVisibility}
                     onChange={(e) => setRoomVisibility(e.target.value as 'public' | 'private')}
                     className="form-select"
                   >
-                    <option value="public">Public</option>
-                    <option value="private">Private</option>
+                    <option value="public">🌐 Public - Anyone can join</option>
+                    <option value="private">🔒 Private - Admin approval required</option>
                   </select>
                 </div>
                 <div className="btn-group-fill">
                   <button
-                    onClick={createRoom}
+                    onClick={() => {
+                      createRoom();
+                      if (roomDisplayName.trim()) {
+                        // Will update name via API after room creation
+                      }
+                    }}
                     className="btn btn-primary"
                   >
                     Create
                   </button>
                   <button
-                    onClick={() => setShowCreateModal(false)}
+                    onClick={() => {
+                      setShowCreateModal(false);
+                      setRoomDisplayName('');
+                    }}
                     className="btn btn-secondary"
                   >
                     Cancel
@@ -983,6 +1234,111 @@ export default function CollaborationRoom() {
                     className="btn btn-secondary"
                   >
                     Cancel
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Room Settings Modal (Admin Only) */}
+        {showRoomSettings && currentRoom && (
+          <div className="modal-overlay">
+            <div className="modal">
+              <h3>⚙️ Room Settings</h3>
+              <div className="modal-form">
+                <div className="form-group">
+                  <label className="form-label">Room Name</label>
+                  <input
+                    type="text"
+                    value={roomDisplayName}
+                    onChange={(e) => setRoomDisplayName(e.target.value)}
+                    placeholder={currentRoom.displayName || `Room ${currentRoom.roomId}`}
+                    className="form-input"
+                  />
+                </div>
+                <div className="form-group">
+                  <label className="form-label">Room Info</label>
+                  <div className="room-info-display">
+                    <p><strong>ID:</strong> {currentRoom.roomId}</p>
+                    <p><strong>Type:</strong> {currentRoom.visibility || 'Private'}</p>
+                    <p><strong>Admin:</strong> {currentRoom.adminId} (You)</p>
+                    <p><strong>Members:</strong> {roomMembers.length}</p>
+                  </div>
+                </div>
+                <div className="btn-group-fill">
+                  <button
+                    onClick={updateRoomName}
+                    className="btn btn-primary"
+                    disabled={!roomDisplayName.trim()}
+                  >
+                    Update Name
+                  </button>
+                  <button
+                    onClick={() => {
+                      setShowRoomSettings(false);
+                      setRoomDisplayName('');
+                    }}
+                    className="btn btn-secondary"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Browse Public Rooms Modal */}
+        {showPublicRooms && (
+          <div className="modal-overlay">
+            <div className="modal modal-large">
+              <h3>🌐 Browse Public Rooms</h3>
+              <div className="modal-form">
+                <div className="public-rooms-list">
+                  {publicRooms.length === 0 ? (
+                    <div className="empty-rooms">
+                      <p>No public rooms available at the moment.</p>
+                      <p>Create a public room to get started!</p>
+                    </div>
+                  ) : (
+                    publicRooms.map((room: any) => (
+                      <div key={room.roomId} className="public-room-item">
+                        <div className="room-details">
+                          <h4>{room.displayName || `Room ${room.roomId}`}</h4>
+                          <div className="room-meta">
+                            <span>👥 {room.memberCount} members</span>
+                            <span>👑 {room.adminId}</span>
+                            <span>🕒 {new Date(room.createdAt || room.updatedAt).toLocaleDateString()}</span>
+                          </div>
+                          <p className="room-id">ID: {room.roomId}</p>
+                        </div>
+                        <button
+                          onClick={() => {
+                            setRoomIdToJoin(room.roomId);
+                            joinRoom();
+                            setShowPublicRooms(false);
+                          }}
+                          className="btn btn-success btn-small"
+                        >
+                          Join
+                        </button>
+                      </div>
+                    ))
+                  )}
+                </div>
+                <div className="btn-group-fill">
+                  <button
+                    onClick={fetchPublicRooms}
+                    className="btn btn-secondary"
+                  >
+                    🔄 Refresh
+                  </button>
+                  <button
+                    onClick={() => setShowPublicRooms(false)}
+                    className="btn btn-secondary"
+                  >
+                    Close
                   </button>
                 </div>
               </div>

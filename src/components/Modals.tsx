@@ -127,6 +127,15 @@ export default function Modals() {
           table.id === state.activeTable.id ? activeTableUpdate : table
         );
         
+        // First disable attack mode if it's on (like vanilla JS switchTable)
+        if (state.ui.attackModeEnabled) {
+          dispatch({ type: 'SET_ATTACK_MODE', payload: { enabled: false } });
+        }
+        
+        // Clear current state (like vanilla JS resetPage)
+        dispatch({ type: 'CLEAR_TIMETABLE' });
+        
+        // Load the new data
         dispatch({
           type: 'LOAD_DATA',
           payload: {
@@ -135,6 +144,9 @@ export default function Modals() {
             totalCredits: activeTableUpdate.data.reduce((sum: number, course: any) => sum + course.credits, 0)
           }
         });
+        
+        // Regenerate timetable from loaded data (like vanilla JS fillPage)
+        dispatch({ type: 'REGENERATE_TIMETABLE' });
         
         alert('Timetable imported successfully!');
       } catch (error) {

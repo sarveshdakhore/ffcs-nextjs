@@ -436,12 +436,20 @@ export default function Home() {
             </div>
 
             {/* Course Panel */}
-            <div className="container-xl cardnew pt-10" style={{ marginTop: '140px', position: 'relative', paddingTop: '2rem' }}>
+            <div style={{ 
+              marginTop: '140px', 
+              marginBottom: '2rem',
+              position: 'relative',
+              width: 'calc(100% - 48px)',
+              maxWidth: '90%',
+              marginLeft: 'auto',
+              marginRight: 'auto'
+            }}>
               {/* Decorative pins for Course Panel */}
               <img src="/images/doodles/bluepin.svg" alt="" style={{
                 position: 'absolute',
                 top: '-15px',
-                left: '25px',
+                left: '1rem',
                 width: '42px',
                 height: '42px',
                 opacity: 1.0,

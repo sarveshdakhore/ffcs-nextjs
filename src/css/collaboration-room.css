@@ -367,6 +367,231 @@
   color: #9ca3af;
 }
 
+/* Enhanced Room Management Styles */
+.room-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.room-id {
+  font-size: 0.75rem;
+  color: #9ca3af;
+  font-family: monospace;
+}
+
+.member-list-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.75rem;
+}
+
+.admin-note {
+  font-size: 0.75rem;
+  color: #9ca3af;
+  font-style: italic;
+}
+
+.member-item.enhanced {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem;
+  background-color: #374151;
+  border-radius: 0.5rem;
+  border: 2px solid #4b5563;
+  transition: all 0.2s;
+}
+
+.member-item.enhanced:hover {
+  border-color: #6b7280;
+  background-color: #3f4956;
+}
+
+.member-badges {
+  display: flex;
+  gap: 0.5rem;
+  margin-left: 0.75rem;
+}
+
+.primary-badge {
+  font-size: 0.75rem;
+  background-color: #f59e0b;
+  color: #fef3c7;
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.25rem;
+  font-weight: 500;
+}
+
+.member-actions {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.admin-controls {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.admin-controls button {
+  padding: 0.375rem;
+  border: none;
+  border-radius: 0.25rem;
+  cursor: pointer;
+  font-size: 0.875rem;
+  transition: all 0.2s;
+}
+
+.admin-controls button:hover {
+  transform: translateY(-1px);
+}
+
+.admin-controls button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* Public Rooms Browser */
+.modal-large {
+  max-width: 42rem;
+  width: 90vw;
+}
+
+.public-rooms-list {
+  max-height: 20rem;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.public-room-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem;
+  background-color: #374151;
+  border-radius: 0.5rem;
+  border: 2px solid #4b5563;
+  transition: border-color 0.2s;
+}
+
+.public-room-item:hover {
+  border-color: #6b7280;
+}
+
+.room-details h4 {
+  color: white;
+  font-weight: 600;
+  margin: 0 0 0.5rem 0;
+}
+
+.room-meta {
+  display: flex;
+  gap: 1rem;
+  font-size: 0.75rem;
+  color: #d1d5db;
+  margin-bottom: 0.5rem;
+}
+
+.room-meta span {
+  background-color: #4b5563;
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.25rem;
+}
+
+.room-info-display {
+  background-color: #374151;
+  padding: 1rem;
+  border-radius: 0.5rem;
+  border: 2px solid #4b5563;
+}
+
+.room-info-display p {
+  margin: 0.5rem 0;
+  color: #d1d5db;
+  font-size: 0.875rem;
+}
+
+.room-info-display strong {
+  color: white;
+}
+
+.empty-rooms {
+  text-align: center;
+  padding: 2rem;
+  color: #9ca3af;
+}
+
+.empty-rooms p {
+  margin: 0.5rem 0;
+}
+
+/* Enhanced Button Styles */
+.btn-large {
+  padding: 1rem 2rem;
+  font-size: 1rem;
+}
+
+.btn-secondary {
+  background-color: #6b7280;
+  color: white;
+}
+
+.btn-secondary:hover {
+  background-color: #5b6270;
+}
+
+/* Live FFCS Mode Toggle */
+.live-mode-section {
+  transition: all 0.3s ease;
+}
+
+.live-mode-section:hover {
+  border-color: #6b7280 !important;
+}
+
+#live-ffcs-toggle:checked {
+  background-color: #ef4444 !important;
+  border-color: #ef4444 !important;
+}
+
+#live-ffcs-toggle {
+  text-align: left !important;
+  transition: all 0.2s;
+}
+
+#live-ffcs-toggle:focus {
+  box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.5);
+  outline: none;
+}
+
+.form-check-input {
+  margin-top: 0;
+  margin-right: 0;
+}
+
+.form-check-label {
+  margin-bottom: 0;
+}
+
+.live-mode-warning {
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.8;
+  }
+}
+
 /* Responsive */
 @media (max-width: 768px) {
   .collab-room {
@@ -387,9 +612,29 @@
     flex-direction: column;
   }
   
-  .member-item {
+  .member-item.enhanced {
     flex-direction: column;
     align-items: flex-start;
+    gap: 0.75rem;
+  }
+  
+  .member-actions {
+    width: 100%;
+    justify-content: space-between;
+  }
+  
+  .public-room-item {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+  }
+  
+  .room-meta {
+    flex-wrap: wrap;
     gap: 0.5rem;
+  }
+  
+  .modal-large {
+    max-width: 95vw;
   }
 }

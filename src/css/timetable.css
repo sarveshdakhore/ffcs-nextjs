@@ -106,6 +106,8 @@
 
 .quick-buttons table {
     margin: auto;
+    width: 100%;
+    table-layout: fixed;
 }
 
 .quick-buttons table :first-child {
@@ -425,6 +427,42 @@
 
 #timetable td.clash:hover {
     background: rgba(255, 68, 68, 0.5) !important;
+}
+
+/* Clashing teacher selections - red highlighting in normal mode */
+#timetable td.clash-selection {
+    background: rgba(255, 107, 107, 0.8) !important;
+    border-color: rgba(255, 107, 107, 1) !important;
+    color: #ffffff !important;
+    box-shadow: 0 3px 12px rgba(255, 107, 107, 0.4) !important;
+    animation: pulse-clash-selection 2s infinite;
+}
+
+#timetable td.clash-selection:hover {
+    background: rgba(255, 107, 107, 0.9) !important;
+    border-color: rgba(255, 107, 107, 1) !important;
+}
+
+/* Course content styling for clashing selections */
+.clashing-course {
+    background: #ff6b6b !important;
+    color: white !important;
+    font-weight: bold !important;
+    border-radius: 3px !important;
+    padding: 2px 4px !important;
+}
+
+/* Pulse animation for clashing teacher selections */
+@keyframes pulse-clash-selection {
+    0% {
+        box-shadow: 0 3px 12px rgba(255, 107, 107, 0.4);
+    }
+    50% {
+        box-shadow: 0 4px 16px rgba(255, 107, 107, 0.6);
+    }
+    100% {
+        box-shadow: 0 3px 12px rgba(255, 107, 107, 0.4);
+    }
 }
 
 /* Pulse animation for clash cells - simplified for better performance */

@@ -214,8 +214,26 @@
 }
 
 .add-course-card .modal-footer {
-    border-top: 1px solid rgba(255, 255, 255, 0.1) !important;
+    border-top: none !important;
     background: transparent !important;
+}
+
+/* Remove all borders from form sections */
+#div-for-add-course,
+#div-for-add-teacher,
+#div-for-edit-course,
+#div-for-edit-teacher {
+    border: none !important;
+    border-top: none !important;
+}
+
+/* Remove borders from form footer sections */
+#div-for-add-course > form > div:last-child,
+#div-for-add-teacher > form > div:last-child,
+#div-for-edit-course > form > div:last-child,
+#div-for-edit-teacher > form > div:last-child {
+    border: none !important;
+    border-top: none !important;
 }
 
 @media screen and (max-width: 400px) {

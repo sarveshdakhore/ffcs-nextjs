@@ -77,6 +77,8 @@
 
 .quick-buttons table {
   margin: 0 auto;
+  width: 100%;
+  table-layout: fixed;
 }
 
 .quick-buttons .quick-button {
@@ -129,6 +131,11 @@
 
 .dropdown-list li:last-child {
   border-bottom: none;
+}
+
+/* Clashing teacher opacity reduction (from FFCSonTheGo) */
+.clashLi {
+  opacity: 0.385 !important;
 }
 
 .dropdown-heading {
