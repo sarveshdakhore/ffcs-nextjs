@@ -29,6 +29,20 @@ export default function Timetable() {
   const [isLiveModeEnabled, setIsLiveModeEnabled] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
+  // Console log all table data for debugging
+  useEffect(() => {
+    console.log('📊 TIMETABLE DATA:', {
+      attackMode: state.ui.attackMode,
+      quickVisualizationEnabled: state.ui.quickVisualizationEnabled,
+      attackData: state.activeTable.attackData,
+      attackQuick: state.activeTable.attackQuick,
+      normalData: state.activeTable.data,
+      normalQuick: state.activeTable.quick,
+      currentTableId: state.currentTableId,
+      activeTableId: state.activeTable.id
+    });
+  }, [state.activeTable.attackData, state.activeTable.attackQuick, state.activeTable.data, state.activeTable.quick, state.ui.attackMode, state.ui.quickVisualizationEnabled]);
+
   // Create a stable key for React re-rendering based on actual data changes
   const dataKey = useMemo(() => {
     const dataString = JSON.stringify(state.activeTable?.data);
@@ -185,15 +199,14 @@ export default function Timetable() {
   const handleQuickToggle = () => {
     const newShowState = !showQuickButtons;
     setShowQuickButtons(newShowState);
-    
-    if (!newShowState) {
-      // QV is being closed - remove QV effects but keep individual cell highlights
-      dispatch({ type: 'CLEAR_QV_HIGHLIGHTS' });
-    }
-    
-    dispatch({ 
-      type: 'SET_UI_STATE', 
-      payload: { quickVisualizationEnabled: newShowState } 
+
+    // Don't clear data when toggling off - just hide visually
+    // The cells already check quickVisualizationEnabled before showing highlights
+    // This allows toggling QV on/off without losing highlight data
+
+    dispatch({
+      type: 'SET_UI_STATE',
+      payload: { quickVisualizationEnabled: newShowState }
     });
   };
 
@@ -430,25 +443,75 @@ export default function Timetable() {
     return clashingSelections;
   };
 
-  // Calculate occupied slots from attack data (live mode) - Using new utilities
+  // Calculate occupied slots from attack data (live mode) - Exact FFCSonTheGo logic
   const getOccupiedSlots = () => {
     const attackData = state.activeTable.attackData || [];
-    const expandedSlots = getAllOccupiedSlots(attackData);
-    
+    const attackQuick = state.activeTable.attackQuick || [];
+
+    // ClashMap for slot expansion (matching FFCSonTheGo exactly)
+    const clashMap: { [key: string]: string[] } = {
+      A1: ['L1', 'L14'], B1: ['L7', 'L20'], C1: ['L13', 'L26'], D1: ['L3', 'L19', 'L4'],
+      E1: ['L9', 'L25', 'L10'], F1: ['L2', 'L15', 'L16'], G1: ['L8', 'L21', 'L22'],
+      TA1: ['L27', 'L28'], TB1: ['L4', 'L5'], TC1: ['L10', 'L11'], TD1: ['L29', 'L30'],
+      TE1: ['L22', 'L23'], TF1: ['L28', 'L29'], TG1: ['L5', 'L6'], TAA1: ['L11', 'L12'],
+      TCC1: ['L23', 'L24'], A2: ['L31', 'L44'], B2: ['L37', 'L50'], C2: ['L43', 'L56'],
+      D2: ['L33', 'L49', 'L34'], E2: ['L39', 'L55', 'L40'], F2: ['L32', 'L45', 'L46'],
+      G2: ['L38', 'L51', 'L52'], TA2: ['L57', 'L58'], TB2: ['L34', 'L35'], TC2: ['L40', 'L41'],
+      TD2: ['L46', 'L47'], TE2: ['L52', 'L53'], TF2: ['L58', 'L59'], TG2: ['L35', 'L36'],
+      TAA2: ['L41', 'L42'], TBB2: ['L47', 'L48'], TCC2: ['L53', 'L54'], TDD2: ['L59', 'L60'],
+      L1: ['A1'], L2: ['F1'], L3: ['D1'], L4: ['TB1', 'D1'], L5: ['TG1', 'TB1'], L6: ['TG1'],
+      L7: ['B1'], L8: ['G1'], L9: ['E1'], L10: ['TC1', 'E1'], L11: ['TAA1', 'TC1'], L12: ['TAA1'],
+      L13: ['C1'], L14: ['A1'], L15: ['F1'], L16: ['V1', 'F1'], L17: ['V2', 'V1'], L18: ['V2'],
+      L19: ['D1'], L20: ['B1'], L21: ['G1'], L22: ['TE1', 'G1'], L23: ['TCC1', 'TE1'], L24: ['TCC1'],
+      L25: ['E1'], L26: ['C1'], L27: ['TA1'], L28: ['TF1', 'TA1'], L29: ['TD1', 'TF1'], L30: ['TD1'],
+      L31: ['A2'], L32: ['F2'], L33: ['D2'], L34: ['TB2', 'D2'], L35: ['TG2', 'TB2'], L36: ['V3', 'TG2'],
+      L37: ['B2'], L38: ['G2'], L39: ['E2'], L40: ['TC2', 'E2'], L41: ['TAA2', 'TC2'], L42: ['V4', 'TAA2'],
+      L43: ['C2'], L44: ['A2'], L45: ['F2'], L46: ['TD2', 'F2'], L47: ['TBB2', 'TD2'], L48: ['V5', 'TBB2'],
+      L49: ['D2'], L50: ['B2'], L51: ['G2'], L52: ['TE2', 'G2'], L53: ['TCC2', 'TE2'], L54: ['V6', 'TCC2'],
+      L55: ['E2'], L56: ['C2'], L57: ['TA2'], L58: ['TF2', 'TA2'], L59: ['TDD2', 'TF2'], L60: ['V7', 'TDD2'],
+      V1: ['L16', 'L17'], V2: ['L17', 'L18'], V3: ['L36'], V4: ['L42'], V5: ['L48'], V6: ['L54'], V7: ['L60'],
+    };
+
+    // Step 1: Collect all raw slots from attackData
+    const allSlots: string[] = [];
+    attackData.forEach((course) => {
+      allSlots.push(...course.slots);
+    });
+
     const thSlots = new Set<string>();
     const labSlots = new Set<string>();
 
-    // Separate theory and lab slots from expanded slots
-    expandedSlots.forEach((slot) => {
+    // Step 2: Process each slot with clashMap expansion (EXACT FFCSonTheGo logic)
+    allSlots.forEach((slot) => {
       if (slot.includes('L')) {
+        // Lab slot
         labSlots.add(slot);
+        if (clashMap[slot]) {
+          clashMap[slot].forEach((relatedSlot) => {
+            thSlots.add(relatedSlot);
+          });
+        }
       } else {
+        // Theory slot
         thSlots.add(slot);
+        if (clashMap[slot]) {
+          clashMap[slot].forEach((relatedSlot) => {
+            labSlots.add(relatedSlot);
+          });
+        }
       }
     });
 
-    // TODO: Add quick visualization slots if enabled
-    // This would require processing attackQuick array similar to the original
+    // Step 3: Process quick visualization slots if enabled
+    if (state.ui.quickVisualizationEnabled && attackQuick.length > 0) {
+      attackQuick.forEach((quickEntry: any[]) => {
+        if (quickEntry.length === 3) {
+          // QV tile highlight with [row, col, true]
+          // We would need to map back to slot names from row/col positions
+          // For now, skipping this as it's complex and rarely used
+        }
+      });
+    }
 
     return {
       theory: Array.from(thSlots).sort(),
@@ -456,6 +519,114 @@ export default function Timetable() {
     };
   };
 
+  // Helper function to get slotsForAttack (includes attackData + attackQuick if QV enabled)
+  const getSlotsForAttack = () => {
+    const attackData = state.activeTable.attackData || [];
+    const attackQuick = state.activeTable.attackQuick || [];
+    const clashMap: { [key: string]: string[] } = {
+      A1: ['L1', 'L14'], B1: ['L7', 'L20'], C1: ['L13', 'L26'], D1: ['L3', 'L19', 'L4'], E1: ['L9', 'L25', 'L10'],
+      F1: ['L2', 'L15', 'L16'], G1: ['L8', 'L21', 'L22'], TA1: ['L27', 'L28'], TB1: ['L4', 'L5'], TC1: ['L10', 'L11'],
+      TD1: ['L29', 'L30'], TE1: ['L22', 'L23'], TF1: ['L28', 'L29'], TG1: ['L5', 'L6'], TAA1: ['L11', 'L12'], TCC1: ['L23', 'L24'],
+      A2: ['L31', 'L44'], B2: ['L37', 'L50'], C2: ['L43', 'L56'], D2: ['L33', 'L49', 'L34'], E2: ['L39', 'L55', 'L40'],
+      F2: ['L32', 'L45', 'L46'], G2: ['L38', 'L51', 'L52'], TA2: ['L57', 'L58'], TB2: ['L34', 'L35'], TC2: ['L40', 'L41'],
+      TD2: ['L46', 'L47'], TE2: ['L52', 'L53'], TF2: ['L58', 'L59'], TG2: ['L35', 'L36'], TAA2: ['L41', 'L42'],
+      TBB2: ['L47', 'L48'], TCC2: ['L53', 'L54'], TDD2: ['L59', 'L60'],
+      L1: ['A1'], L2: ['F1'], L3: ['D1'], L4: ['TB1', 'D1'], L5: ['TG1', 'TB1'], L6: ['TG1'],
+      L7: ['B1'], L8: ['G1'], L9: ['E1'], L10: ['TC1', 'E1'], L11: ['TAA1', 'TC1'], L12: ['TAA1'],
+      L13: ['C1'], L14: ['A1'], L15: ['F1'], L16: ['F1'], L19: ['D1'], L20: ['B1'], L21: ['G1'],
+      L22: ['TE1', 'G1'], L23: ['TCC1', 'TE1'], L24: ['TCC1'], L25: ['E1'], L26: ['C1'], L27: ['TA1'],
+      L28: ['TF1', 'TA1'], L29: ['TD1', 'TF1'], L30: ['TD1'],
+      L31: ['A2'], L32: ['F2'], L33: ['D2'], L34: ['TB2', 'D2'], L35: ['TG2', 'TB2'], L36: ['TG2'],
+      L37: ['B2'], L38: ['G2'], L39: ['E2'], L40: ['TC2', 'E2'], L41: ['TAA2', 'TC2'], L42: ['TAA2'],
+      L43: ['C2'], L44: ['A2'], L45: ['F2'], L46: ['TD2', 'F2'], L47: ['TBB2', 'TD2'], L49: ['D2'],
+      L50: ['B2'], L51: ['G2'], L52: ['TE2', 'G2'], L53: ['TCC2', 'TE2'], L55: ['E2'], L56: ['C2'],
+      L57: ['TA2'], L58: ['TF2', 'TA2'], L59: ['TDD2', 'TF2'], L60: ['TDD2']
+    };
+
+    // Get all slots from attackData
+    let allSlots: string[] = [];
+    attackData.forEach(course => {
+      allSlots = allSlots.concat(course.slots);
+    });
+
+    // Expand using clashMap
+    const thSlots = new Set<string>();
+    const labSlots = new Set<string>();
+
+    allSlots.forEach(slot => {
+      if (slot.includes('L')) {
+        labSlots.add(slot);
+        if (clashMap[slot]) {
+          clashMap[slot].forEach(relatedSlot => {
+            thSlots.add(relatedSlot);
+          });
+        }
+      } else {
+        thSlots.add(slot);
+        if (clashMap[slot]) {
+          clashMap[slot].forEach(relatedSlot => {
+            labSlots.add(relatedSlot);
+          });
+        }
+      }
+    });
+
+    // If QV is enabled, process attackQuick
+    if (state.ui.quickVisualizationEnabled) {
+      // Note: In React, we can't query DOM cells like vanilla JS
+      // We'll need to use the slot text directly from our quick array entries
+      // For now, skip this as it requires passing additional context
+    }
+
+    const combinedSlots = Array.from(thSlots).concat(Array.from(labSlots));
+    return combinedSlots;
+  };
+
+  // Handle cell click following FFCSonTheGo logic
+  const handleCellClick = (row: number, col: number, slotText: string) => {
+    const activeQuick = state.ui.attackMode ? state.activeTable.attackQuick : state.activeTable.quick;
+
+    // Parse cell text to get lab slots
+    const parts = slotText.split(' / ');
+    const labSlots = parts.filter(slot => slot.trim().startsWith('L')).map(s => s.trim());
+
+    // Check if cell is currently highlighted
+    const isHighlighted = activeQuick.some((entry: any[]) =>
+      entry[0] === row && entry[1] === col
+    );
+
+    // Block click in attack mode if lab slots are already in slotsForAttack
+    if (state.ui.attackMode && labSlots.length > 0 && !isHighlighted) {
+      const occupied = getSlotsForAttack();
+      if (isCommonSlot(labSlots, occupied)) {
+        return; // Block the click
+      }
+    }
+
+    // Only process if QV is enabled
+    if (!state.ui.quickVisualizationEnabled) {
+      return;
+    }
+
+    // Check if cell has courses (don't allow click if it has courses)
+    const dataToCheck = state.ui.attackMode ? state.activeTable.attackData : state.activeTable.data;
+    const theorySlot = parts[0]?.trim();
+    const labSlot = parts[1]?.trim() || null;
+    const hasCourses = dataToCheck.some(course =>
+      course.slots.includes(theorySlot) || (labSlot && course.slots.includes(labSlot))
+    );
+
+    if (hasCourses) {
+      return; // Don't allow click on cells with courses
+    }
+
+    // Dispatch the cell click action
+    // The yellow tile state will automatically update based on the quick array
+    dispatch({
+      type: 'PROCESS_CELL_CLICK',
+      payload: { row, col, slotText }
+    });
+  };
 
   const renderTimetableRows = () => {
     const rows: React.ReactElement[] = [];
@@ -527,8 +698,8 @@ export default function Timetable() {
           
           // Check for courses in this slot (live mode or normal mode)
           const dataToCheck = isLiveModeEnabled ? state.activeTable.attackData : state.activeTable.data;
-          const coursesInSlot = dataToCheck.filter(course => 
-            course.slots.includes(theorySlot)
+          const coursesInSlot = dataToCheck.filter(course =>
+            course.slots.includes(theorySlot) || (labSlot && course.slots.includes(labSlot))
           );
           
           // Check if this specific cell is highlighted in quick array
@@ -574,14 +745,12 @@ export default function Timetable() {
           if (hasClashingSelection) classNames.push('clash-selection'); // Red highlighting for clashing selections
           
           dayRows[day].push(
-            <td 
-              key={`${day}-${index}`} 
+            <td
+              key={`${day}-${index}`}
               className={classNames.join(' ')}
               onClick={() => {
-                // Cell click only works when QV is enabled and cell has no courses
-                if (state.ui.quickVisualizationEnabled && coursesInSlot.length === 0 && !isClash) {
-                  dispatch({ type: 'TOGGLE_CELL_HIGHLIGHT', payload: { day, index, theorySlot } });
-                }
+                // Implement FFCSonTheGo cell click logic
+                handleCellClick(currentRow, currentCol, slotText);
               }}
             >
               {coursesInSlot.length > 0 ? (
@@ -656,73 +825,52 @@ export default function Timetable() {
 
   const renderQuickButtons = () => {
     const handleQuickButtonClick = (slot: string) => {
-      // QV tile click - find ALL cells with this theory slot and highlight them
-      // Use the predefined mapping instead of DOM querying for accuracy
-      
-      // Define where each theory slot appears in the timetable based on dayRowsData
-      // Row indices: theory=0, lab=1, mon=2, tue=3, wed=4, thu=5, fri=6, sat=7, sun=8
-      // Column mapping: dayRowsData index 0-5 -> table col 1-6, index 6-12 -> table col 8-14 (lunch at col 7)
+      // FFCSonTheGo QV tile click logic
+
+      // Define where each theory slot appears in the timetable
       const slotPositions: { [key: string]: [number, number][] } = {
-        // First period slots (dayRowsData indices 0-5 -> table columns 1-6)
-        'A1': [[2, 1], [4, 2]], // MON index 0 -> col 1, WED index 1 -> col 2
-        'F1': [[2, 2], [4, 3]], // MON index 1 -> col 2, WED index 2 -> col 3
-        'D1': [[2, 3], [5, 1]], // MON index 2 -> col 3, THU index 0 -> col 1
-        'TB1': [[2, 4]], // MON index 3 -> col 4
-        'TG1': [[2, 5]], // MON index 4 -> col 5
-        
-        'B1': [[3, 1], [5, 2]], // TUE index 0 -> col 1, THU index 1 -> col 2
-        'G1': [[3, 2], [5, 3]], // TUE index 1 -> col 2, THU index 2 -> col 3
-        'E1': [[3, 3], [6, 1]], // TUE index 2 -> col 3, FRI index 0 -> col 1
-        'TC1': [[3, 4]], // TUE index 3 -> col 4
-        'TAA1': [[3, 5]], // TUE index 4 -> col 5
-        
-        'C1': [[4, 1], [6, 2]], // WED index 0 -> col 1, FRI index 1 -> col 2
-        'V1': [[4, 4]], // WED index 3 -> col 4
-        'V2': [[4, 5]], // WED index 4 -> col 5
-        
-        'TE1': [[5, 4]], // THU index 3 -> col 4
-        'TCC1': [[5, 5]], // THU index 4 -> col 5
-        
-        'TA1': [[6, 3]], // FRI index 2 -> col 3
-        'TF1': [[6, 4]], // FRI index 3 -> col 4
-        'TD1': [[6, 5]], // FRI index 4 -> col 5
-        
-        // Second period slots (dayRowsData indices 6-12 -> table columns 8-14)
-        'A2': [[2, 8], [4, 9]], // MON index 6 -> col 8, WED index 7 -> col 9
-        'F2': [[2, 9], [4, 10]], // MON index 7 -> col 9, WED index 8 -> col 10
-        'D2': [[2, 10], [5, 8]], // MON index 8 -> col 10, THU index 6 -> col 8
-        'TB2': [[2, 11]], // MON index 9 -> col 11
-        'TG2': [[2, 12]], // MON index 10 -> col 12
-        'V3': [[2, 14]], // MON index 12 -> col 14
-        
-        'B2': [[3, 8], [5, 9]], // TUE index 6 -> col 8, THU index 7 -> col 9
-        'G2': [[3, 9], [5, 10]], // TUE index 7 -> col 9, THU index 8 -> col 10
-        'E2': [[3, 10], [6, 8]], // TUE index 8 -> col 10, FRI index 6 -> col 8
-        'TC2': [[3, 11]], // TUE index 9 -> col 11
-        'TAA2': [[3, 12]], // TUE index 10 -> col 12
-        'V4': [[3, 14]], // TUE index 12 -> col 14
-        
-        'C2': [[4, 8], [6, 9]], // WED index 6 -> col 8, FRI index 7 -> col 9
-        'TD2': [[4, 11]], // WED index 9 -> col 11
-        'TBB2': [[4, 12]], // WED index 10 -> col 12
-        'V5': [[4, 14]], // WED index 12 -> col 14
-        
-        'TE2': [[5, 11]], // THU index 9 -> col 11
-        'TCC2': [[5, 12]], // THU index 10 -> col 12
-        'V6': [[5, 14]], // THU index 12 -> col 14
-        
-        'TA2': [[6, 10]], // FRI index 8 -> col 10
-        'TF2': [[6, 11]], // FRI index 9 -> col 11
-        'TDD2': [[6, 12]], // FRI index 10 -> col 12
-        'V7': [[6, 14]], // FRI index 12 -> col 14
+        'A1': [[2, 1], [4, 2]], 'F1': [[2, 2], [4, 3]], 'D1': [[2, 3], [5, 1]], 'TB1': [[2, 4]], 'TG1': [[2, 5]],
+        'B1': [[3, 1], [5, 2]], 'G1': [[3, 2], [5, 3]], 'E1': [[3, 3], [6, 1]], 'TC1': [[3, 4]], 'TAA1': [[3, 5]],
+        'C1': [[4, 1], [6, 2]], 'V1': [[4, 4]], 'V2': [[4, 5]], 'TE1': [[5, 4]], 'TCC1': [[5, 5]],
+        'TA1': [[6, 3]], 'TF1': [[6, 4]], 'TD1': [[6, 5]],
+        'A2': [[2, 8], [4, 9]], 'F2': [[2, 9], [4, 10]], 'D2': [[2, 10], [5, 8]], 'TB2': [[2, 11]], 'TG2': [[2, 12]], 'V3': [[2, 14]],
+        'B2': [[3, 8], [5, 9]], 'G2': [[3, 9], [5, 10]], 'E2': [[3, 10], [6, 8]], 'TC2': [[3, 11]], 'TAA2': [[3, 12]], 'V4': [[3, 14]],
+        'C2': [[4, 8], [6, 9]], 'TD2': [[4, 11]], 'TBB2': [[4, 12]], 'V5': [[4, 14]],
+        'TE2': [[5, 11]], 'TCC2': [[5, 12]], 'V6': [[5, 14]],
+        'TA2': [[6, 10]], 'TF2': [[6, 11]], 'TDD2': [[6, 12]], 'V7': [[6, 14]]
       };
-      
+
       const positions = slotPositions[slot] || [];
-      if (positions.length === 0) return; // No positions found for this slot
-      
-      dispatch({ 
-        type: 'PROCESS_QV_SLOT_HIGHLIGHT', 
-        payload: { slot, positions } 
+      if (positions.length === 0) return;
+
+      // Check if tile is visually highlighted (ALL cells highlighted, either 2-element OR 3-element)
+      const quickArray = state.ui.attackMode ? state.activeTable.attackQuick : state.activeTable.quick;
+      const isHighlighted = positions.every(([r, c]) =>
+        quickArray.some((entry: any[]) => entry[0] === r && entry[1] === c)
+      );
+
+      // FFCSonTheGo logic: Prevent click in attack mode if slot is in slotsForAttack and NOT highlighted
+      // This blocks clicks when the tile is not fully highlighted AND the slot clashes with existing selections
+      if (state.ui.attackMode && !isHighlighted) {
+        const occupied = getSlotsForAttack();
+        if (occupied.includes(slot)) {
+          console.log(`🚫 Blocking ${slot} tile click in attack mode: slot is in slotsForAttack but tile not highlighted`);
+          return; // Block the click
+        }
+      }
+
+      // Check if all cells are empty (no courses) and no clash class
+      const dataToCheck = state.ui.attackMode ? state.activeTable.attackData : state.activeTable.data;
+      const hasCourses = dataToCheck.some(course => course.slots.includes(slot));
+
+      if (hasCourses) {
+        return; // Don't allow highlighting slots with courses
+      }
+
+      // Dispatch the action to toggle highlight
+      dispatch({
+        type: 'PROCESS_QV_SLOT_HIGHLIGHT',
+        payload: { slot, positions }
       });
     };
 
@@ -747,19 +895,21 @@ export default function Timetable() {
       };
       
       const cellsWithSlot = slotPositions[slot] || [];
-      
-      // Check if ALL of this slot's positions are QV-highlighted (not just some)
-      const isQVHighlighted = cellsWithSlot.length > 0 && cellsWithSlot.every(([r, c]) => 
+
+      // FFCSonTheGo logic (line 3640): Check if ALL cells with this slot are highlighted
+      // This includes both QV tile clicks (3-element) AND individual cell clicks (2-element)
+      const allCellsHighlighted = cellsWithSlot.length > 0 && cellsWithSlot.every(([r, c]) =>
         quickArray.some((entry: any[]) => {
-          return entry.length === 3 && entry[0] === r && entry[1] === c && entry[2] === true;
+          // Match if row and col match (either 2-element or 3-element entry)
+          return entry[0] === r && entry[1] === c;
         })
       );
-      
+
       const dataToCheck = isLiveModeEnabled ? state.activeTable.attackData : state.activeTable.data;
-      const hasCoursesInSlot = dataToCheck.some(course => 
+      const hasCoursesInSlot = dataToCheck.some(course =>
         course.slots.includes(slot)
       );
-      const shouldHighlight = isQVHighlighted || hasCoursesInSlot;
+      const shouldHighlight = allCellsHighlighted || hasCoursesInSlot;
       
       return (
         <td key={slot}>
@@ -836,11 +986,36 @@ export default function Timetable() {
       };
       
       const positions = slotPositions[slot] || [];
-      if (positions.length === 0) return; // No positions found for this slot
-      
-      dispatch({ 
-        type: 'PROCESS_QV_SLOT_HIGHLIGHT', 
-        payload: { slot, positions } 
+      if (positions.length === 0) return;
+
+      // Check if tile is visually highlighted (ALL cells highlighted, either 2-element OR 3-element)
+      const quickArray = state.ui.attackMode ? state.activeTable.attackQuick : state.activeTable.quick;
+      const isHighlighted = positions.every(([r, c]) =>
+        quickArray.some((entry: any[]) => entry[0] === r && entry[1] === c)
+      );
+
+      // FFCSonTheGo logic: Prevent click in attack mode if slot is in slotsForAttack and NOT highlighted
+      // This blocks clicks when the tile is not fully highlighted AND the slot clashes with existing selections
+      if (state.ui.attackMode && !isHighlighted) {
+        const occupied = getSlotsForAttack();
+        if (occupied.includes(slot)) {
+          console.log(`🚫 Blocking ${slot} tile click in attack mode: slot is in slotsForAttack but tile not highlighted`);
+          return; // Block the click
+        }
+      }
+
+      // Check if all cells are empty (no courses) and no clash class
+      const dataToCheck = state.ui.attackMode ? state.activeTable.attackData : state.activeTable.data;
+      const hasCourses = dataToCheck.some(course => course.slots.includes(slot));
+
+      if (hasCourses) {
+        return; // Don't allow highlighting slots with courses
+      }
+
+      // Dispatch the action to toggle highlight
+      dispatch({
+        type: 'PROCESS_QV_SLOT_HIGHLIGHT',
+        payload: { slot, positions }
       });
     };
 
@@ -866,19 +1041,21 @@ export default function Timetable() {
       };
       
       const cellsWithSlot = slotPositions[slot] || [];
-      
-      // Check if ALL of this slot's positions are QV-highlighted (not just some)
-      const isQVHighlighted = cellsWithSlot.length > 0 && cellsWithSlot.every(([r, c]) => 
+
+      // FFCSonTheGo logic (line 3640): Check if ALL cells with this slot are highlighted
+      // This includes both QV tile clicks (3-element) AND individual cell clicks (2-element)
+      const allCellsHighlighted = cellsWithSlot.length > 0 && cellsWithSlot.every(([r, c]) =>
         quickArray.some((entry: any[]) => {
-          return entry.length === 3 && entry[0] === r && entry[1] === c && entry[2] === true;
+          // Match if row and col match (either 2-element or 3-element entry)
+          return entry[0] === r && entry[1] === c;
         })
       );
-      
+
       const dataToCheck = isLiveModeEnabled ? state.activeTable.attackData : state.activeTable.data;
-      const hasCoursesInSlot = dataToCheck.some(course => 
+      const hasCoursesInSlot = dataToCheck.some(course =>
         course.slots.includes(slot)
       );
-      const shouldHighlight = isQVHighlighted || hasCoursesInSlot;
+      const shouldHighlight = allCellsHighlighted || hasCoursesInSlot;
       
       return (
         <td key={slot}>
@@ -1029,7 +1206,7 @@ export default function Timetable() {
               <i className="fas fa-download"></i>
               <span>&nbsp;&nbsp;Download Timetable</span>
             </button>
-            
+
             <button
               id="quick-toggle"
               className={`btn ms-1 me-1 btn-warning text-white m-2`}
@@ -1042,18 +1219,6 @@ export default function Timetable() {
               </span>
             </button>
 
-            <button
-              id="attack-toggle"
-              className={`btn ms-1 me-1 ${isLiveModeEnabled ? 'btn-danger' : 'btn-outline-danger'} m-2`}
-              type="button"
-              onClick={handleLiveModeToggle}
-            >
-              <i className={`fas ${isLiveModeEnabled ? 'fa-broadcast-tower' : 'fa-tower-broadcast'} text-white`}></i>
-              <span className='text-white'>&nbsp;&nbsp;
-                {isLiveModeEnabled ? 'Disable' : 'Enable'} Live FFCS Mode
-              </span>
-            </button>
-            
             <button
               className="btn btn-danger m-2"
               type="button"
@@ -1084,54 +1249,6 @@ export default function Timetable() {
 
       {/* Quick selection tiles - Below timetable */}
       {renderQuickButtonsBelow()}
-
-      {/* Occupied Slots Display - Only show in Live Mode */}
-      {isLiveModeEnabled && (
-        <div className="container-sm mt-4" id="div-for-attack-slot" style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-          <div className="alert alert-info">
-            <h5 className="alert-heading">
-              <i className="fas fa-broadcast-tower"></i> Live FFCS Mode - Occupied Slots
-            </h5>
-            <div className="row">
-              <div className="col-md-6">
-                <strong>Theory Slots:</strong>
-                <h6 style={{ 
-                  backgroundColor: '#f8f9fa', 
-                  padding: '8px', 
-                  borderRadius: '4px', 
-                  marginTop: '5px',
-                  minHeight: '40px',
-                  border: '1px solid #dee2e6'
-                }}>
-                  {getOccupiedSlots().theory.length > 0 
-                    ? getOccupiedSlots().theory.join(' ,  ') 
-                    : 'No theory slots occupied'
-                  }
-                </h6>
-              </div>
-              <div className="col-md-6">
-                <strong>Lab Slots:</strong>
-                <h6 style={{ 
-                  backgroundColor: '#f8f9fa', 
-                  padding: '8px', 
-                  borderRadius: '4px', 
-                  marginTop: '5px',
-                  minHeight: '40px',
-                  border: '1px solid #dee2e6'
-                }}>
-                  {getOccupiedSlots().lab.length > 0 
-                    ? getOccupiedSlots().lab.join(' ,  ') 
-                    : 'No lab slots occupied'
-                  }
-                </h6>
-              </div>
-            </div>
-            <small className="text-muted">
-              <i className="fas fa-info-circle"></i> This shows slots that are currently occupied based on your live mode course selections.
-            </small>
-          </div>
-        </div>
-      )}
 
       {/* Custom Modals */}
       

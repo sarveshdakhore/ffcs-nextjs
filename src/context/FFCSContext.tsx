@@ -163,6 +163,8 @@ type FFCSAction =
   | { type: 'TOGGLE_CELL_HIGHLIGHT'; payload: { day: string; index: number; theorySlot: string } }
   | { type: 'TOGGLE_QV_SLOT_HIGHLIGHT'; payload: string }
   | { type: 'PROCESS_QV_SLOT_HIGHLIGHT'; payload: { slot: string; positions: [number, number][] } }
+  | { type: 'PROCESS_CELL_CLICK'; payload: { row: number; col: number; slotText: string } }
+  | { type: 'CLEANUP_QUICK_ON_TEACHER_SELECT'; payload: { teacherSlots: string[] } }
   | { type: 'CLEAR_QV_HIGHLIGHTS' }
   | { type: 'SWITCH_CAMPUS'; payload: 'Vellore' | 'Chennai' }
   | { type: 'CREATE_TABLE'; payload: string }
@@ -170,6 +172,7 @@ type FFCSAction =
   | { type: 'RENAME_TABLE'; payload: { id: number; name: string } }
   | { type: 'DELETE_TABLE'; payload: number }
   | { type: 'RESET_TABLE' }
+  | { type: 'CLEAR_LIST' }
   | { type: 'SET_EDIT_MODE'; payload: Partial<FFCSState['editMode']> }
   | { type: 'SET_UI_STATE'; payload: Partial<FFCSState['ui']> }
   | { type: 'LOAD_DATA'; payload: Partial<FFCSState> }
@@ -429,8 +432,26 @@ function ffcsReducer(state: FFCSState, action: FFCSAction): FFCSState {
       };
     }
 
+    case 'CLEAR_LIST':
+      // Clear only selections (data, quick, attackData, attackQuick) - PRESERVE subject definitions
+      const clearTables = state.timetableStoragePref.map(table =>
+        table.id === state.currentTableId
+          ? { ...table, data: [], quick: [], attackData: [], attackQuick: [] }
+          : table
+      );
+      const clearActive = { ...state.activeTable, data: [], quick: [], attackData: [], attackQuick: [] };
+      return {
+        ...state,
+        timetableStoragePref: clearTables,
+        activeTable: clearActive,
+        selectedCourses: [],
+        timetable: {},
+        courses: [],
+        totalCredits: 0,
+      };
+
     case 'RESET_TABLE':
-      // Clear all data including subjects to start from scratch
+      // Reset EVERYTHING including subjects (complete table reset)
       const resetTables = state.timetableStoragePref.map(table =>
         table.id === state.currentTableId
           ? { ...table, data: [], quick: [], attackData: [], attackQuick: [], subject: {} }
@@ -900,39 +921,38 @@ function ffcsReducer(state: FFCSState, action: FFCSAction): FFCSState {
       // Process the actual QV slot highlighting with DOM positions
       const { slot, positions } = action.payload;
       const activeTableToUpdate = state.ui.attackMode ? 'attackQuick' : 'quick';
-      
+
       const updatedTables = state.timetableStoragePref.map(table => {
         if (table.id === state.currentTableId) {
           const currentQuick = table[activeTableToUpdate] || [];
-          
-          // Check if any of these positions are currently highlighted (with third parameter true)
-          const hasHighlighted = positions.some(([r, c]) => 
-            currentQuick.some((entry: any[]) => {
-              if (entry.length === 3) {
-                // Entry with third parameter [row, col, true] from QV tile
-                return entry[0] === r && entry[1] === c && entry[2] === true;
-              }
-              return false;
-            })
+
+          // CRITICAL FIX: Check if ALL positions are highlighted (either 2-element OR 3-element)
+          // This detects if the tile is visually highlighted
+          const allHighlighted = positions.every(([r, c]) =>
+            currentQuick.some((entry: any[]) =>
+              // Match any entry (2-element or 3-element) at this position
+              entry[0] === r && entry[1] === c
+            )
           );
-          
+
           let newQuick;
-          if (hasHighlighted) {
-            // Remove all QV-highlighted slots with this theory slot
+          if (allHighlighted) {
+            // Remove ALL entries (both 2-element and 3-element) at these positions
+            console.log(`🗑️ Removing all highlights for ${slot} at positions:`, positions);
             newQuick = currentQuick.filter((entry: any[]) => {
-              if (entry.length === 3 && entry[2] === true) {
-                // This is a QV highlight, check if it matches our slot positions
-                return !positions.some(([r, c]) => entry[0] === r && entry[1] === c);
-              }
-              // Keep individual cell highlights (length 2)
-              return true;
+              // Remove if this entry matches any of our positions
+              return !positions.some(([r, c]) => entry[0] === r && entry[1] === c);
             });
           } else {
             // Add all positions with this theory slot (with third parameter true)
-            const newSlots = positions.map(([r, c]) => [r, c, true] as [number, number, boolean]);
+            // But only add if they don't already exist (prevent duplicates)
+            const newSlots = positions
+              .filter(([r, c]) => !currentQuick.some(entry => entry[0] === r && entry[1] === c))
+              .map(([r, c]) => [r, c, true] as [number, number, boolean]);
+            console.log(`➕ Adding QV highlights for ${slot}:`, newSlots);
             newQuick = [...currentQuick, ...newSlots];
           }
-          
+
           return {
             ...table,
             [activeTableToUpdate]: newQuick
@@ -940,12 +960,12 @@ function ffcsReducer(state: FFCSState, action: FFCSAction): FFCSState {
         }
         return table;
       });
-      
+
       const updatedActive = {
         ...state.activeTable,
         [activeTableToUpdate]: updatedTables.find(t => t.id === state.currentTableId)?.[activeTableToUpdate] || []
       };
-      
+
       return {
         ...state,
         timetableStoragePref: updatedTables,
@@ -964,7 +984,7 @@ function ffcsReducer(state: FFCSState, action: FFCSAction): FFCSState {
           const newAttackQuick = (table.attackQuick || []).filter((entry: any[]) => {
             return entry.length === 2; // Keep individual cell highlights
           });
-          
+
           return {
             ...table,
             quick: newQuick,
@@ -973,18 +993,69 @@ function ffcsReducer(state: FFCSState, action: FFCSAction): FFCSState {
         }
         return table;
       });
-      
+
       const updatedActive = {
         ...state.activeTable,
         quick: updatedTables.find(t => t.id === state.currentTableId)?.quick || [],
         attackQuick: updatedTables.find(t => t.id === state.currentTableId)?.attackQuick || []
       };
-      
+
       return {
         ...state,
         timetableStoragePref: updatedTables,
         activeTable: updatedActive
       };
+    }
+
+    case 'PROCESS_CELL_CLICK': {
+      // Handle individual cell clicks (toggle [row, col] in quick array)
+      const { row, col, slotText } = action.payload;
+      const activeTableToUpdate = state.ui.attackMode ? 'attackQuick' : 'quick';
+
+      const updatedTables = state.timetableStoragePref.map(table => {
+        if (table.id === state.currentTableId) {
+          const currentQuick = table[activeTableToUpdate] || [];
+
+          // Check if this cell is currently highlighted
+          const existingIndex = currentQuick.findIndex((entry: any[]) =>
+            entry[0] === row && entry[1] === col
+          );
+
+          let newQuick;
+          if (existingIndex !== -1) {
+            // Remove the highlight (it exists)
+            newQuick = currentQuick.filter((_: any, index: number) => index !== existingIndex);
+          } else {
+            // Add the highlight (push [row, col] - 2 elements, NOT 3)
+            newQuick = [...currentQuick, [row, col]];
+          }
+
+          return {
+            ...table,
+            [activeTableToUpdate]: newQuick
+          };
+        }
+        return table;
+      });
+
+      const updatedActive = {
+        ...state.activeTable,
+        [activeTableToUpdate]: updatedTables.find(t => t.id === state.currentTableId)?.[activeTableToUpdate] || []
+      };
+
+      return {
+        ...state,
+        timetableStoragePref: updatedTables,
+        activeTable: updatedActive
+      };
+    }
+
+    case 'CLEANUP_QUICK_ON_TEACHER_SELECT': {
+      // When teacher is selected, remove conflicting quick slots
+      // Teacher slots become part of slotsForAttack, so we don't need complex cleanup
+      // The cell/tile click handlers will prevent clicking conflicting slots
+      // This action is mainly for future use if needed
+      return state;
     }
 
     case 'UPDATE_LOCALFORAGE': {
@@ -1111,12 +1182,17 @@ function ffcsReducer(state: FFCSState, action: FFCSAction): FFCSState {
     }
 
     case 'SET_ATTACK_MODE': {
+      // Update UI state and ensure activeTable is synced from timetableStoragePref
+      const currentTable = state.timetableStoragePref.find(t => t.id === state.currentTableId) || state.activeTable;
+
       return {
         ...state,
         ui: {
           ...state.ui,
+          attackMode: action.payload.enabled,
           attackModeEnabled: action.payload.enabled
-        }
+        },
+        activeTable: currentTable // Sync activeTable from storage to preserve attackQuick data
       };
     }
 

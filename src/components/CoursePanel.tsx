@@ -52,7 +52,10 @@ export default function CoursePanel() {
   // Live FFCS Mode (Attack Mode) states
   const [liveFfcsMode, setLiveFfcsMode] = useState(false);
   const [autoFocus, setAutoFocus] = useState(true);
-  
+
+  // Force re-render trigger for occupied slots when QV toggles
+  const [qvUpdateTrigger, setQvUpdateTrigger] = useState(0);
+
   // Modal refs for Bootstrap
   const modalRef = useRef<HTMLDivElement>(null);
   const bootstrapModalRef = useRef<any>(null);
@@ -116,6 +119,28 @@ export default function CoursePanel() {
   // Force component update (similar to re-rendering in vanilla JS)
   const [renderKey, setRenderKey] = useState(0);
   const triggerUpdate = () => setRenderKey(prev => prev + 1);
+
+  // Sync liveFfcsMode with global attackMode state
+  useEffect(() => {
+    if (state.ui.attackMode !== liveFfcsMode) {
+      console.log('🔄 Syncing liveFfcsMode with global attackMode:', state.ui.attackMode);
+      setLiveFfcsMode(state.ui.attackMode);
+    }
+  }, [state.ui.attackMode, liveFfcsMode]);
+
+  // Force re-render of occupied slots when QV toggles in live mode
+  useEffect(() => {
+    console.log('🔄 QV state changed:', {
+      liveFfcsMode,
+      attackMode: state.ui.attackMode,
+      quickVisualizationEnabled: state.ui.quickVisualizationEnabled,
+      willTrigger: liveFfcsMode || state.ui.attackMode
+    });
+    if (liveFfcsMode || state.ui.attackMode) {
+      console.log('🔄 Forcing occupied slots refresh via qvUpdateTrigger');
+      setQvUpdateTrigger(prev => prev + 1);
+    }
+  }, [state.ui.quickVisualizationEnabled, liveFfcsMode, state.ui.attackMode]);
 
   // Create a stable key for React re-rendering based on actual data changes
   const dataKey = useMemo(() => {
@@ -1252,17 +1277,14 @@ export default function CoursePanel() {
     if (checked) {
       // ENABLE Live FFCS Mode
       console.log('✅ Enabling Live FFCS Mode - Attack Mode ON');
-      
+
       // Hide normal edit/add UI
       setShowAddCourse(false);
       setShowAddTeacher(false);
       setShowEditCourse(false);
       setShowEditTeacher(false);
-      
-      // Clear timetable to show slot occupancy instead
-      dispatch({ type: 'CLEAR_TIMETABLE' });
-      
-      // Switch to attack data mode
+
+      // Switch to attack data mode (don't clear timetable to preserve attackQuick data)
       dispatch({ type: 'SET_ATTACK_MODE', payload: { enabled: true } });
       
     } else {
@@ -1503,6 +1525,188 @@ export default function CoursePanel() {
       setMultipleError('Error processing teacher data. Please check the format and try again.');
     }
   };
+
+  // Helper to get cell slot text by row and column (complete mapping from vellore.json)
+  const getCellSlotText = (row: number, col: number): string[] => {
+    // Complete mapping based on vellore.json schema
+    // Row indices: 0=Theory, 1=Lab, 2=Mon, 3=Tue, 4=Wed, 5=Thu, 6=Fri, 7=Sat, 8=Sun
+    // Col indices: 1-6 are morning slots, 7 is LUNCH (skip), 8-14 are afternoon slots
+
+    const slotMap: { [key: string]: string } = {
+      // Theory row (row 0)
+      '0,1': 'A1', '0,2': 'F1', '0,3': 'D1', '0,4': 'TB1', '0,5': 'TG1', '0,6': 'V1',
+      '0,8': 'A2', '0,9': 'F2', '0,10': 'D2', '0,11': 'TB2', '0,12': 'TG2', '0,14': 'V3',
+
+      // Lab row (row 1)
+      '1,1': 'L1', '1,2': 'L2', '1,3': 'L3', '1,4': 'L4', '1,5': 'L5', '1,6': 'L6',
+      '1,8': 'L31', '1,9': 'L32', '1,10': 'L33', '1,11': 'L34', '1,12': 'L35', '1,13': 'L36',
+
+      // Monday (row 2)
+      '2,1': 'A1 / L1', '2,2': 'F1 / L2', '2,3': 'D1 / L3', '2,4': 'TB1 / L4', '2,5': 'TG1 / L5', '2,6': 'V1 / L16',
+      '2,8': 'A2 / L31', '2,9': 'F2 / L32', '2,10': 'D2 / L33', '2,11': 'TB2 / L34', '2,12': 'TG2 / L35', '2,14': 'V3 / L36',
+
+      // Tuesday (row 3)
+      '3,1': 'B1 / L7', '3,2': 'G1 / L8', '3,3': 'E1 / L9', '3,4': 'TC1 / L10', '3,5': 'TAA1 / L11', '3,6': 'V2 / L17',
+      '3,8': 'B2 / L37', '3,9': 'G2 / L38', '3,10': 'E2 / L39', '3,11': 'TC2 / L40', '3,12': 'TAA2 / L41', '3,14': 'V4 / L42',
+
+      // Wednesday (row 4)
+      '4,1': 'C1 / L13', '4,2': 'A1 / L14', '4,3': 'F1 / L15', '4,4': 'V1 / L16', '4,5': 'V2 / L17', '4,6': 'V2 / L18',
+      '4,8': 'C2 / L43', '4,9': 'A2 / L44', '4,10': 'F2 / L45', '4,11': 'TD2 / L46', '4,12': 'TBB2 / L47', '4,14': 'V5 / L48',
+
+      // Thursday (row 5)
+      '5,1': 'D1 / L19', '5,2': 'B1 / L20', '5,3': 'G1 / L21', '5,4': 'TE1 / L22', '5,5': 'TCC1 / L23', '5,6': 'TCC1 / L24',
+      '5,8': 'D2 / L49', '5,9': 'B2 / L50', '5,10': 'G2 / L51', '5,11': 'TE2 / L52', '5,12': 'TCC2 / L53', '5,14': 'V6 / L54',
+
+      // Friday (row 6)
+      '6,1': 'E1 / L25', '6,2': 'C1 / L26', '6,3': 'TA1 / L27', '6,4': 'TF1 / L28', '6,5': 'TD1 / L29', '6,6': 'TD1 / L30',
+      '6,8': 'E2 / L55', '6,9': 'C2 / L56', '6,10': 'TA2 / L57', '6,11': 'TF2 / L58', '6,12': 'TDD2 / L59', '6,14': 'V7 / L60',
+    };
+
+    const key = `${row},${col}`;
+    const slotText = slotMap[key] || '';
+    if (!slotText) {
+      console.warn(`⚠️ No slot mapping for row=${row}, col=${col}`);
+      return [''];
+    }
+    return slotText.split(' / ').map(s => s.trim()).filter(s => s.length > 0);
+  };
+
+  // Get occupied slots from attackData + attackQuick (EXACT FFCSonTheGo logic)
+  // Memoized to re-calculate when dependencies change
+  const occupiedSlots = useMemo(() => {
+    const attackData = state.activeTable.attackData || [];
+    const attackQuick = state.activeTable.attackQuick || [];
+    console.log('🔍 occupiedSlots recalculating - attackData:', attackData);
+    console.log('🔍 occupiedSlots recalculating - attackQuick:', attackQuick);
+    console.log('🔍 occupiedSlots recalculating - attackMode:', state.ui.attackMode);
+    console.log('🔍 occupiedSlots recalculating - quickVisualizationEnabled:', state.ui.quickVisualizationEnabled);
+
+    // ClashMap for slot expansion
+    const clashMap: { [key: string]: string[] } = {
+      A1: ['L1', 'L14'], B1: ['L7', 'L20'], C1: ['L13', 'L26'], D1: ['L3', 'L19', 'L4'],
+      E1: ['L9', 'L25', 'L10'], F1: ['L2', 'L15', 'L16'], G1: ['L8', 'L21', 'L22'],
+      TA1: ['L27', 'L28'], TB1: ['L4', 'L5'], TC1: ['L10', 'L11'], TD1: ['L29', 'L30'],
+      TE1: ['L22', 'L23'], TF1: ['L28', 'L29'], TG1: ['L5', 'L6'], TAA1: ['L11', 'L12'],
+      TCC1: ['L23', 'L24'], A2: ['L31', 'L44'], B2: ['L37', 'L50'], C2: ['L43', 'L56'],
+      D2: ['L33', 'L49', 'L34'], E2: ['L39', 'L55', 'L40'], F2: ['L32', 'L45', 'L46'],
+      G2: ['L38', 'L51', 'L52'], TA2: ['L57', 'L58'], TB2: ['L34', 'L35'], TC2: ['L40', 'L41'],
+      TD2: ['L46', 'L47'], TE2: ['L52', 'L53'], TF2: ['L58', 'L59'], TG2: ['L35', 'L36'],
+      TAA2: ['L41', 'L42'], TBB2: ['L47', 'L48'], TCC2: ['L53', 'L54'], TDD2: ['L59', 'L60'],
+      L1: ['A1'], L2: ['F1'], L3: ['D1'], L4: ['TB1', 'D1'], L5: ['TG1', 'TB1'], L6: ['TG1'],
+      L7: ['B1'], L8: ['G1'], L9: ['E1'], L10: ['TC1', 'E1'], L11: ['TAA1', 'TC1'], L12: ['TAA1'],
+      L13: ['C1'], L14: ['A1'], L15: ['F1'], L16: ['V1', 'F1'], L17: ['V2', 'V1'], L18: ['V2'],
+      L19: ['D1'], L20: ['B1'], L21: ['G1'], L22: ['TE1', 'G1'], L23: ['TCC1', 'TE1'], L24: ['TCC1'],
+      L25: ['E1'], L26: ['C1'], L27: ['TA1'], L28: ['TF1', 'TA1'], L29: ['TD1', 'TF1'], L30: ['TD1'],
+      L31: ['A2'], L32: ['F2'], L33: ['D2'], L34: ['TB2', 'D2'], L35: ['TG2', 'TB2'], L36: ['V3', 'TG2'],
+      L37: ['B2'], L38: ['G2'], L39: ['E2'], L40: ['TC2', 'E2'], L41: ['TAA2', 'TC2'], L42: ['V4', 'TAA2'],
+      L43: ['C2'], L44: ['A2'], L45: ['F2'], L46: ['TD2', 'F2'], L47: ['TBB2', 'TD2'], L48: ['V5', 'TBB2'],
+      L49: ['D2'], L50: ['B2'], L51: ['G2'], L52: ['TE2', 'G2'], L53: ['TCC2', 'TE2'], L54: ['V6', 'TCC2'],
+      L55: ['E2'], L56: ['C2'], L57: ['TA2'], L58: ['TF2', 'TA2'], L59: ['TDD2', 'TF2'], L60: ['V7', 'TDD2'],
+      V1: ['L16', 'L17'], V2: ['L17', 'L18'], V3: ['L36'], V4: ['L42'], V5: ['L48'], V6: ['L54'], V7: ['L60'],
+    };
+
+    // Collect all raw slots from attackData
+    const allSlots: string[] = [];
+    attackData.forEach((course) => {
+      allSlots.push(...course.slots);
+    });
+
+    const thSlots = new Set<string>();
+    const labSlots = new Set<string>();
+
+    // Process each slot with clashMap expansion (EXACT FFCSonTheGo logic)
+    allSlots.forEach((slot) => {
+      if (slot.includes('L')) {
+        // Lab slot
+        labSlots.add(slot);
+        if (clashMap[slot]) {
+          clashMap[slot].forEach((relatedSlot) => {
+            thSlots.add(relatedSlot);
+          });
+        }
+      } else {
+        // Theory slot
+        thSlots.add(slot);
+        if (clashMap[slot]) {
+          clashMap[slot].forEach((relatedSlot) => {
+            labSlots.add(relatedSlot);
+          });
+        }
+      }
+    });
+
+    // CRITICAL: Include attackQuick if Quick Visualization is enabled (FFCSonTheGo line 2387-2439)
+    if (state.ui.quickVisualizationEnabled) {
+      console.log('🔍 Processing attackQuick entries...');
+      attackQuick.forEach((el: any[]) => {
+        const x = getCellSlotText(el[0], el[1]);
+        console.log(`🔍 attackQuick entry [${el[0]}, ${el[1]}] (length=${el.length}) -> slots:`, x);
+
+        if (el.length === 3) {
+          // QV tile highlight (3 elements)
+          if (x.length === 1) {
+            // Single slot cell
+            if (x[0].includes('L')) {
+              labSlots.add(x[0]);
+            } else {
+              thSlots.add(x[0]);
+              if (clashMap[x[0]]) {
+                clashMap[x[0]].forEach((lec) => labSlots.add(lec));
+              }
+            }
+          } else {
+            // Theory/Lab cell - only add theory slot
+            thSlots.add(x[0]);
+            if (clashMap[x[0]]) {
+              clashMap[x[0]].forEach((lec) => labSlots.add(lec));
+            }
+          }
+        } else {
+          // Individual cell highlight (2 elements)
+          if (x.length === 1) {
+            // Single slot cell
+            if (x[0].includes('L')) {
+              console.log(`  ➕ Adding lab slot: ${x[0]}`);
+              labSlots.add(x[0]);
+              if (clashMap[x[0]]) {
+                console.log(`  ➕ Expanding ${x[0]} to theory: ${clashMap[x[0]].join(', ')}`);
+                clashMap[x[0]].forEach((lec) => thSlots.add(lec));
+              }
+            } else {
+              console.log(`  ➕ Adding theory slot: ${x[0]}`);
+              thSlots.add(x[0]);
+            }
+          } else {
+            // Theory/Lab cell - only add lab slot
+            const labSlot = x[1].split('\n')[0];
+            console.log(`  ➕ Adding lab slot from theory/lab cell: ${labSlot}`);
+            labSlots.add(labSlot);
+            if (clashMap[labSlot]) {
+              console.log(`  ➕ Expanding ${labSlot} to theory: ${clashMap[labSlot].join(', ')}`);
+              clashMap[labSlot].forEach((lec) => thSlots.add(lec));
+            }
+          }
+        }
+      });
+    }
+
+    const result = {
+      theory: Array.from(thSlots).sort(),
+      lab: Array.from(labSlots).sort()
+    };
+
+    console.log('🔍 occupiedSlots - result:', result);
+    console.log('🔍 occupiedSlots - allSlots:', allSlots);
+
+    return result;
+  }, [
+    state.activeTable.attackData,
+    state.activeTable.attackQuick,
+    state.ui.quickVisualizationEnabled,
+    state.ui.attackMode,
+    liveFfcsMode,
+    qvUpdateTrigger
+  ]);
 
   return (
     <>
@@ -1826,60 +2030,74 @@ export default function CoursePanel() {
                   Live FFCS Mode - Slot Occupancy
                 </h4>
               </div>
-              
+
               <div style={{ backgroundColor: 'rgba(255, 255, 255, 0.1)', borderRadius: '8px', padding: '1rem' }}>
                 <div className="alert alert-info mb-3">
-                  <strong>Live Mode Active:</strong> This mode shows real-time slot availability and automatically focuses on conflicting slots during FFCS registration.
+                  <strong>Live Mode Active:</strong> This mode shows occupied slots based on your course selections.
                 </div>
-                
-                {/* Slot Status Grid */}
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(100px, 1fr))', gap: '0.5rem', marginBottom: '1rem' }}>
-                  {/* Theory Slots */}
-                  {['A1', 'A2', 'B1', 'B2', 'C1', 'C2', 'D1', 'D2', 'E1', 'E2', 'F1', 'F2', 'G1', 'G2'].map(slot => (
-                    <div 
-                      key={slot}
-                      style={{
-                        backgroundColor: 'rgba(0, 255, 0, 0.2)',
-                        border: '1px solid rgba(0, 255, 0, 0.5)',
-                        borderRadius: '4px',
-                        padding: '0.25rem',
-                        textAlign: 'center',
-                        fontSize: '0.8rem',
-                        color: 'white'
-                      }}
-                    >
-                      {slot}
-                      <div style={{ fontSize: '0.6rem', opacity: 0.8 }}>Available</div>
+
+                {/* Theory Occupied Slots */}
+                <div style={{ marginBottom: '1rem' }}>
+                  <h5 style={{ color: 'white', fontWeight: '600', fontSize: '1rem', marginBottom: '0.5rem' }}>
+                    Theory Slots Occupied
+                  </h5>
+                  {occupiedSlots.theory.length > 0 ? (
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(80px, 1fr))', gap: '0.5rem' }}>
+                      {occupiedSlots.theory.map(slot => (
+                        <div
+                          key={slot}
+                          style={{
+                            backgroundColor: 'rgba(255, 107, 107, 0.3)',
+                            border: '1px solid rgba(255, 107, 107, 0.6)',
+                            borderRadius: '4px',
+                            padding: '0.5rem',
+                            textAlign: 'center',
+                            fontSize: '0.85rem',
+                            fontWeight: '600',
+                            color: '#ff6b6b'
+                          }}
+                        >
+                          {slot}
+                        </div>
+                      ))}
                     </div>
-                  ))}
+                  ) : (
+                    <p style={{ color: 'rgba(255, 255, 255, 0.6)', fontSize: '0.9rem', fontStyle: 'italic' }}>
+                      No theory slots occupied
+                    </p>
+                  )}
                 </div>
-                
-                {/* Lab Slots */}
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(100px, 1fr))', gap: '0.5rem' }}>
-                  {['L1', 'L2', 'L3', 'L4', 'L5', 'L6'].map(slot => (
-                    <div 
-                      key={slot}
-                      style={{
-                        backgroundColor: 'rgba(255, 165, 0, 0.2)',
-                        border: '1px solid rgba(255, 165, 0, 0.5)',
-                        borderRadius: '4px',
-                        padding: '0.25rem',
-                        textAlign: 'center',
-                        fontSize: '0.8rem',
-                        color: 'white'
-                      }}
-                    >
-                      {slot}
-                      <div style={{ fontSize: '0.6rem', opacity: 0.8 }}>Lab</div>
+
+                {/* Lab Occupied Slots */}
+                <div>
+                  <h5 style={{ color: 'white', fontWeight: '600', fontSize: '1rem', marginBottom: '0.5rem' }}>
+                    Lab Slots Occupied
+                  </h5>
+                  {occupiedSlots.lab.length > 0 ? (
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(80px, 1fr))', gap: '0.5rem' }}>
+                      {occupiedSlots.lab.map(slot => (
+                        <div
+                          key={slot}
+                          style={{
+                            backgroundColor: 'rgba(255, 165, 0, 0.3)',
+                            border: '1px solid rgba(255, 165, 0, 0.6)',
+                            borderRadius: '4px',
+                            padding: '0.5rem',
+                            textAlign: 'center',
+                            fontSize: '0.85rem',
+                            fontWeight: '600',
+                            color: '#ffb347'
+                          }}
+                        >
+                          {slot}
+                        </div>
+                      ))}
                     </div>
-                  ))}
-                </div>
-                
-                <div style={{ marginTop: '1rem', fontSize: '0.8rem', color: 'rgba(255, 255, 255, 0.8)' }}>
-                  <strong>Legend:</strong> 
-                  <span style={{ color: '#90EE90', marginLeft: '0.5rem' }}>● Available</span>
-                  <span style={{ color: '#FFB347', marginLeft: '0.5rem' }}>● Lab Slots</span>
-                  <span style={{ color: '#FF6B6B', marginLeft: '0.5rem' }}>● Occupied</span>
+                  ) : (
+                    <p style={{ color: 'rgba(255, 255, 255, 0.6)', fontSize: '0.9rem', fontStyle: 'italic' }}>
+                      No lab slots occupied
+                    </p>
+                  )}
                 </div>
               </div>
             </div>
@@ -2356,12 +2574,12 @@ export default function CoursePanel() {
                   style={{ borderRadius: '12px', padding: '0.5rem 0.75rem', fontWeight: '500', fontSize: '0.875rem', flex: '1' }}
                   onClick={() => {
                     // Different confirmation messages for normal vs attack mode (like vanilla JS)
-                    const confirmMessage = state.ui.attackMode 
+                    const confirmMessage = state.ui.attackMode
                       ? 'Are you sure you want to clear the course list and Quick Visualization?'
                       : 'Are you sure you want to clear the course list?';
-                    
+
                     if (confirm(confirmMessage)) {
-                      dispatch({ type: 'RESET_TABLE' });
+                      dispatch({ type: 'CLEAR_LIST' });
                     }
                   }}
                 >

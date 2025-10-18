@@ -440,12 +440,11 @@ export default function CourseList() {
                   <strong>
                     Total Credits:{' '}
                     <span id="total-credits">
-                      {state.ui.attackMode 
+                      {state.ui.attackMode
                         ? state.activeTable.attackData.reduce((sum, course) => sum + course.credits, 0)
                         : state.totalCredits
                       }
                     </span>
-                    {state.ui.attackMode && <span className="text-warning"> (Attack Mode)</span>}
                   </strong>
                 </td>
               </tr>
