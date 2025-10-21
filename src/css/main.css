@@ -1,0 +1,1382 @@
+/**
+ *  This style sheet contains the custom styling applied
+ *  to the document body that is common to all sections
+ *  or that doesn't fit into any particular section
+ */
+
+/* Loading animation keyframes */
+@keyframes loading-bounce {
+    0%, 80%, 100% {
+        transform: scale(0);
+    }
+    40% {
+        transform: scale(1);
+    }
+}
+
+body {
+    background: linear-gradient(135deg, #0c0c0c 0%, #1a1a1a 50%, #0f0f0f 100%);
+    background-attachment: fixed;
+    color: var(--text-color);
+    min-height: 100vh;
+}
+
+/*
+    Navigation bar
+ */
+
+.navbar {
+    background: rgba(58, 58, 58, 0.7) !important;
+    border-radius: 20px;
+    margin: auto;
+    position: absolute;
+    top: 24px;
+    width: calc(100% - 48px);
+    max-width: 90%;
+    min-height: 80px;
+    z-index: 1000;
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(255, 255, 255, 0.6);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+    transition: all 0.3s ease;
+}
+
+.navbar * {
+    color: white !important;
+}
+
+.navbar .navbar-brand {
+    color: white !important;
+}
+
+.navbar .nav-link {
+    color: white !important;
+}
+
+.navbar .btn-outline-light {
+    color: white !important;
+    border-color: rgba(255, 255, 255, 0.5) !important;
+}
+
+/* Navbar button styling */
+.navbar .btn-outline-secondary {
+    background: rgba(108, 117, 125, 0.2) !important;
+    border: 1px solid rgba(255, 255, 255, 0.3) !important;
+    border-radius: 15px !important;
+    color: white !important;
+    padding: 0.75rem 1.5rem !important;
+    font-weight: 500 !important;
+    transition: all 0.3s ease !important;
+    backdrop-filter: blur(10px) !important;
+}
+
+.navbar .btn-outline-secondary:hover {
+    background: rgba(108, 117, 125, 0.8) !important;
+    color: white !important;
+    transform: translateY(-2px) !important;
+    border-color: rgba(255, 255, 255, 0.5) !important;
+}
+
+.gdsc-logo {
+    transition: transform 0.3s ease;
+    border-radius: 4px;
+    object-fit: contain;
+    width: 40px;
+    height: auto;
+    max-height: 40px;
+}
+
+.navbar .container-xl,
+.navbar .container-xl * {
+    background-color: transparent !important;
+}
+
+/*
+    Custom blockquote
+ */
+blockquote > p::before {
+    content: '\f059';
+    font-family: 'Font Awesome 5 Free';
+    margin-right: 5px;
+}
+
+/*
+    Overriding bootstrap table style
+ */
+.table th,
+.table td {
+    text-align: center;
+    vertical-align: middle;
+    white-space: nowrap;
+}
+
+/*
+    Footer
+ */
+footer {
+    background-color: var(--primary-color);
+    color: var(--background-color);
+}
+
+/*
+    Disable text selection
+ */
+.noselect {
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    -khtml-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+}
+
+/*
+    Custom scrollbar
+ */
+::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+    background: #121212;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #303030;
+    border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #505050;
+}
+
+/* Dark theme styles for cards and containers - NOT navbar */
+.card:not(.navbar-card) {
+    background-color: var(--background-color);
+    border: none;
+    color: var(--text-color);
+}
+
+/* Override Bootstrap default styles for dark theme */
+.card-body {
+    background-color: var(--background-color) !important;
+    color: var(--text-color) !important;
+}
+
+/* Dark theme styles for form inputs - Modern pill design */
+.form-control,
+.form-select {
+    background-color: rgba(0, 0, 0, 0.4);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: white;
+    border-radius: 20px;
+    padding: 0.6rem 1.25rem;
+    font-weight: 500;
+    transition: all 0.3s ease;
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+    min-height: 38px;
+}
+
+.form-control:focus,
+.form-select:focus {
+    background-color: rgba(0, 0, 0, 0.6);
+    border-color: var(--primary-color);
+    color: white;
+    box-shadow: 0 0 0 0.2rem rgba(78, 205, 196, 0.25);
+    transform: translateY(-2px);
+}
+
+/* Dark theme styles for modals */
+.modal-content {
+    background-color: var(--background-color);
+    color: var(--text-color);
+}
+
+.modal-header {
+    border-color: var(--table-border-color);
+}
+
+.modal-footer {
+    border-color: var(--table-border-color);
+}
+
+/* Universal glassmorphic button styles */
+.btn {
+    border: none !important;
+    border-radius: 15px !important;
+    padding: 0.75rem 1.5rem !important;
+    font-weight: 500 !important;
+    transition: all 0.3s ease !important;
+    backdrop-filter: blur(10px) !important;
+}
+
+.btn:hover {
+    transform: translateY(-2px) !important;
+}
+
+.btn-primary {
+    background: rgba(13, 110, 253, 0.8) !important;
+    color: white !important;
+}
+
+.btn-primary:hover {
+    background: rgba(13, 110, 253, 1) !important;
+    transform: translateY(-2px) !important;
+}
+
+.btn-success {
+    background: rgba(76, 175, 80, 0.8) !important;
+    color: white !important;
+}
+
+.btn-success:hover {
+    background: rgba(76, 175, 80, 1) !important;
+    transform: translateY(-2px) !important;
+}
+
+.btn-warning {
+    background: rgba(255, 193, 7, 0.8) !important;
+    color: white !important;
+}
+
+.btn-warning:hover {
+    background: rgba(255, 193, 7, 1) !important;
+    transform: translateY(-2px) !important;
+    color: white !important;
+}
+
+.btn-danger {
+    background: rgba(220, 53, 69, 0.8) !important;
+    color: white !important;
+}
+
+.btn-danger:hover {
+    background: rgba(220, 53, 69, 1) !important;
+    transform: translateY(-2px) !important;
+}
+
+.btn-light {
+    background: rgba(248, 249, 250, 0.9) !important;
+    color: #212529 !important;
+}
+
+.btn-light:hover {
+    background: rgba(248, 249, 250, 1) !important;
+    transform: translateY(-2px) !important;
+}
+
+.btn-outline-secondary {
+    background: rgba(108, 117, 125, 0.2) !important;
+    border: 1px solid rgba(108, 117, 125, 0.5) !important;
+    color: rgba(108, 117, 125, 1) !important;
+}
+
+.btn-outline-secondary:hover {
+    background: rgba(108, 117, 125, 0.8) !important;
+    color: white !important;
+    transform: translateY(-2px) !important;
+}
+
+/* Dark theme styles for buttons */
+.btn-secondary {
+    background: rgba(108, 117, 125, 0.8) !important;
+    color: white !important;
+}
+
+.btn-secondary:hover {
+    background: rgba(108, 117, 125, 1) !important;
+    transform: translateY(-2px) !important;
+}
+
+/* Dark theme styles for dropdowns - Modern pill design */
+.dropdown-menu {
+    background: rgba(0, 0, 0, 0.85);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 15px;
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+    padding: 0.5rem;
+}
+
+.dropdown-item {
+    color: white;
+    padding: 0.75rem 1.5rem;
+    border-radius: 10px;
+    margin: 0.25rem 0;
+    transition: all 0.3s ease;
+    font-weight: 500;
+}
+
+.dropdown-item:hover,
+.dropdown-item:focus {
+    background: rgba(78, 205, 196, 0.8);
+    color: white;
+}
+
+/* Custom .h2s class for course display - Modern pill-shaped design */
+div.h2s,
+.h2s,
+div[class*="h2s"],
+.course-panel .h2s,
+#course-panel .h2s,
+.container .h2s,
+.row .h2s,
+.col .h2s {
+    background: #121212;
+    backdrop-filter: blur(20px) !important;
+    -webkit-backdrop-filter: blur(20px) !important;
+    border: 2px solid rgba(255, 255, 255, 0.5) !important;
+    border-radius: 14px !important;
+    padding: 0.6rem 1.25rem !important;
+    margin: 0.5rem 0 !important;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3) !important;
+    transition: all 0.3s ease !important;
+    position: relative !important;
+    overflow: hidden !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    min-height: 40px !important;
+    width: 100% !important;
+}
+
+/* Remove any potential background colors from all children - with maximum specificity */
+div.h2s *,
+.h2s *,
+.h2s h2,
+.h2s h4,
+.h2s span,
+.h2s p,
+.h2s div,
+.course-panel .h2s *,
+#course-panel .h2s *,
+.container .h2s *,
+.row .h2s *,
+.col .h2s * {
+    background: transparent !important;
+    background-color: transparent !important;
+}
+
+.h2s::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.02), rgba(255, 255, 255, 0.05));
+    border-radius: 25px;
+    pointer-events: none;
+    z-index: 0;
+}
+
+.h2s:hover,
+div.h2s:hover,
+.course-panel .h2s:hover,
+#course-panel .h2s:hover,
+.container .h2s:hover,
+.row .h2s:hover,
+.col .h2s:hover {
+    background: rgba(0, 0, 0, 0.9) !important;
+    background-color: rgba(0, 0, 0, 0.9) !important;
+    border-color: rgba(78, 205, 196, 0.4) !important;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4), 0 0 0 0.1rem rgba(78, 205, 196, 0.2) !important;
+    transform: translateY(-1px) !important;
+}
+
+/* Style the inner h2 elements only */
+.h2s h2,
+div.h2s h2,
+.course-panel .h2s h2,
+#course-panel .h2s h2,
+.container .h2s h2,
+.row .h2s h2,
+.col .h2s h2 {
+    margin: 0 !important;
+    font-size: 0.95rem !important;
+    font-weight: 500 !important;
+    color: white !important;
+    flex: 1 !important;
+    display: flex !important;
+    align-items: center !important;
+    text-shadow: none !important;
+    line-height: 1.3 !important;
+    position: relative !important;
+    z-index: 1 !important;
+    background: transparent !important;
+    background-color: transparent !important;
+}
+
+/* Style the course name span */
+.h2s .cname,
+div.h2s .cname,
+.course-panel .h2s .cname,
+#course-panel .h2s .cname,
+.container .h2s .cname,
+.row .h2s .cname,
+.col .h2s .cname {
+    color: white !important;
+    font-weight: 500 !important;
+    text-overflow: ellipsis !important;
+    overflow: hidden !important;
+    white-space: nowrap !important;
+    flex: 1 !important;
+    margin-right: 0.5rem !important;
+    position: relative !important;
+    z-index: 1 !important;
+    background: transparent !important;
+    background-color: transparent !important;
+}
+
+/* Arrow styling - COMPLETELY HIDDEN */
+.h2s .arrow,
+div.h2s .arrow,
+.course-panel .h2s .arrow,
+#course-panel .h2s .arrow,
+.container .h2s .arrow,
+.row .h2s .arrow,
+.col .h2s .arrow {
+    display: none !important;
+    visibility: hidden !important;
+}
+
+/* Hide ALL arrows globally */
+.arrow,
+*[class*="arrow"],
+.dropdown-toggle::after,
+.dropdown::after,
+.caret,
+.fa-caret-down,
+.fa-chevron-down,
+.fa-angle-down {
+    display: none !important;
+    visibility: hidden !important;
+}
+
+/* Responsive adjustments for h2s */
+@media (max-width: 768px) {
+    .h2s,
+    div.h2s,
+    .course-panel .h2s,
+    #course-panel .h2s,
+    .container .h2s,
+    .row .h2s,
+    .col .h2s {
+        padding: 0.75rem 1.25rem !important;
+        font-size: 0.9rem !important;
+    }
+    
+    .h2s h2,
+    div.h2s h2,
+    .course-panel .h2s h2,
+    #course-panel .h2s h2,
+    .container .h2s h2,
+    .row .h2s h2,
+    .col .h2s h2 {
+        font-size: 0.9rem !important;
+    }
+    
+    .h2s .cname,
+    div.h2s .cname,
+    .course-panel .h2s .cname,
+    #course-panel .h2s .cname,
+    .container .h2s .cname,
+    .row .h2s .cname,
+    .col .h2s .cname {
+        margin-right: 0.25rem !important;
+    }
+}
+
+/* Additional dark theme improvements */
+hr {
+    border-color: var(--table-border-color);
+}
+
+/* Improve table visibility in dark theme */
+.table {
+    color: var(--text-color);
+}
+
+.table th,
+.table td {
+    border-color: var(--table-border-color);
+}
+
+/* Dark theme for alerts and badges */
+.alert {
+    color: var(--text-color);
+    background-color: var(--background-color);
+    border-color: var(--table-border-color);
+}
+
+/* Ensure proper contrast for text elements */
+h1, h2, h3, h4, h5, h6 {
+    color: var(--text-color);
+}
+
+p, span, div {
+    color: inherit;
+}
+
+/* Dark theme for progress bars */
+.progress {
+    background-color: var(--table-border-color);
+}
+
+/* Dark theme for list groups */
+.list-group-item {
+    background-color: var(--background-color);
+    border-color: var(--table-border-color);
+    color: var(--text-color);
+}
+
+/* Dark theme for course preferences section specifically */
+#course-preferences,
+.course-preferences {
+    background-color: var(--background-color) !important;
+    color: var(--text-color) !important;
+}
+
+/* Glassmorphism styling for course preferences container ONLY */
+.container-xl .card:not(.navbar) {
+    background: #232323 !important;
+    backdrop-filter: blur(16px) !important;
+    -webkit-backdrop-filter: blur(16px) !important;
+    border: none !important;
+    border-left: none !important;
+    border-right: none !important;
+    border-top: none !important;
+    border-bottom: none !important;
+    border-radius: 20px !important;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2) !important;
+    transition: all 0.3s ease;
+}
+
+.container-xl .card:not(.navbar):hover {
+    background: #232323 !important;
+    border: none !important;
+    border-left: none !important;
+    border-right: none !important;
+    border-top: none !important;
+    border-bottom: none !important;
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.3) !important;
+}
+
+/* Modern card header styling - ONLY for course preferences */
+.container-xl .card .card-header {
+    background: #232323 !important;
+    border: none !important;
+    border-left: none !important;
+    border-right: none !important;
+    border-top: none !important;
+    border-bottom: none !important;
+    border-radius: 20px 20px 0 0 !important;
+    padding: 1rem 1.5rem;
+    backdrop-filter: blur(15px);
+    -webkit-backdrop-filter: blur(15px);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.card-header .c_pref {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: white;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+    flex: 0 0 auto;
+}
+
+.header-button-element {
+    display: flex;
+    gap: 0.75rem;
+    align-items: center;
+}
+
+/* Updated button styling for header buttons - now matches universal style */
+.header-button-element .btn {
+    border-radius: 12px !important;
+    padding: 0.5rem 1rem !important;
+    font-weight: 500 !important;
+    transition: all 0.3s ease !important;
+    border: none !important;
+    backdrop-filter: blur(10px) !important;
+    -webkit-backdrop-filter: blur(10px) !important;
+    font-size: 0.9rem !important;
+}
+
+.header-button-element .btn-success {
+    background: rgba(76, 175, 80, 0.8) !important;
+    color: white !important;
+}
+
+.header-button-element .btn-success:hover {
+    background: rgba(76, 175, 80, 1) !important;
+    transform: translateY(-2px) !important;
+    box-shadow: 0 8px 25px rgba(76, 175, 80, 0.3) !important;
+}
+
+.header-button-element .btn-primary {
+    background: rgba(13, 110, 253, 0.8) !important;
+    color: white !important;
+}
+
+.header-button-element .btn-primary:hover {
+    background: rgba(13, 110, 253, 1) !important;
+    transform: translateY(-2px) !important;
+    box-shadow: 0 8px 25px rgba(13, 110, 253, 0.3) !important;
+}
+
+.header-button-element .btn-warning {
+    background: rgba(255, 193, 7, 0.8) !important;
+    color: white !important;
+}
+
+.header-button-element .btn-warning:hover {
+    background: rgba(255, 193, 7, 1) !important;
+    transform: translateY(-2px) !important;
+    box-shadow: 0 8px 25px rgba(255, 193, 7, 0.3) !important;
+    color: white !important;
+}
+
+.header-button-element .btn-outline-secondary {
+    background: rgba(108, 117, 125, 0.2) !important;
+    color: white !important;
+    border: 1px solid rgba(108, 117, 125, 0.4) !important;
+}
+
+.header-button-element .btn-outline-secondary:hover {
+    background: rgba(108, 117, 125, 0.8) !important;
+    color: white !important;
+    transform: translateY(-2px) !important;
+    box-shadow: 0 8px 25px rgba(108, 117, 125, 0.2) !important;
+}
+
+/* Card body modern styling - ONLY for course preferences */
+.container-xl .card .card-body {
+    background: #232323!important;
+    color: var(--text-color) !important;
+    border-radius: 0;
+    border: none !important;
+    padding: 1.25rem;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    border: none !important;
+    border-left: none !important;
+    border-right: none !important;
+    border-top: none !important;
+    border-bottom: none !important;
+}
+
+/* Card footer styling */
+.container-xl .card .card-footer {
+    background: #232323 !important;
+    border: none !important;
+    border-left: none !important;
+    border-right: none !important;
+    border-top: none !important;
+    border-bottom: none !important;
+    border-radius: 0 0 20px 20px !important;
+    padding: 1.25rem;
+    backdrop-filter: blur(16px);
+}
+
+/* Left and right sections styling */
+.left-box, .right-box {
+    background: #232323 !important;
+    border-radius: 12px;
+    padding: 1rem;
+    margin: 0.25rem;
+    border: none;
+}
+
+.left-border {
+    border-left: 0px solid var(--primary-color);
+}
+
+/* Form styling within course preferences */
+#div-for-add-course .form-control,
+#div-for-edit-course .form-control {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 10px;
+    color: white;
+    padding: 0.75rem 1rem;
+    transition: all 0.3s ease;
+}
+
+#div-for-add-course .form-control:focus,
+#div-for-edit-course .form-control:focus {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 0.2rem rgba(78, 205, 196, 0.25);
+    color: white;
+}
+
+#div-for-add-course .form-control::placeholder,
+#div-for-edit-course .form-control::placeholder {
+    color: rgba(255, 255, 255, 0.6);
+}
+
+/* Modern labels */
+#div-for-add-course label,
+#div-for-edit-course label {
+    color: white;
+    font-weight: 500;
+    margin-bottom: 0.5rem;
+}
+
+/* Modal footer buttons - now using universal glassmorphic style */
+.modal-footer .btn {
+    border-radius: 15px !important;
+    padding: 0.75rem 2rem !important;
+    font-weight: 500 !important;
+    transition: all 0.3s ease !important;
+    border: none !important;
+    backdrop-filter: blur(10px) !important;
+}
+
+/* Form switches styling */
+.form-check-label {
+    color: white !important;
+    font-weight: 500;
+}
+
+.form-check-input:checked {
+    background-color: var(--primary-color);
+    border-color: var(--primary-color);
+}
+
+/* Headers within sections */
+#div-for-add-course h4,
+#div-for-edit-course h4 {
+    color: white;
+    font-weight: 600;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+/* HR styling */
+hr {
+    border-color: rgba(255, 255, 255, 0.2) !important;
+    opacity: 0.5;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .container-xl .card {
+        margin: 0.5rem;
+        border-radius: 15px;
+    }
+    
+    .card-header {
+        padding: 0.75rem 1rem;
+        border-radius: 15px 15px 0 0 !important;
+    }
+    
+    .card-body {
+        padding: 0.75rem;
+        border-radius: 0 0 15px 15px;
+    }
+    
+    .left-box, .right-box {
+        margin: 0.125rem;
+        padding: 0.75rem;
+        border-radius: 10px;
+    }
+    
+    .header-button-element {
+        gap: 0.5rem;
+    }
+    
+    .header-button-element .btn {
+        padding: 0.4rem 0.8rem !important;
+        font-size: 0.85rem !important;
+    }
+    
+    .card-header .c_pref {
+        font-size: 1.1rem;
+    }
+    
+    .h2s,
+    div.h2s,
+    .course-panel .h2s,
+    #course-panel .h2s,
+    .container .h2s,
+    .row .h2s,
+    .col .h2s {
+        padding: 0.5rem 1rem !important;
+        margin: 0.375rem 0 !important;
+        min-height: 36px !important;
+        border-radius: 12px !important;
+    }
+    
+    .form-control,
+    .form-select {
+        padding: 0.5rem 1rem;
+        min-height: 34px;
+        border-radius: 18px;
+    }
+}
+
+/* Additional responsive adjustments for very small screens */
+@media (max-width: 480px) {
+    .container-xl .card {
+        margin: 0.25rem;
+        border-radius: 12px;
+    }
+    
+    .card-header {
+        padding: 0.5rem;
+        flex-direction: column;
+        gap: 0.5rem;
+        text-align: center;
+    }
+    
+    .card-body {
+        padding: 0.5rem;
+    }
+    
+    .left-box, .right-box {
+        margin: 0;
+        padding: 0.5rem;
+        border-radius: 8px;
+    }
+    
+    .header-button-element {
+        gap: 0.25rem;
+        flex-wrap: wrap;
+        justify-content: center;
+    }
+    
+    .header-button-element .btn {
+        padding: 0.3rem 0.6rem !important;
+        font-size: 0.8rem !important;
+        border-radius: 10px !important;
+    }
+    
+    .card-header .c_pref {
+        font-size: 1rem;
+        margin-bottom: 0.5rem;
+    }
+    
+    .h2s,
+    div.h2s,
+    .course-panel .h2s,
+    #course-panel .h2s,
+    .container .h2s,
+    .row .h2s,
+    .col .h2s {
+        padding: 0.4rem 0.8rem !important;
+        margin: 0.25rem 0 !important;
+        min-height: 32px !important;
+        border-radius: 10px !important;
+    }
+    
+    .form-control,
+    .form-select {
+        padding: 0.4rem 0.8rem;
+        min-height: 30px;
+        border-radius: 15px;
+        font-size: 0.9rem;
+    }
+}
+
+/* Additional background and glassmorphism improvements */
+html, body {
+    background: linear-gradient(135deg, #0c0c0c 0%, #1a1a1a 50%, #0f0f0f 100%) !important;
+    background-attachment: fixed !important;
+    min-height: 100vh !important;
+}
+
+/* Hide any background decorative elements that might interfere */
+body::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(135deg, #0c0c0c 0%, #1a1a1a 50%, #0f0f0f 100%);
+    z-index: -1;
+}
+
+/* Better contrast for form elements in the right panel */
+.right-box .form-control,
+.right-box .form-select,
+.right-box input,
+.right-box select {
+    background: rgba(0, 0, 0, 0.3) !important;
+    border: 1px solid rgba(255, 255, 255, 0.2) !important;
+    color: white !important;
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+}
+
+.right-box .form-control:focus,
+.right-box .form-select:focus,
+.right-box input:focus,
+.right-box select:focus {
+    background: rgba(0, 0, 0, 0.5) !important;
+    border-color: var(--primary-color) !important;
+    box-shadow: 0 0 0 0.2rem rgba(78, 205, 196, 0.25) !important;
+    color: white !important;
+}
+
+.right-box .form-control::placeholder,
+.right-box input::placeholder {
+    color: rgba(255, 255, 255, 0.7) !important;
+}
+
+/* Better styling for the right panel specifically */
+.right-box {
+    background: #232323 !important;
+    border: none !important;
+    overflow: visible !important;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Style labels in the right panel */
+.right-box label {
+    color: white !important;
+    font-weight: 500;
+}
+
+/* Improve text visibility in the right panel */
+.right-box h4,
+.right-box h5,
+.right-box h6 {
+    color: white !important;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+}
+
+/* Better dropdown styling - Modern pill-shaped design */
+.bootstrap-select .dropdown-toggle {
+    background: rgba(0, 0, 0, 0.8) !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    color: white !important;
+    border-radius: 25px !important;
+    padding: 0.875rem 1.75rem !important;
+    font-weight: 500;
+    font-size: 0.95rem;
+    transition: all 0.3s ease;
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+    min-height: 48px;
+    display: flex;
+    align-items: center;
+    position: relative;
+    overflow: hidden;
+}
+
+.bootstrap-select .dropdown-toggle:focus,
+.bootstrap-select .dropdown-toggle:hover {
+    background: rgba(0, 0, 0, 0.9) !important;
+    border-color: rgba(78, 205, 196, 0.4) !important;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4), 0 0 0 0.1rem rgba(78, 205, 196, 0.2) !important;
+    transform: translateY(-1px);
+}
+
+/* Enhanced dropdown toggle styling for exact match */
+.bootstrap-select .dropdown-toggle::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.02), rgba(255, 255, 255, 0.05));
+    border-radius: 25px;
+    pointer-events: none;
+}
+
+/* Style the dropdown arrow - COMPLETELY HIDDEN */
+.bootstrap-select .dropdown-toggle::after {
+    display: none !important;
+    visibility: hidden !important;
+    content: none !important;
+}
+
+/* Dropdown menu styling */
+.bootstrap-select .dropdown-menu {
+    background: rgba(0, 0, 0, 0.85) !important;
+    border: 1px solid rgba(255, 255, 255, 0.15) !important;
+    border-radius: 15px !important;
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+    margin-top: 0.5rem;
+    padding: 0.5rem;
+    max-height: 300px;
+    overflow-y: auto;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+}
+
+.bootstrap-select .dropdown-menu::-webkit-scrollbar {
+    display: none;
+}
+
+.bootstrap-select .dropdown-item {
+    color: white !important;
+    padding: 0.75rem 1.5rem;
+    border-radius: 10px;
+    margin: 0.25rem 0;
+    transition: all 0.3s ease;
+    font-weight: 500;
+}
+
+.bootstrap-select .dropdown-item:hover,
+.bootstrap-select .dropdown-item:focus {
+    background: rgba(78, 205, 196, 0.8) !important;
+    color: white !important;
+    transform: translateX(5px);
+    box-shadow: 0 4px 15px rgba(78, 205, 196, 0.3);
+}
+
+.bootstrap-select .dropdown-item.active {
+    background: var(--primary-color) !important;
+    color: white !important;
+}
+
+/* Additional styling for perfect pill-shaped dropdowns */
+.bootstrap-select {
+    width: 100% !important;
+}
+
+.bootstrap-select .dropdown-toggle .filter-option {
+    color: white !important;
+    font-weight: 500;
+    text-overflow: ellipsis;
+    overflow: hidden;
+    white-space: nowrap;
+}
+
+.bootstrap-select .dropdown-toggle .filter-option-inner {
+    color: white !important;
+}
+
+/* Custom dropdown styling for course/teacher selection - Modern dark theme */
+.dropdown-teacher {
+    margin: 0.75rem 0;
+    border-radius: 15px;
+    overflow: hidden;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+    transition: all 0.3s ease;
+    background: #161616 !important;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+}
+
+.dropdown-heading {
+    background: transparent !important;
+    border: none !important;
+    border-radius: 15px 15px 0 0 !important;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+    padding: 0 !important;
+    margin: 0 !important;
+}
+
+.dropdown-heading:hover {
+    background: rgba(0, 0, 0, 0.9) !important;
+}
+
+.dropdown-heading .h2s {
+    background: rgba(0, 0, 0, 0.8) !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    border-radius: 15px !important;
+    margin: 0 !important;
+}
+
+.dropdown-heading .h2s:hover {
+    border-color: rgba(78, 205, 196, 0.4) !important;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4), 0 0 0 0.1rem rgba(78, 205, 196, 0.2) !important;
+}
+
+.dropdown-list {
+    border: none !important;
+    border-radius: 0 0 15px 15px !important;
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+    padding: 0.5rem;
+    margin: 0;
+    list-style: none;
+    max-height: 300px;
+    overflow-y: auto;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+}
+
+.dropdown-list::-webkit-scrollbar {
+    display: none;
+}
+
+.dropdown-list li {
+    color: white !important;
+    padding: 0.75rem 1rem !important;
+    border-radius: 10px !important;
+    margin: 0.25rem 0 !important;
+    transition: all 0.3s ease !important;
+    cursor: pointer !important;
+    display: flex !important;
+    align-items: center !important;
+    font-weight: 500 !important;
+    border: none !important;
+    min-height: 48px !important;
+}
+
+.dropdown-list li:hover {
+    background: rgba(78, 205, 196, 0.8) !important;
+    color: white !important;
+    transform: translateX(5px) !important;
+    box-shadow: 0 4px 15px rgba(78, 205, 196, 0.3) !important;
+}
+
+.dropdown-list li input[type="radio"] {
+    margin-right: 0.75rem;
+    accent-color: var(--primary-color);
+    transform: scale(1.2);
+    flex-shrink: 0;
+}
+
+.dropdown-list li div {
+    color: white !important;
+    background: transparent !important;
+    display: flex;
+    align-items: center;
+    font-size: 0.9rem;
+}
+
+/* Ensure all text in dropdown items is white */
+.dropdown-list li * {
+    color: white !important;
+    background: transparent !important;
+}
+
+/* Override any inline styles with maximum specificity */
+.dropdown-list li[style] {
+    color: white !important;
+}
+
+.dropdown-list li[style]:hover {
+    background: rgba(78, 205, 196, 0.8) !important;
+    background-color: rgba(78, 205, 196, 0.8) !important;
+}
+
+/* Additional override for specific inline background colors */
+.dropdown-list li[style*="background-color"] {
+    color: white !important;
+}
+
+.dropdown-list li[style*="background-color"]:hover {
+    background: rgba(78, 205, 196, 0.8) !important;
+    background-color: rgba(78, 205, 196, 0.8) !important;
+}
+
+/* Force override all possible inline color variations */
+.dropdown-list li[style*="rgb(255, 228, 135)"],
+.dropdown-list li[style*="rgb(214, 255, 214)"],
+.dropdown-list li[style*="rgb(255, 205, 205)"] {
+    background: none !important;
+    background-color: none !important;
+}
+
+.dropdown-list li[style*="rgb(255, 228, 135)"]:hover,
+.dropdown-list li[style*="rgb(214, 255, 214)"]:hover,
+.dropdown-list li[style*="rgb(255, 205, 205)"]:hover {
+    background: rgba(78, 205, 196, 0.8) !important;
+    background-color: rgba(78, 205, 196, 0.8) !important;
+}
+
+/* Enhanced form controls to match the dropdown style */
+.form-control,
+.form-select {
+    background-color: rgba(0, 0, 0, 0.8);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: white;
+    border-radius: 25px;
+    padding: 0.875rem 1.75rem;
+    font-weight: 500;
+    font-size: 0.95rem;
+    transition: all 0.3s ease;
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+    min-height: 48px;
+    position: relative;
+    overflow: hidden;
+}
+
+.form-control::before,
+.form-select::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.02), rgba(255, 255, 255, 0.05));
+    border-radius: 25px;
+    pointer-events: none;
+}
+
+.form-control:focus,
+.form-select:focus {
+    background-color: rgba(0, 0, 0, 0.9);
+    border-color: rgba(78, 205, 196, 0.4);
+    color: white;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4), 0 0 0 0.1rem rgba(78, 205, 196, 0.2);
+    transform: translateY(-1px);
+}
+
+.cardnew {
+    background: #232323;
+    border-radius: 20px;
+    margin: auto;
+    position: relative;
+    width: calc(100% - 48px);
+    max-width: 90%;
+    min-height: 80px;
+    z-index: 1000;
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: none;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+    transition: all 0.3s ease;
+    border: 2px solid rgba(255, 255, 255, 0.4);
+}
+
+.container-xl .card {
+    background: #232323 !important;
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: none !important;
+    border-left: none !important;
+    border-right: none !important;
+    border-top: none !important;
+    border-bottom: none !important;
+    border-radius: 20px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+}
+
+.card-header {
+    background: #232323 !important;
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: none !important;
+    border-left: none !important;
+    border-right: none !important;
+    border-top: none !important;
+    border-bottom: none !important;
+    color: white !important;
+    border-radius: 20px 20px 0 0 !important;
+}
+
+.card-body {
+    background: #232323 !important;
+    border: none !important;
+    border-left: none !important;
+    border-right: none !important;
+    border-top: none !important;
+    border-bottom: none !important;
+}
+
+.card-footer {
+    background: #232323 !important;
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: none !important;
+    border-left: none !important;
+    border-right: none !important;
+    border-top: none !important;
+    border-bottom: none !important;
+    border-radius: 0 0 20px 20px !important;
+}
+
+/* Comprehensive border removal for all card elements */
+.card, .card-header, .card-body, .card-footer,
+.container-xl .card, .container-xl .card-header, .container-xl .card-body, .container-xl .card-footer {
+    border: none !important;
+    border-left: none !important;
+    border-right: none !important;
+    border-top: none !important;
+    border-bottom: none !important;
+    border-width: 0 !important;
+    border-style: none !important;
+    outline: none !important;
+}
+
+/* Remove any bootstrap default borders */
+.card {
+    border: 0 !important;
+}
+
+.card > .card-header {
+    border-bottom: 0 !important;
+}
+
+.card > .card-footer {
+    border-top: 0 !important;
+}
+
+.card > .list-group:first-child .list-group-item:first-child {
+    border-top: 0 !important;
+}
+
+.card > .list-group:last-child .list-group-item:last-child {
+    border-bottom: 0 !important;
+}
+
+#div-for-add-teacher {
+    border: 2px solid rgba(255, 255, 255, 0.4) !important;
+}
+
+#div-for-add-course {
+    border: 2px solid rgba(255, 255, 255, 0.4) !important;
+    background: #1f1f1f !important;
+}
+
+.h2s {
+    border: 2px solid rgba(255, 255, 255, 1) !important;
+}
+
+.dropdown-heading .h2s {
+    border: 2px solid rgba(255, 255, 255, 0.5) !important;
+    background: #161616 !important;
+}
+
+#tt-picker-button {
+    border-top-right-radius: 0% !important;
+    border-bottom-right-radius: 0% !important;
+}
+
+#option-buttons #tt-picker-button {
+    border-top-right-radius: 0% !important;
+    border-bottom-right-radius: 0% !important;
+}
+
+#option-buttons #tt-picker-add {
+    border-top-left-radius: 0% !important;
+    border-bottom-left-radius: 0% !important;
+}
+
+.collab-room * {
+  all: unset;
+  all: revert; /* Use revert to reset to browser defaults */
+  box-sizing: border-box;
+}
+.collab-room select,
+.collab-room input {
+  background: none !important;
+}
+.collab-room {
+  background-image: none !important;
+}
