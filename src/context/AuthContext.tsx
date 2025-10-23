@@ -91,7 +91,7 @@ const AuthContext = createContext<{
 } | null>(null);
 
 // API Base URL
-const API_BASE_URL = 'https://gdscffsc.onrender.com';
+const API_BASE_URL = 'http://localhost:8005';
 
 // Auth provider
 export function AuthProvider({ children }: { children: ReactNode }) {
@@ -122,7 +122,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     try {
       const endpoint = isGDSC ? '/loginGDSC' : '/loginUser';
-      
+
       const response = await fetch(`${API_BASE_URL}${endpoint}`, {
         method: 'POST',
         headers: {
@@ -144,6 +144,41 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         // Save to localStorage
         localStorage.setItem('ffcs-user', JSON.stringify(user));
         dispatch({ type: 'LOGIN_SUCCESS', payload: user });
+
+        // Fetch personal timetables from backend after successful login
+        try {
+          console.log('📥 Fetching personal timetables after login...');
+
+          const timetablesResponse = await fetch(`${API_BASE_URL}/api/personal/timetables`, {
+            method: 'GET',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${data.token}`,
+            },
+          });
+
+          const timetablesData = await timetablesResponse.json();
+
+          if (timetablesResponse.ok && timetablesData.msg === 'Success') {
+            console.log('✅ Personal timetables fetched:', timetablesData.data);
+
+            // Trigger event to load timetables into FFCSContext
+            if (typeof window !== 'undefined') {
+              const event = new CustomEvent('load-personal-timetables', {
+                detail: {
+                  timetables: timetablesData.data.timetables,
+                  activeTimetable: timetablesData.data.activeTimetable
+                }
+              });
+              window.dispatchEvent(event);
+            }
+          } else {
+            console.warn('⚠️ Failed to fetch personal timetables:', timetablesData.msg);
+          }
+        } catch (timetablesError) {
+          console.error('❌ Error fetching personal timetables:', timetablesError);
+          // Don't fail login if timetables fetch fails
+        }
       } else {
         dispatch({ type: 'LOGIN_FAILURE', payload: data.msg || 'Login failed' });
       }

@@ -430,10 +430,10 @@ export default function Home() {
           /* Desktop content */
           <>
             <Navbar />
-            {/* Collaboration Room */}
-            <div style={{marginTop: '100px'}}>
+            {/* Collaboration Room - Moved into CoursePanel's Room Settings */}
+            {/* <div style={{marginTop: '100px'}}>
               <CollaborationRoom />
-            </div>
+            </div> */}
 
             {/* Course Panel */}
             <div style={{ 
