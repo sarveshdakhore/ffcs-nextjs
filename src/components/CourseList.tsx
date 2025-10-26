@@ -166,254 +166,101 @@ export default function CourseList() {
   const sortedCourses = getSortedCourses();
 
   return (
-    <div className="container-xxl" style={{ marginTop: '3rem', position: 'relative' }}>
-      {/* Decorative pins for Course List */}
-      <img 
-        src="./images/doodles/yellowpin.svg" 
-        alt="" 
-        style={{ 
-          position: 'absolute', 
-          top: '45px', 
-          left: '100px', 
-          width: '40px', 
-          height: '40px', 
-          opacity: 1.0, 
-          zIndex: 100, 
-          transform: 'rotate(18deg)', 
-          filter: 'drop-shadow(0 3px 6px rgba(0,0,0,0.4))' 
-        }} 
-      />
-      <img 
-        src="./images/doodles/redpin.svg" 
-        alt="" 
-        style={{ 
-          position: 'absolute', 
-          top: '50px', 
-          right: '100px', 
-          width: '36px', 
-          height: '36px', 
-          opacity: 1.0, 
-          zIndex: 100, 
-          transform: 'rotate(-28deg)', 
-          filter: 'drop-shadow(0 3px 6px rgba(0,0,0,0.4))' 
-        }} 
-      />
-      
-      <div style={{
-        background: 'rgba(35, 35, 35, 0.95)',
-        borderRadius: '20px',
-        backdropFilter: 'blur(20px)',
-        WebkitBackdropFilter: 'blur(20px)',
-        border: '2px solid rgba(255, 255, 255, 0.5)',
-        boxShadow: '0 8px 32px rgba(0, 0, 0, 0.3)',
-        overflow: 'hidden',
-        margin: '2rem auto',
-        maxWidth: '1200px'
-      }}>
+    <div className="container-xxl mt-12">
+      <div className="bg-[#232323]/95 rounded-[20px] backdrop-blur-[20px] border-2 border-white/50 shadow-[0_8px_32px_rgba(0,0,0,0.3)] overflow-hidden my-8 mx-auto max-w-[1200px]">
         
         {/* Header */}
-        <div style={{ padding: '1.5rem 2rem' }}>
-          <h3 style={{
-            color: 'white',
-            fontWeight: 600,
-            margin: 0,
-            fontSize: '1.4rem'
-          }}>
+        <div className="px-8 py-6">
+          <h3 className="text-white font-semibold m-0 text-[1.4rem]">
             Selected Course List
           </h3>
         </div>
 
-        <div className="table-responsive" style={{ background: 'transparent', padding: '20px' }}>
-          <table 
-            id="course-list" 
-            className="table table-hover mb-0" 
-            style={{
-              background: 'transparent',
-              color: 'white',
-              margin: 0,
-              border: '2px solid rgba(255, 255, 255, 0.5)',
-              borderRadius: '20px',
-              borderCollapse: 'separate',
-              borderSpacing: 0
-            }}
+        <div className="table-responsive bg-transparent p-5">
+          <table
+            id="course-list"
+            className="table table-hover mb-0 bg-transparent text-white m-0 border-2 border-white/50 rounded-[20px] border-separate border-spacing-0"
           >
             <thead>
-              <tr style={{
-                background: 'rgba(20, 20, 20, 0.8)',
-                border: 'none',
-                borderTopLeftRadius: '20%',
-                borderTopRightRadius: '20%'
-              }}>
-                <th 
+              <tr className="bg-[#141414]/80 border-none rounded-t-[20%]">
+                <th
                   onClick={() => handleSort('slots')}
-                  style={{ 
-                    cursor: 'pointer',
-                    background: 'transparent',
-                    color: 'white',
-                    fontWeight: 600,
-                    fontSize: '0.85rem',
-                    padding: '1rem 1.5rem',
-                    border: 'none',
-                    textTransform: 'uppercase',
-                    letterSpacing: '0.5px',
-                    borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
-                    borderTopLeftRadius: '20px'
-                  }}
-                  className={sortColumn === 'slots' ? sortDirection : ''}
+                  className={`cursor-pointer bg-transparent text-white font-semibold text-[0.85rem] px-6 py-4 border-none uppercase tracking-wide border-b border-white/10 rounded-tl-[20px] ${sortColumn === 'slots' ? sortDirection : ''}`}
                 >
                   Slot{getSortIcon('slots')}
                 </th>
-                <th 
+                <th
                   onClick={() => handleSort('courseCode')}
-                  style={{ 
-                    cursor: 'pointer',
-                    background: 'transparent',
-                    color: 'white',
-                    fontWeight: 600,
-                    fontSize: '0.85rem',
-                    padding: '1rem 1.5rem',
-                    border: 'none',
-                    textTransform: 'uppercase',
-                    letterSpacing: '0.5px',
-                    borderBottom: '1px solid rgba(255, 255, 255, 0.1)'
-                  }}
-                  className={sortColumn === 'courseCode' ? sortDirection : ''}
+                  className={`cursor-pointer bg-transparent text-white font-semibold text-[0.85rem] px-6 py-4 border-none uppercase tracking-wide border-b border-white/10 ${sortColumn === 'courseCode' ? sortDirection : ''}`}
                 >
                   Course Code{getSortIcon('courseCode')}
                 </th>
-                <th 
+                <th
                   onClick={() => handleSort('courseTitle')}
-                  style={{ 
-                    cursor: 'pointer',
-                    background: 'transparent',
-                    color: 'white',
-                    fontWeight: 600,
-                    fontSize: '0.85rem',
-                    padding: '1rem 1.5rem',
-                    border: 'none',
-                    textTransform: 'uppercase',
-                    letterSpacing: '0.5px',
-                    borderBottom: '1px solid rgba(255, 255, 255, 0.1)'
-                  }}
-                  className={sortColumn === 'courseTitle' ? sortDirection : ''}
+                  className={`cursor-pointer bg-transparent text-white font-semibold text-[0.85rem] px-6 py-4 border-none uppercase tracking-wide border-b border-white/10 ${sortColumn === 'courseTitle' ? sortDirection : ''}`}
                 >
                   Course Title{getSortIcon('courseTitle')}
                 </th>
-                <th 
+                <th
                   onClick={() => handleSort('faculty')}
-                  style={{ 
-                    cursor: 'pointer',
-                    background: 'transparent',
-                    color: 'white',
-                    fontWeight: 600,
-                    fontSize: '0.85rem',
-                    padding: '1rem 1.5rem',
-                    border: 'none',
-                    textTransform: 'uppercase',
-                    letterSpacing: '0.5px',
-                    borderBottom: '1px solid rgba(255, 255, 255, 0.1)'
-                  }}
-                  className={sortColumn === 'faculty' ? sortDirection : ''}
+                  className={`cursor-pointer bg-transparent text-white font-semibold text-[0.85rem] px-6 py-4 border-none uppercase tracking-wide border-b border-white/10 ${sortColumn === 'faculty' ? sortDirection : ''}`}
                 >
                   Faculty{getSortIcon('faculty')}
                 </th>
-                <th 
+                <th
                   onClick={() => handleSort('venue')}
-                  style={{ 
-                    cursor: 'pointer',
-                    background: 'transparent',
-                    color: 'white',
-                    fontWeight: 600,
-                    fontSize: '0.85rem',
-                    padding: '1rem 1.5rem',
-                    border: 'none',
-                    textTransform: 'uppercase',
-                    letterSpacing: '0.5px',
-                    borderBottom: '1px solid rgba(255, 255, 255, 0.1)'
-                  }}
-                  className={sortColumn === 'venue' ? sortDirection : ''}
+                  className={`cursor-pointer bg-transparent text-white font-semibold text-[0.85rem] px-6 py-4 border-none uppercase tracking-wide border-b border-white/10 ${sortColumn === 'venue' ? sortDirection : ''}`}
                 >
                   Venue{getSortIcon('venue')}
                 </th>
-                <th 
+                <th
                   onClick={() => handleSort('credits')}
-                  style={{ 
-                    cursor: 'pointer',
-                    background: 'transparent',
-                    color: 'white',
-                    fontWeight: 600,
-                    fontSize: '0.85rem',
-                    padding: '1rem 1.5rem',
-                    border: 'none',
-                    textTransform: 'uppercase',
-                    letterSpacing: '0.5px',
-                    borderBottom: '1px solid rgba(255, 255, 255, 0.1)'
-                  }}
-                  className={sortColumn === 'credits' ? sortDirection : ''}
+                  className={`cursor-pointer bg-transparent text-white font-semibold text-[0.85rem] px-6 py-4 border-none uppercase tracking-wide border-b border-white/10 ${sortColumn === 'credits' ? sortDirection : ''}`}
                 >
                   Credits{getSortIcon('credits')}
                 </th>
-                <th style={{
-                  background: 'transparent',
-                  color: 'white',
-                  fontWeight: 600,
-                  fontSize: '0.85rem',
-                  padding: '1rem 1.5rem',
-                  border: 'none',
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.5px',
-                  borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
-                  borderTopRightRadius: '20px'
-                }}></th>
+                <th className="bg-transparent text-white font-semibold text-[0.85rem] px-6 py-4 border-none uppercase tracking-wide border-b border-white/10 rounded-tr-[20px]"></th>
               </tr>
             </thead>
 
-            <tbody id="courseList-tbody" style={{ background: 'transparent' }}>
+            <tbody id="courseList-tbody" className="bg-transparent">
               {sortedCourses.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="text-center text-muted py-4" style={{ color: 'rgba(255, 255, 255, 0.7) !important' }}>
+                  <td colSpan={7} className="text-center text-white/70 py-4">
                     No courses selected yet. Click on teachers in the Course Preferences panel to add them.
                   </td>
                 </tr>
               ) : (
                 sortedCourses.map((course) => (
-                  <tr 
+                  <tr
                     key={`course${course.courseId}`}
                     data-course={`course${course.courseId}`}
                     data-is-project={course.isProject}
-                    style={{
-                      background: 'transparent',
-                      color: 'white'
-                    }}
+                    className="bg-transparent text-white"
                   >
-                    <td style={{ padding: '1rem 1.5rem', border: 'none', borderBottom: '1px solid rgba(255, 255, 255, 0.05)' }}>
+                    <td className="px-6 py-4 border-none border-b border-white/5">
                       {course.slots.join('+')}
                     </td>
-                    <td className="fw-bold" style={{ padding: '1rem 1.5rem', border: 'none', borderBottom: '1px solid rgba(255, 255, 255, 0.05)' }}>
+                    <td className="fw-bold px-6 py-4 border-none border-b border-white/5">
                       {course.courseCode}
                     </td>
-                    <td style={{ padding: '1rem 1.5rem', border: 'none', borderBottom: '1px solid rgba(255, 255, 255, 0.05)' }}>
+                    <td className="px-6 py-4 border-none border-b border-white/5">
                       {course.courseTitle}
                     </td>
-                    <td style={{ padding: '1rem 1.5rem', border: 'none', borderBottom: '1px solid rgba(255, 255, 255, 0.05)' }}>
+                    <td className="px-6 py-4 border-none border-b border-white/5">
                       {course.faculty}
                     </td>
-                    <td style={{ padding: '1rem 1.5rem', border: 'none', borderBottom: '1px solid rgba(255, 255, 255, 0.05)' }}>
+                    <td className="px-6 py-4 border-none border-b border-white/5">
                       {course.venue}
                     </td>
-                    <td style={{ padding: '1rem 1.5rem', border: 'none', borderBottom: '1px solid rgba(255, 255, 255, 0.05)' }}>
+                    <td className="px-6 py-4 border-none border-b border-white/5">
                       {course.credits}
                     </td>
-                    <td style={{ padding: '1rem 1.5rem', border: 'none', borderBottom: '1px solid rgba(255, 255, 255, 0.05)' }}>
+                    <td className="px-6 py-4 border-none border-b border-white/5">
                       <button
-                        className="btn btn-sm btn-outline-danger"
+                        className="btn btn-sm btn-outline-danger border-danger/50 text-danger bg-transparent"
                         onClick={() => handleRemoveCourse(course.courseId)}
                         title="Remove course"
-                        style={{
-                          borderColor: 'rgba(220, 53, 69, 0.5)',
-                          color: '#dc3545',
-                          background: 'transparent'
-                        }}
                       >
                         <i className="fas fa-times"></i>
                       </button>
@@ -424,19 +271,8 @@ export default function CourseList() {
             </tbody>
 
             <tfoot>
-              <tr style={{ background: 'rgba(20, 20, 20, 0.9)', border: 'none' }}>
-                <td colSpan={7} style={{
-                  background: 'transparent',
-                  color: 'white',
-                  fontWeight: 600,
-                  fontSize: '1.1rem',
-                  textAlign: 'center',
-                  padding: '1rem',
-                  border: 'none',
-                  borderTop: '1px solid rgba(255, 255, 255, 0.2)',
-                  borderBottomLeftRadius: '20px',
-                  borderBottomRightRadius: '20px'
-                }}>
+              <tr className="bg-[#141414]/90 border-none">
+                <td colSpan={7} className="bg-transparent text-white font-semibold text-[1.1rem] text-center p-4 border-none border-t border-white/20 rounded-b-[20px]">
                   <strong>
                     Total Credits:{' '}
                     <span id="total-credits">

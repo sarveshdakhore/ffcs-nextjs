@@ -2230,79 +2230,39 @@ export default function CoursePanel() {
 
   return (
     <>
-      <div key={`course-panel-${dataKey}`} style={{ 
-        display: 'flex', 
-        gap: '1.5rem', 
-        minHeight: '600px',
-        height: '80vh', // Fixed height for both columns
-        padding: '1rem',
-        width: '100%'
-      }}>
-      {/* Left Column - 60% */}
-      <div style={{ 
-        flex: '0 0 60%',
-        display: 'flex',
-        flexDirection: 'column',
-        height: '100%'
-      }}>
+      <div key={`course-panel-${dataKey}`} className="flex gap-6 min-h-[600px] h-[80vh] p-4 w-full">
+      {/* Left Column */}
+      <div className="flex-[3] flex flex-col h-full min-w-0">
         {/* Course Preferences Card */}
-        <div className="card" style={{ 
-          height: '100%',
-          display: 'flex',
-          flexDirection: 'column'
-        }}>
+        <div className="card h-full flex flex-col">
           <div className="card-header text-left fw-bold header-button">
-            <div className="c_pref" style={{ width: '28%', alignSelf: 'center' }}>
+            <div className="c_pref w-[28%] self-center">
               Course Preferences
               {state.ui.attackMode && <span className="badge bg-warning text-dark ms-2">Live FFCS Mode</span>}
             </div>
           </div>
 
-          <div className="card-body" style={{ 
-            padding: '1rem',
-            flex: 1,
-            overflow: 'hidden',
-            display: 'flex',
-            flexDirection: 'column'
-          }}>
+          <div className="card-body p-4 flex-1 overflow-hidden flex flex-col">
         {/* Subject Area OR Active Room Details */}
-        <section style={{
-          flex: 1,
-          overflowY: 'auto',
-          scrollbarWidth: 'thin',
-          scrollbarColor: '#4a5568 #2d3748',
-          paddingRight: '0.5rem'
-        }} className="left-border left-box" id="subjectArea">
+        <section className="left-border left-box flex-1 overflow-y-auto scrollbar-thin scrollbar-thumb-[#4a5568] scrollbar-track-[#2d3748] pr-2" id="subjectArea">
           {showRoomSettings ? (
             // Active Room Details (60% LEFT column when Room Settings is ON)
-            <div style={{ color: 'white', padding: '0.5rem' }}>
+            <div className="text-white p-2">
               {!authState.isAuthenticated ? (
                 // Not authenticated
-                <div style={{
-                  textAlign: 'center',
-                  padding: '2rem',
-                  backgroundColor: 'rgba(234, 67, 53, 0.1)',
-                  borderRadius: '8px',
-                  border: '1px solid rgba(234, 67, 53, 0.3)'
-                }}>
-                  <i className="fas fa-lock" style={{ fontSize: '3rem', color: '#ea4335', marginBottom: '1rem' }}></i>
-                  <h5 style={{ color: 'white', marginBottom: '1rem' }}>Authentication Required</h5>
-                  <p style={{ color: 'rgba(255,255,255,0.7)', marginBottom: 0 }}>
+                <div className="text-center p-8 bg-google-red/10 rounded-lg border border-google-red/30">
+                  <i className="fas fa-lock text-5xl text-google-red mb-4"></i>
+                  <h5 className="text-white mb-4">Authentication Required</h5>
+                  <p className="text-white/70 mb-0">
                     Please log in to access collaboration rooms.
                   </p>
                 </div>
               ) : !activeRoomId ? (
                 // No active room selected
-                <div style={{
-                  textAlign: 'center',
-                  padding: '2rem',
-                  backgroundColor: 'rgba(66, 133, 244, 0.1)',
-                  borderRadius: '8px',
-                  border: '1px solid rgba(66, 133, 244, 0.3)'
-                }}>
-                  <i className="fas fa-users" style={{ fontSize: '3rem', color: '#4285f4', marginBottom: '1rem' }}></i>
-                  <h5 style={{ color: 'white', marginBottom: '0.5rem' }}>No Active Room</h5>
-                  <p style={{ color: 'rgba(255,255,255,0.7)', marginBottom: 0 }}>
+                <div className="text-center p-8 bg-google-blue/10 rounded-lg border border-google-blue/30">
+                  <i className="fas fa-users text-5xl text-google-blue mb-4"></i>
+                  <h5 className="text-white mb-2">No Active Room</h5>
+                  <p className="text-white/70 mb-0">
                     Create a new room or join an existing one from the panel on the right →
                   </p>
                 </div>
@@ -2310,17 +2270,11 @@ export default function CoursePanel() {
                 // Active room details
                 <div>
                   {/* Room Header */}
-                  <div style={{
-                    backgroundColor: 'rgba(66, 133, 244, 0.15)',
-                    borderRadius: '8px',
-                    padding: '1rem',
-                    marginBottom: '1.5rem',
-                    border: '2px solid rgba(66, 133, 244, 0.3)'
-                  }}>
-                    <h5 style={{ color: 'white', marginBottom: '0.75rem', fontSize: '1.1rem', fontWeight: '600' }}>
+                  <div className="bg-google-blue/15 rounded-lg p-4 mb-6 border-2 border-google-blue/30">
+                    <h5 className="text-white mb-3 text-[1.1rem] font-semibold">
                       📍 {activeRoomDetails?.displayName || `Room ${activeRoomId}`}
                     </h5>
-                    <div style={{ fontSize: '0.9rem', color: 'rgba(255,255,255,0.8)' }}>
+                    <div className="text-sm text-white/80">
                       <div>🆔 {activeRoomId}</div>
                       <div>👤 Admin: {activeRoomDetails?.adminId}</div>
                       <div>👥 Members: {activeRoomMembers.length}</div>
@@ -2680,16 +2634,11 @@ export default function CoursePanel() {
         </div>
       </div>
 
-      {/* Right Column - 40% */}
-      <div style={{ 
-        flex: '0 0 40%',
-        display: 'flex',
-        flexDirection: 'column',
-        height: '100%'
-      }}>
+      {/* Right Column */}
+      <div className="flex-[2] flex flex-col h-full min-w-0">
         {/* Top Buttons Card */}
         <div className="card">
-          <div className="card-body" style={{ padding: '1rem' }}>
+          <div className="card-body p-4">
               <button
                 id="tt-teacher-add"
                 type="button"

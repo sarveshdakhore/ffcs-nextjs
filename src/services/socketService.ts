@@ -1,4 +1,5 @@
-import { io, Socket } from 'socket.io-client';
+const { io } = require('socket.io-client');
+type Socket = any;
 
 const SOCKET_URL = 'http://localhost:8005';
 
@@ -44,15 +45,15 @@ class SocketService {
       console.log('✅ Socket connected:', this.socket?.id);
     });
 
-    this.socket.on('disconnect', (reason) => {
+    this.socket.on('disconnect', (reason: any) => {
       console.log('❌ Socket disconnected:', reason);
     });
 
-    this.socket.on('connect_error', (error) => {
+    this.socket.on('connect_error', (error: any) => {
       console.error('🔴 Socket connection error:', error.message);
     });
 
-    this.socket.on('server-message', (data) => {
+    this.socket.on('server-message', (data: any) => {
       console.log('📨 Server message:', data);
       if (data.error) {
         console.error('Server error:', data.error);

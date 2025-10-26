@@ -781,14 +781,14 @@ function ffcsReducer(state: FFCSState, action: FFCSAction): FFCSState {
           
           // Check if this specific cell [row, column] is already highlighted
           const existingIndex = currentQuick.findIndex(([r, c]) => r === row && c === column);
-          
-          let newQuick;
+
+          let newQuick: [number, number, number?][];
           if (existingIndex >= 0) {
             // Remove highlighting from this specific cell
-            newQuick = currentQuick.filter((_, i) => i !== existingIndex);
+            newQuick = currentQuick.filter((_, i) => i !== existingIndex) as [number, number, number?][];
           } else {
             // Add highlighting to this specific cell [row, column] (no third parameter for individual cell)
-            newQuick = [...currentQuick, [row, column]];
+            newQuick = [...currentQuick, [row, column]] as [number, number, number?][];
           }
           
           // After updating individual cell highlight, check if all cells of this theory slot are now highlighted
@@ -825,7 +825,7 @@ function ffcsReducer(state: FFCSState, action: FFCSAction): FFCSState {
             
             // If all positions were highlighted, add only QV highlights (replace individual ones)
             if (allPositionsHighlighted) {
-              const qvHighlights = positions.map(([r, c]) => [r, c, true] as [number, number, boolean]);
+              const qvHighlights = positions.map(([r, c]) => [r, c, 1] as [number, number, number]);
               newQuick = [...newQuick, ...qvHighlights];
             }
           });
