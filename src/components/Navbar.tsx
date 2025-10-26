@@ -2,22 +2,22 @@
 
 import { useState, useEffect } from 'react';
 import { useFFCS } from '@/context/FFCSContext';
-import { useAuth } from '@/context/AuthContext';
-import { useRouter } from 'next/navigation';
+// import { useAuth } from '@/context/AuthContext';
+// import { useRouter } from 'next/navigation';
 
 export default function Navbar() {
   const { state, dispatch } = useFFCS();
-  const { state: authState, logout } = useAuth();
-  const router = useRouter();
+  // const { state: authState, logout } = useAuth();
+  // const router = useRouter();
   const [isNavbarCollapsed, setIsNavbarCollapsed] = useState(true);
 
   const handleCampusChange = (campus: 'Vellore' | 'Chennai') => {
     dispatch({ type: 'SWITCH_CAMPUS', payload: campus });
   };
 
-  const handleLogout = () => {
-    logout();
-  };
+  // const handleLogout = () => {
+  //   logout();
+  // };
 
   const shareUrls = {
     facebook: `https://www.facebook.com/sharer/sharer.php?message=FFCS made hassle free!&u=https://ffcs.sarveshdakhore.in/`,
@@ -29,7 +29,12 @@ export default function Navbar() {
   return (
     <>
       {/* Navbar */}
-      <nav className="navbar fixed-top navbar-expand-md">
+      <nav className="navbar fixed-top navbar-expand-md" style={{
+        background: 'rgba(255, 255, 255, 0.1)',
+        backdropFilter: 'blur(10px)',
+        border: '1px solid rgba(255, 255, 255, 0.2)',
+        WebkitBackdropFilter: 'blur(10px)'
+      }}>
         <div className="container-xl px-4 py-2" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           {/* Left side - GDSC Logo and Text */}
           <div className="navbar-brand d-flex align-items-center" style={{ flex: 1, margin: 0 }}>
@@ -49,9 +54,10 @@ export default function Navbar() {
 
           {/* Right side - Navigation buttons */}
           <div className="navbar-nav flex-row" style={{ flex: 1, justifyContent: 'flex-end' }}>
-            {authState.isAuthenticated ? (
-              // Show user dropdown when authenticated
-              <>
+            {/* Commented out auth functionality for now */}
+            {/* {authState.isAuthenticated ? ( */}
+              {/* Show user dropdown when authenticated */}
+              {/* <>
                 <div id="user-opt">
                   <div className="dropdown d-inline">
                     <a
@@ -141,7 +147,7 @@ export default function Navbar() {
                   <i className="fas fa-sign-in-alt"></i>&nbsp;&nbsp;Login
                 </button>
               </>
-            )}
+            )} */}
           </div>
         </div>
       </nav>

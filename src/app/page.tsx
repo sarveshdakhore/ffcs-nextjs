@@ -8,6 +8,7 @@ import CourseList from '@/components/CourseList';
 import Footer from '@/components/Footer';
 import Modals from '@/components/Modals';
 import CollaborationRoom from '@/components/CollaborationRoom';
+import LoadingDots from '@/components/LoadingDots';
 import { FFCSProvider } from '@/context/FFCSContext';
 
 export default function Home() {
@@ -51,178 +52,11 @@ export default function Home() {
       <div className="ffcs-app">
         {/* Loading Screen */}
         {showLoading && (
-          <div id="loading-screen" style={{
-            position: 'fixed',
-            top: 0,
-            left: 0,
-            width: '100%',
-            height: '100%',
-            background: 'linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%)',
-            display: 'flex',
-            justifyContent: 'center',
-            alignItems: 'center',
-            zIndex: 10000,
-            transition: 'opacity 0.5s ease-out'
-          }}>
-            <div className="loading-dots" style={{ display: 'flex', gap: '1rem' }}>
-              <div className="loading-dot dot-blue" style={{
-                width: '16px',
-                height: '16px',
-                borderRadius: '50%',
-                background: '#4285F4',
-                animation: 'loading-bounce 1.4s infinite ease-in-out',
-                animationDelay: '-0.32s'
-              }}></div>
-              <div className="loading-dot dot-red" style={{
-                width: '16px',
-                height: '16px',
-                borderRadius: '50%',
-                background: '#EA4335',
-                animation: 'loading-bounce 1.4s infinite ease-in-out',
-                animationDelay: '-0.16s'
-              }}></div>
-              <div className="loading-dot dot-yellow" style={{
-                width: '16px',
-                height: '16px',
-                borderRadius: '50%',
-                background: '#FBBC05',
-                animation: 'loading-bounce 1.4s infinite ease-in-out',
-                animationDelay: '0s'
-              }}></div>
-              <div className="loading-dot dot-green" style={{
-                width: '16px',
-                height: '16px',
-                borderRadius: '50%',
-                background: '#34A853',
-                animation: 'loading-bounce 1.4s infinite ease-in-out',
-                animationDelay: '0.16s'
-              }}></div>
-            </div>
+          <div id="loading-screen" style={{ opacity: 1 }}>
+            <LoadingDots />
           </div>
         )}
 
-        {/* Decorative Doodles */}
-        <div className="doodles-container" style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          width: '100%',
-          height: '100%',
-          pointerEvents: 'none',
-          zIndex: 1,
-          overflow: 'hidden'
-        }}>
-          {/* Top left area */}
-          <img src="/images/doodles/gdsc.svg" alt="" style={{
-            position: 'absolute',
-            top: '10%',
-            left: '5%',
-            width: '60px',
-            height: '60px',
-            opacity: 0.4,
-            filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.3))'
-          }} />
-          <img src="/images/doodles/shape1.svg" alt="" style={{
-            position: 'absolute',
-            top: '20%',
-            left: '15%',
-            width: '40px',
-            height: '40px',
-            opacity: 0.3,
-            filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.3))'
-          }} />
-          <img src="/images/doodles/shape2.svg" alt="" style={{
-            position: 'absolute',
-            top: '15%',
-            left: '8%',
-            width: '35px',
-            height: '35px',
-            opacity: 0.35,
-            filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.3))'
-          }} />
-          
-          {/* Top right area */}
-          <img src="/images/doodles/ffcs.svg" alt="" style={{
-            position: 'absolute',
-            top: '12%',
-            right: '8%',
-            width: '55px',
-            height: '55px',
-            opacity: 0.4,
-            filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.3))'
-          }} />
-          <img src="/images/doodles/shape2.svg" alt="" style={{
-            position: 'absolute',
-            top: '18%',
-            right: '5%',
-            width: '45px',
-            height: '45px',
-            opacity: 0.3,
-            filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.3))'
-          }} />
-          
-          {/* Middle left area */}
-          <img src="/images/doodles/moto.svg" alt="" style={{
-            position: 'absolute',
-            top: '45%',
-            left: '3%',
-            width: '50px',
-            height: '50px',
-            opacity: 0.35,
-            filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.3))'
-          }} />
-          <img src="/images/doodles/gdsc.svg" alt="" style={{
-            position: 'absolute',
-            top: '55%',
-            left: '12%',
-            width: '42px',
-            height: '42px',
-            opacity: 0.4,
-            filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.3))'
-          }} />
-          
-          {/* Middle right area */}
-          <img src="/images/doodles/moto2.svg" alt="" style={{
-            position: 'absolute',
-            top: '48%',
-            right: '5%',
-            width: '48px',
-            height: '48px',
-            opacity: 0.35,
-            filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.3))'
-          }} />
-          <img src="/images/doodles/shape3.svg" alt="" style={{
-            position: 'absolute',
-            top: '42%',
-            right: '18%',
-            width: '40px',
-            height: '40px',
-            opacity: 0.3,
-            filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.3))'
-          }} />
-          
-          {/* Bottom left area */}
-          <img src="/images/doodles/moto3.svg" alt="" style={{
-            position: 'absolute',
-            bottom: '20%',
-            left: '8%',
-            width: '52px',
-            height: '52px',
-            opacity: 0.4,
-            filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.3))'
-          }} />
-          
-          {/* Bottom right area */}
-          <img src="/images/doodles/moto.svg" alt="" style={{
-            position: 'absolute',
-            bottom: '15%',
-            right: '10%',
-            width: '45px',
-            height: '45px',
-            opacity: 0.3,
-            filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.3))'
-          }} />
-        </div>
 
         {/* Mobile-only page */}
         {showMobileMessage ? (
@@ -237,94 +71,6 @@ export default function Home() {
             position: 'relative',
             overflow: 'hidden'
           }}>
-            {/* Mobile Decorative Doodles */}
-            <div style={{
-              position: 'absolute',
-              top: 0,
-              left: 0,
-              width: '100%',
-              height: '100%',
-              pointerEvents: 'none',
-              zIndex: 1
-            }}>
-              {/* Top scattered doodles */}
-              <img src="/images/doodles/gdsc.svg" alt="" style={{
-                position: 'absolute',
-                top: '8%',
-                left: '10%',
-                width: '40px',
-                height: '40px',
-                opacity: 0.6,
-                transform: 'rotate(15deg)'
-              }} />
-              <img src="/images/doodles/shape1.svg" alt="" style={{
-                position: 'absolute',
-                top: '12%',
-                right: '15%',
-                width: '35px',
-                height: '35px',
-                opacity: 0.5,
-                transform: 'rotate(-20deg)'
-              }} />
-              <img src="/images/doodles/moto.svg" alt="" style={{
-                position: 'absolute',
-                top: '20%',
-                left: '20%',
-                width: '30px',
-                height: '30px',
-                opacity: 0.4,
-                transform: 'rotate(45deg)'
-              }} />
-              
-              {/* Middle scattered doodles */}
-              <img src="/images/doodles/shape2.svg" alt="" style={{
-                position: 'absolute',
-                top: '40%',
-                left: '5%',
-                width: '38px',
-                height: '38px',
-                opacity: 0.5,
-                transform: 'rotate(-30deg)'
-              }} />
-              <img src="/images/doodles/ffcs.svg" alt="" style={{
-                position: 'absolute',
-                top: '45%',
-                right: '8%',
-                width: '42px',
-                height: '42px',
-                opacity: 0.6,
-                transform: 'rotate(25deg)'
-              }} />
-              
-              {/* Bottom scattered doodles */}
-              <img src="/images/doodles/moto2.svg" alt="" style={{
-                position: 'absolute',
-                bottom: '25%',
-                left: '12%',
-                width: '36px',
-                height: '36px',
-                opacity: 0.4,
-                transform: 'rotate(60deg)'
-              }} />
-              <img src="/images/doodles/shape3.svg" alt="" style={{
-                position: 'absolute',
-                bottom: '20%',
-                right: '20%',
-                width: '34px',
-                height: '34px',
-                opacity: 0.5,
-                transform: 'rotate(-45deg)'
-              }} />
-              <img src="/images/doodles/moto3.svg" alt="" style={{
-                position: 'absolute',
-                bottom: '10%',
-                left: '25%',
-                width: '32px',
-                height: '32px',
-                opacity: 0.3,
-                transform: 'rotate(30deg)'
-              }} />
-            </div>
 
             {/* Main content */}
             <div style={{
@@ -385,17 +131,6 @@ export default function Home() {
                 border: '1px solid #e9ecef',
                 position: 'relative'
               }}>
-                <div style={{ 
-                  position: 'absolute',
-                  top: '-12px',
-                  left: '-12px'
-                }}>
-                  <img src="/images/doodles/bluepin.svg" alt="" style={{
-                    width: '48px',
-                    height: '48px',
-                    transform: 'rotate(15deg)'
-                  }} />
-                </div>
                 <h4 style={{
                   fontSize: '20px',
                   fontWeight: '600',
@@ -445,18 +180,6 @@ export default function Home() {
               marginLeft: 'auto',
               marginRight: 'auto'
             }}>
-              {/* Decorative pins for Course Panel */}
-              <img src="/images/doodles/bluepin.svg" alt="" style={{
-                position: 'absolute',
-                top: '-15px',
-                left: '1rem',
-                width: '42px',
-                height: '42px',
-                opacity: 1.0,
-                zIndex: 100,
-                transform: 'rotate(12deg)',
-                filter: 'drop-shadow(0 3px 6px rgba(0,0,0,0.4))'
-              }} />
               
               <CoursePanel />
             </div>

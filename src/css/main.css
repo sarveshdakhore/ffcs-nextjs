@@ -15,7 +15,11 @@
 }
 
 body {
-    background: linear-gradient(135deg, #0c0c0c 0%, #1a1a1a 50%, #0f0f0f 100%);
+    background: #171717;
+    background-image: 
+        linear-gradient(to right, rgba(255, 255, 255, 0.1) 1px, transparent 1px),
+        linear-gradient(to bottom, rgba(255, 255, 255, 0.1) 1px, transparent 1px);
+    background-size: 4rem 4rem;
     background-attachment: fixed;
     color: var(--text-color);
     min-height: 100vh;
@@ -26,7 +30,7 @@ body {
  */
 
 .navbar {
-    background: rgba(58, 58, 58, 0.7) !important;
+    background: rgba(255, 255, 255, 0.15) !important;
     border-radius: 20px;
     margin: auto;
     position: absolute;
@@ -35,9 +39,9 @@ body {
     max-width: 90%;
     min-height: 80px;
     z-index: 1000;
-    backdrop-filter: blur(16px);
-    -webkit-backdrop-filter: blur(16px);
-    border: 1px solid rgba(255, 255, 255, 0.6);
+    backdrop-filter: blur(1px) !important;
+    -webkit-backdrop-filter: blur(1px) !important;
+    border: 1px solid rgba(255, 255, 255, 0.2) !important;
     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
     transition: all 0.3s ease;
 }
@@ -885,7 +889,11 @@ hr {
 
 /* Additional background and glassmorphism improvements */
 html, body {
-    background: linear-gradient(135deg, #0c0c0c 0%, #1a1a1a 50%, #0f0f0f 100%) !important;
+    background: #171717 !important;
+    background-image: 
+        linear-gradient(to right, rgba(255, 255, 255, 0.1) 1px, transparent 1px),
+        linear-gradient(to bottom, rgba(255, 255, 255, 0.1) 1px, transparent 1px) !important;
+    background-size: 4rem 4rem !important;
     background-attachment: fixed !important;
     min-height: 100vh !important;
 }
@@ -898,7 +906,11 @@ body::before {
     left: 0;
     width: 100%;
     height: 100%;
-    background: linear-gradient(135deg, #0c0c0c 0%, #1a1a1a 50%, #0f0f0f 100%);
+    background: #171717;
+    background-image: 
+        linear-gradient(to right, rgba(255, 255, 255, 0.1) 1px, transparent 1px),
+        linear-gradient(to bottom, rgba(255, 255, 255, 0.1) 1px, transparent 1px);
+    background-size: 4rem 4rem;
     z-index: -1;
 }
 
