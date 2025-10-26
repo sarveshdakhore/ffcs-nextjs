@@ -7,7 +7,6 @@ import Timetable from '@/components/Timetable';
 import CourseList from '@/components/CourseList';
 import Footer from '@/components/Footer';
 import Modals from '@/components/Modals';
-import CollaborationRoom from '@/components/CollaborationRoom';
 import LoadingDots from '@/components/LoadingDots';
 import { FFCSProvider } from '@/context/FFCSContext';
 
@@ -165,10 +164,6 @@ export default function Home() {
           /* Desktop content */
           <>
             <Navbar />
-            {/* Collaboration Room - Moved into CoursePanel's Room Settings */}
-            {/* <div style={{marginTop: '100px'}}>
-              <CollaborationRoom />
-            </div> */}
 
             {/* Course Panel */}
             <div style={{ 

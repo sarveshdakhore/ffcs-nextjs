@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import "./globals.css";
-import { AuthProvider } from '@/context/AuthContext';
 import ErrorBoundary from '@/components/ErrorBoundary';
 
 // Import all styles
@@ -48,9 +47,7 @@ export default function RootLayout({
     <html lang="en">
       <body>
         <ErrorBoundary>
-          <AuthProvider>
-            {children}
-          </AuthProvider>
+          {children}
         </ErrorBoundary>
       </body>
     </html>

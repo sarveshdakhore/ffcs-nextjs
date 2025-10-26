@@ -2,7 +2,6 @@
 
 import React, { createContext, useContext, useReducer, useEffect, useRef, ReactNode } from 'react';
 import localforage from 'localforage';
-import { socketService } from '@/services/socketService';
 
 // Clash map from vanilla JS - used for slot conflict detection
 const clashMap: { [key: string]: string[] } = {
@@ -1369,8 +1368,6 @@ function ffcsReducer(state: FFCSState, action: FFCSAction): FFCSState {
 const FFCSContext = createContext<{
   state: FFCSState;
   dispatch: React.Dispatch<FFCSAction>;
-  loadFromBackend: () => Promise<void>;
-  saveToBackend: () => Promise<void>;
 } | undefined>(undefined);
 
 // Provider component
@@ -1509,91 +1506,9 @@ export function FFCSProvider({ children }: { children: ReactNode }) {
     state.forceUpdateCounter // Sync on manual updates too
   ]);
 
-  // Load timetables from backend
-  const loadFromBackend = async () => {
-    try {
-      console.log('📥 Loading timetables from backend...');
-
-      if (!socketService.isConnected()) {
-        throw new Error('Socket not connected. Please login first.');
-      }
-
-      const response = await socketService.getPersonalTimetables();
-
-      if (response.success && response.timetables) {
-        console.log('✅ Loaded from backend:', response);
-
-        dispatch({
-          type: 'LOAD_FROM_BACKEND',
-          payload: {
-            timetables: response.timetables,
-            activeTimetable: response.activeTimetable || 'Default'
-          }
-        });
-      } else {
-        throw new Error(response.error || 'Failed to load timetables');
-      }
-    } catch (error) {
-      console.error('❌ Error loading from backend:', error);
-      dispatch({
-        type: 'SAVE_TO_BACKEND_ERROR',
-        payload: error instanceof Error ? error.message : 'Failed to load'
-      });
-      throw error;
-    }
-  };
-
-  // Save current timetables to backend
-  const saveToBackend = async () => {
-    try {
-      console.log('💾 Saving timetables to backend...');
-      dispatch({ type: 'SAVE_TO_BACKEND_START' });
-
-      if (!socketService.isConnected()) {
-        throw new Error('Socket not connected. Please login first.');
-      }
-
-      // Save all timetables
-      for (const table of state.timetableStoragePref) {
-        console.log(`💾 Saving timetable: ${table.name}`);
-
-        const response = await socketService.updatePersonalTimetable(table.name, table);
-
-        if (!response.success) {
-          // If timetable doesn't exist, create it first
-          if (response.error?.includes('not found')) {
-            console.log(`📝 Creating new timetable: ${table.name}`);
-            const createResponse = await socketService.createPersonalTimetable(table.name);
-
-            if (createResponse.success) {
-              // Now update it with actual data
-              await socketService.updatePersonalTimetable(table.name, table);
-            }
-          } else {
-            throw new Error(response.error || `Failed to save ${table.name}`);
-          }
-        }
-      }
-
-      // Set active timetable
-      if (state.activeTable) {
-        await socketService.setActiveTimetable(state.activeTable.name);
-      }
-
-      console.log('✅ All timetables saved successfully');
-      dispatch({ type: 'SAVE_TO_BACKEND_SUCCESS' });
-    } catch (error) {
-      console.error('❌ Error saving to backend:', error);
-      dispatch({
-        type: 'SAVE_TO_BACKEND_ERROR',
-        payload: error instanceof Error ? error.message : 'Failed to save'
-      });
-      throw error;
-    }
-  };
 
   return (
-    <FFCSContext.Provider value={{ state, dispatch, loadFromBackend, saveToBackend }}>
+    <FFCSContext.Provider value={{ state, dispatch }}>
       {children}
     </FFCSContext.Provider>
   );
