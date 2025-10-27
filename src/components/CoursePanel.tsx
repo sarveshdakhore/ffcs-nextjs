@@ -49,6 +49,10 @@ export default function CoursePanel() {
   const [multipleTeachersText, setMultipleTeachersText] = useState('');
   const [multipleError, setMultipleError] = useState('');
 
+  // Scroll position preservation
+  const scrollPositionsRef = useRef<Map<string, number>>(new Map());
+  const subjectAreaScrollRef = useRef<number>(0);
+
   // Delete confirmation states
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [showTeacherDeleteConfirm, setShowTeacherDeleteConfirm] = useState(false);
@@ -525,8 +529,8 @@ export default function CoursePanel() {
     const trimmedQuery = teacherSearchQuery.trim();
 
     if (!trimmedQuery) {
-      // No search query - close all dropdowns
-      setOpenDropdowns(new Set());
+      // No search query - don't change dropdown state (let user control manually)
+      // Only reset when search query is explicitly cleared by user
       return;
     }
 
@@ -544,6 +548,23 @@ export default function CoursePanel() {
 
     setOpenDropdowns(newOpenDropdowns);
   }, [teacherSearchQuery, activeTable.subject]);
+
+  // Restore scroll positions after re-render (runs synchronously before paint)
+  useEffect(() => {
+    // Restore subject area scroll position
+    const subjectArea = document.getElementById('subjectArea') as HTMLElement;
+    if (subjectArea && subjectArea.scrollTop !== subjectAreaScrollRef.current) {
+      subjectArea.scrollTop = subjectAreaScrollRef.current;
+    }
+
+    // Restore all dropdown scroll positions
+    scrollPositionsRef.current.forEach((scrollTop, subjectName) => {
+      const ulElement = document.querySelector(`[data-subject="${subjectName}"]`) as HTMLElement;
+      if (ulElement && ulElement.scrollTop !== scrollTop) {
+        ulElement.scrollTop = scrollTop;
+      }
+    });
+  });
 
   // Check if a teacher is selected (in the timetable data or attack data)
   const isTeacherSelected = (courseName: string, teacherName: string): boolean => {
@@ -2154,7 +2175,15 @@ export default function CoursePanel() {
                     type="text"
                     placeholder="Search teachers..."
                     value={teacherSearchQuery}
-                    onChange={(e) => setTeacherSearchQuery(e.target.value)}
+                    onChange={(e) => {
+                      const newValue = e.target.value;
+                      setTeacherSearchQuery(newValue);
+
+                      // If search is cleared, close all dropdowns
+                      if (!newValue.trim()) {
+                        setOpenDropdowns(new Set());
+                      }
+                    }}
                     style={{
                       padding: '6px 32px 6px 32px',
                       backgroundColor: 'rgba(255, 255, 255, 0.08)',
@@ -2226,6 +2255,11 @@ export default function CoursePanel() {
             minHeight: 0,
             paddingTop: 0
           }}
+          onScroll={(e) => {
+            // Save subject area scroll position
+            const target = e.currentTarget;
+            subjectAreaScrollRef.current = target.scrollTop;
+          }}
         >
           {Object.entries(subjects).map(([subjectName, subjectData]) => {
             return (
@@ -2262,6 +2296,21 @@ export default function CoursePanel() {
               <ul
                 className={`dropdown-list bg-[#0b0b0b] ${openDropdowns.has(subjectName) ? 'show' : ''}`}
                 data-edit-mode={state.globalVars.editTeacher ? 'true' : 'false'}
+                data-subject={subjectName}
+                ref={(el) => {
+                  if (el) {
+                    // Restore saved scroll position when element mounts
+                    const savedScroll = scrollPositionsRef.current.get(subjectName);
+                    if (savedScroll !== undefined) {
+                      el.scrollTop = savedScroll;
+                    }
+                  }
+                }}
+                onScroll={(e) => {
+                  // Save scroll position as user scrolls
+                  const target = e.currentTarget;
+                  scrollPositionsRef.current.set(subjectName, target.scrollTop);
+                }}
               >
                 {(() => {
                   const sortedTeachers = sortTeachersByColor(subjectData.teacher, subjectName);
@@ -2278,7 +2327,6 @@ export default function CoursePanel() {
                   return filteredTeachers.map(([teacherName, teacherData]) => {
                   // Skip clash detection entirely in edit mode (when setting priority)
                   let hasClash = false;
-                  let isClashingAndSelected = false;
 
                   if (!state.globalVars.editTeacher) {
                     // Only check clashes in normal mode, not edit mode
@@ -2308,10 +2356,6 @@ export default function CoursePanel() {
 
                     // Check clash against OTHER courses only
                     hasClash = isCommonSlot(teacherSlots, consideredSlots);
-
-                    // Check if this teacher is selected and clashing in normal mode (for red highlighting)
-                    const isSelected = isTeacherSelected(subjectName, teacherName);
-                    isClashingAndSelected = hasClash && isSelected && !state.ui.attackMode;
                   }
 
                   const isEditSelected = state.globalVars.editTeacher && selectedEditTeacher === `${subjectName}|${teacherName}`;
@@ -2322,9 +2366,7 @@ export default function CoursePanel() {
                     data-teacher={`${subjectName}|${teacherName}`}
                     className={`${!state.globalVars.editTeacher && hasClash ? 'clashLi' : ''} ${isClicking ? 'clicking' : ''}`}
                     style={{
-                      backgroundColor: isClashingAndSelected ? '#ff6b6b' : teacherData.color,
-                      color: isClashingAndSelected ? 'white' : undefined,
-                      fontWeight: isClashingAndSelected ? 'bold' : undefined,
+                      backgroundColor: teacherData.color,
                       border: isEditSelected ? '4px solid #3b82f6' : undefined,
                       boxShadow: isEditSelected ? '0 0 0 2px #3b82f6' : undefined,
                       cursor: (() => {
@@ -2968,7 +3010,7 @@ export default function CoursePanel() {
                         type="text"
                         className="form-control"
                         id="teacher-input_remove"
-                        placeholder="KIM JONG UN"
+                        placeholder="Teacher's Name"
                         value={teacherName}
                         onChange={(e) => setTeacherName(removeDotsLive(e.target.value))}
                         autoComplete="off"
@@ -3093,7 +3135,7 @@ export default function CoursePanel() {
                         type="text"
                         className="form-control"
                         id="teacher-input_remove-edit"
-                        placeholder="KIM JONG UN"
+                        placeholder="Teacher's Name"
                         value={editTeacherName}
                         onChange={(e) => setEditTeacherName(removeDotsLive(e.target.value))}
                         autoComplete="off"
@@ -3112,7 +3154,7 @@ export default function CoursePanel() {
                         type="text"
                         className="form-control"
                         id="teacher-input_remove-edit-pre"
-                        placeholder="KIM JONG UN"
+                        placeholder="Teacher's Name"
                         autoComplete="off"
                       />
                     </div>

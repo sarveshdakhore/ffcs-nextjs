@@ -451,7 +451,7 @@ export default function AddTeacherForm() {
                 type="text"
                 className="form-control"
                 id="teacher-input_remove"
-                placeholder="KIM JONG UN"
+                placeholder="Teacher's Name"
                 autoComplete="off"
                 value={teacherName}
                 onChange={(e) => setTeacherName(removeDotsLive(e.target.value))}
