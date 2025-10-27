@@ -765,7 +765,6 @@ export default function Timetable() {
 
     // SECOND PASS: Check ADJACENT cells for time overlap (FFCSonTheGo pattern)
     // Check theory courses against next cell's courses, and lab courses against next cell's courses
-    console.log('🔍 [CLASH DETECTION] Starting adjacent cell check...');
     DAYS.forEach(day => {
       for (let index = 0; index < 13; index++) {
         const currentCell = cellsByDayAndIndex[day]?.[index];
@@ -790,10 +789,6 @@ export default function Timetable() {
           }
 
           if (nextStartTime < theoryEndTime) {
-            console.log(`🚨 [THEORY CLASH] ${day.toUpperCase()} index ${index} theory → ${index + 1}`, {
-              theoryEndTime: `${Math.floor(theoryEndTime / 60)}:${(theoryEndTime % 60).toString().padStart(2, '0')}`,
-              nextStartTime: `${Math.floor(nextStartTime / 60)}:${(nextStartTime % 60).toString().padStart(2, '0')}`
-            });
             hasClash = true;
           }
         }
@@ -813,10 +808,6 @@ export default function Timetable() {
           }
 
           if (nextStartTime < labEndTime) {
-            console.log(`🚨 [LAB CLASH] ${day.toUpperCase()} index ${index} lab → ${index + 1}`, {
-              labEndTime: `${Math.floor(labEndTime / 60)}:${(labEndTime % 60).toString().padStart(2, '0')}`,
-              nextStartTime: `${Math.floor(nextStartTime / 60)}:${(nextStartTime % 60).toString().padStart(2, '0')}`
-            });
             hasClash = true;
           }
         }
@@ -841,11 +832,6 @@ export default function Timetable() {
           });
         }
       }
-    });
-
-    console.log('🔍 [CLASH DETECTION] Final results:', {
-      timeOverlapCells: Array.from(timeOverlapCells),
-      clashingCourseIds
     });
 
     // THIRD PASS: Render cells with correct classes
@@ -948,8 +934,10 @@ export default function Timetable() {
                         fontWeight: '500'
                       }}
                     >
-                      {course.courseCode || course.courseTitle}
-                      {course.venue && course.venue !== 'VENUE' ? `-${course.venue}` : ''}
+                      {course.courseCode
+                        ? `${course.courseCode}${course.venue && course.venue !== 'VENUE' ? `-${course.venue}` : ''}`
+                        : course.venue && course.venue !== 'VENUE' ? course.venue : course.courseTitle
+                      }
                     </div>
                   );
                 })
