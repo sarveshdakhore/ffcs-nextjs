@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useFFCS } from '@/context/FFCSContext';
+import html2canvas from 'html2canvas';
 
 export default function Modals() {
   const { state, dispatch } = useFFCS();
@@ -52,15 +53,184 @@ export default function Modals() {
 
     const dataStr = JSON.stringify(courseListData, null, 2);
     const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
-    
+
     const exportFileDefaultName = `ffcs-course-list-${new Date().toISOString().slice(0, 10)}.json`;
-    
+
     const linkElement = document.createElement('a');
     linkElement.setAttribute('href', dataUri);
     linkElement.setAttribute('download', exportFileDefaultName);
     linkElement.click();
-    
+
     setShowDownloadModal(false);
+  };
+
+  // Helper function to create branded header
+  const appendHeader = (container: HTMLElement, tableName: string) => {
+    const header = document.createElement('div');
+    header.style.padding = '20px';
+    header.style.backgroundColor = '#ffffff';
+    header.style.borderBottom = '2px solid #e0e0e0';
+
+    const title = document.createElement('h1');
+    title.textContent = 'FFCS Planner';
+    title.style.color = '#4ECDCC';
+    title.style.fontSize = '32px';
+    title.style.fontWeight = 'bold';
+    title.style.margin = '0 0 10px 0';
+    title.style.display = 'inline-block';
+
+    const campus = document.createElement('span');
+    campus.textContent = state.currentCampus || 'VIT';
+    campus.style.color = '#666';
+    campus.style.fontSize = '18px';
+    campus.style.float = 'right';
+    campus.style.marginTop = '8px';
+
+    const tableNameDiv = document.createElement('div');
+    tableNameDiv.textContent = tableName;
+    tableNameDiv.style.color = '#333';
+    tableNameDiv.style.fontSize = '20px';
+    tableNameDiv.style.fontWeight = '500';
+    tableNameDiv.style.marginTop = '10px';
+    tableNameDiv.style.clear = 'both';
+
+    header.appendChild(title);
+    header.appendChild(campus);
+    header.appendChild(tableNameDiv);
+    container.appendChild(header);
+  };
+
+  // Download timetable as image
+  const handleDownloadTimetableAsImage = async () => {
+    const timetableElement = document.getElementById('timetable');
+    if (!timetableElement) {
+      alert('Timetable not found');
+      return;
+    }
+
+    // Create off-screen container
+    const container = document.createElement('div');
+    container.style.position = 'absolute';
+    container.style.left = '-9999px';
+    container.style.backgroundColor = '#ffffff';
+    container.style.padding = '20px';
+    document.body.appendChild(container);
+
+    try {
+      // Add header
+      appendHeader(container, state.activeTable.name);
+
+      // Clone and style timetable
+      const clone = timetableElement.cloneNode(true) as HTMLElement;
+      clone.style.margin = '20px 0';
+      clone.style.backgroundColor = '#ffffff';
+
+      // Apply white background to table cells
+      const cells = clone.querySelectorAll('td, th');
+      cells.forEach(cell => {
+        (cell as HTMLElement).style.backgroundColor = '#ffffff';
+        (cell as HTMLElement).style.color = '#000000';
+      });
+
+      container.appendChild(clone);
+
+      // Render with html2canvas
+      const canvas = await html2canvas(container, {
+        backgroundColor: '#ffffff',
+        scale: 2,
+        logging: false
+      });
+
+      // Convert to blob and download
+      canvas.toBlob((blob) => {
+        if (blob) {
+          const url = URL.createObjectURL(blob);
+          const link = document.createElement('a');
+          link.download = `FFCS Planner ${state.activeTable.name} (Timetable).jpg`;
+          link.href = url;
+          link.click();
+          URL.revokeObjectURL(url);
+        }
+      }, 'image/jpeg', 0.95);
+
+      setShowDownloadModal(false);
+    } catch (error) {
+      console.error('Error generating timetable image:', error);
+      alert('Failed to generate timetable image');
+    } finally {
+      document.body.removeChild(container);
+    }
+  };
+
+  // Download course list as image
+  const handleDownloadCourseListAsImage = async () => {
+    const courseListElement = document.getElementById('course-list');
+    if (!courseListElement) {
+      alert('Course list not found');
+      return;
+    }
+
+    // Create off-screen container
+    const container = document.createElement('div');
+    container.style.position = 'absolute';
+    container.style.left = '-9999px';
+    container.style.backgroundColor = '#ffffff';
+    container.style.padding = '20px';
+    document.body.appendChild(container);
+
+    try {
+      // Add header
+      appendHeader(container, state.activeTable.name);
+
+      // Clone and style course list
+      const clone = courseListElement.cloneNode(true) as HTMLElement;
+      clone.style.margin = '20px 0';
+      clone.style.backgroundColor = '#ffffff';
+
+      // Remove action column (last column)
+      const rows = clone.querySelectorAll('tr');
+      rows.forEach(row => {
+        const cells = row.querySelectorAll('td, th');
+        if (cells.length > 0) {
+          cells[cells.length - 1].remove();
+        }
+      });
+
+      // Apply white background to table cells
+      const cells = clone.querySelectorAll('td, th');
+      cells.forEach(cell => {
+        (cell as HTMLElement).style.backgroundColor = '#ffffff';
+        (cell as HTMLElement).style.color = '#000000';
+      });
+
+      container.appendChild(clone);
+
+      // Render with html2canvas
+      const canvas = await html2canvas(container, {
+        backgroundColor: '#ffffff',
+        scale: 2,
+        logging: false
+      });
+
+      // Convert to blob and download
+      canvas.toBlob((blob) => {
+        if (blob) {
+          const url = URL.createObjectURL(blob);
+          const link = document.createElement('a');
+          link.download = `FFCS Planner ${state.activeTable.name} (Course List).jpg`;
+          link.href = url;
+          link.click();
+          URL.revokeObjectURL(url);
+        }
+      }, 'image/jpeg', 0.95);
+
+      setShowDownloadModal(false);
+    } catch (error) {
+      console.error('Error generating course list image:', error);
+      alert('Failed to generate course list image');
+    } finally {
+      document.body.removeChild(container);
+    }
   };
 
   const handleRenameTable = () => {
@@ -381,10 +551,10 @@ export default function Modals() {
       {/* Download Modal */}
       {showDownloadModal && (
         <div className="modal show d-block" tabIndex={-1}>
-          <div className="modal-dialog modal-sm">
+          <div className="modal-dialog">
             <div className="modal-content">
               <div className="modal-header">
-                <h5 className="modal-title">Download Timetable</h5>
+                <h5 className="modal-title">Download Options</h5>
                 <button
                   type="button"
                   className="btn-close"
@@ -392,22 +562,57 @@ export default function Modals() {
                 ></button>
               </div>
               <div className="modal-body">
-                <button
-                  type="button"
-                  className="btn btn-success w-100 mb-2"
-                  onClick={handleDownloadTimetable}
-                >
-                  <i className="fas fa-camera"></i>
-                  &nbsp;&nbsp;Download Timetable
-                </button>
-                <button
-                  type="button"
-                  className="btn btn-success w-100"
-                  onClick={handleDownloadCourseList}
-                >
-                  <i className="fas fa-camera"></i>
-                  &nbsp;&nbsp;Download Course List
-                </button>
+                <div style={{ marginBottom: '1rem' }}>
+                  <h6 style={{ color: 'rgba(255, 255, 255, 0.9)', marginBottom: '0.5rem', fontSize: '0.9rem' }}>
+                    Download as Image (JPEG)
+                  </h6>
+                  <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1rem' }}>
+                    <button
+                      type="button"
+                      className="btn btn-success"
+                      style={{ flex: 1 }}
+                      onClick={handleDownloadTimetableAsImage}
+                    >
+                      <i className="fas fa-image"></i>
+                      &nbsp;&nbsp;Timetable
+                    </button>
+                    <button
+                      type="button"
+                      className="btn btn-success"
+                      style={{ flex: 1 }}
+                      onClick={handleDownloadCourseListAsImage}
+                    >
+                      <i className="fas fa-image"></i>
+                      &nbsp;&nbsp;Course List
+                    </button>
+                  </div>
+                </div>
+
+                <div>
+                  <h6 style={{ color: 'rgba(255, 255, 255, 0.9)', marginBottom: '0.5rem', fontSize: '0.9rem' }}>
+                    Download as Data File
+                  </h6>
+                  <div style={{ display: 'flex', gap: '0.5rem' }}>
+                    <button
+                      type="button"
+                      className="btn btn-primary"
+                      style={{ flex: 1 }}
+                      onClick={handleDownloadTimetable}
+                    >
+                      <i className="fas fa-download"></i>
+                      &nbsp;&nbsp;Timetable
+                    </button>
+                    <button
+                      type="button"
+                      className="btn btn-primary"
+                      style={{ flex: 1 }}
+                      onClick={handleDownloadCourseList}
+                    >
+                      <i className="fas fa-download"></i>
+                      &nbsp;&nbsp;Course List
+                    </button>
+                  </div>
+                </div>
               </div>
             </div>
           </div>

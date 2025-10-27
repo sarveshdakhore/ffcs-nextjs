@@ -25,14 +25,16 @@ export const activateCoursesSortable = () => {
   const leftBox = document.querySelector('.left-box') as HTMLElement;
   if (leftBox) {
     courseSortableInstance = Sortable.create(leftBox, {
-      animation: 0,
+      animation: 150,
+      easing: 'cubic-bezier(1, 0, 0, 1)',
       delay: isMobile ? 170 : 0,
       delayOnTouchOnly: true,
       chosenClass: 'sortable-chosen',
       ghostClass: 'sortable-ghost',
       dragClass: 'sortable-drag',
       handle: '.dropdown-heading', // Only allow dragging by course header
-      forceFallback: true, // Force HTML5 fallback for better control
+      forceFallback: true, // Use fallback for full control over drag state
+      fallbackTolerance: 3,
       scroll: true, // Enable auto-scroll during drag
       scrollSensitivity: 100, // Pixel distance from edge to start scrolling
       scrollSpeed: 10, // Scroll speed
@@ -93,17 +95,20 @@ export const activateTeachersSortable = () => {
   const dropdownLists = document.querySelectorAll('.dropdown-list') as NodeListOf<HTMLElement>;
   dropdownLists.forEach((dropdownList) => {
     const teachersSortable = Sortable.create(dropdownList, {
-      animation: 0,
+      animation: 150,
+      easing: 'cubic-bezier(1, 0, 0, 1)',
       delay: isMobile ? 170 : 0,
       delayOnTouchOnly: true,
       chosenClass: 'sortable-chosen',
       ghostClass: 'sortable-ghost',
       dragClass: 'sortable-drag',
-      forceFallback: true,
+      forceFallback: true, // Use fallback for full control over drag state
+      fallbackTolerance: 3,
       scroll: true, // Enable auto-scroll during drag
-      scrollSensitivity: 100, // Pixel distance from edge to start scrolling
-      scrollSpeed: 10, // Scroll speed
+      scrollSensitivity: 30, // Increased sensitivity - scroll starts closer to edge
+      scrollSpeed: 15, // Increased scroll speed
       bubbleScroll: true, // Enable scroll on nested containers
+      forceAutoScrollFallback: true, // Force autoscroll even when using native drag
       onEnd: (evt) => {
         // Remove any lingering classes from the dragged item
         if (evt.item) {

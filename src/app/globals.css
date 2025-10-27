@@ -546,7 +546,8 @@
 
 .sortable-chosen {
   opacity: 1 !important;
-  background: rgba(78, 205, 196, 0.1) !important;
+  border: 2px solid #00d9ff !important;
+  box-shadow: 0 0 15px rgba(0, 217, 255, 0.6) !important;
 }
 
 .sortable-drag {
