@@ -20,7 +20,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: "FFCS GDG",
     description: "Visualize and make the most optimum timetable for yourself.",
-    url: "https://ffcs.devansharora.in/",
+    url: "https://ffcs.dscvit.com/",
     siteName: "FFCS GDG",
     images: [
       {
