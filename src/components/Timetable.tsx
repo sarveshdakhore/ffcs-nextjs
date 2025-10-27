@@ -708,27 +708,33 @@ export default function Timetable() {
     // Track cells that should have 'clash' class due to time overlap
     const timeOverlapCells = new Set<string>(); // Format: "day-index"
 
-    // Store cell data for time overlap checking (Scenario B)
+    // Store cell data organized by day and index (FFCSonTheGo pattern)
     type CellData = {
-      day: string;
-      index: number;
-      coursesInSlot: CourseData[];
-      startTime: number;
-      endTime: number;
+      theoryCourses: CourseData[];
+      labCourses: CourseData[];
+      theoryEndTime: number | null;
+      labEndTime: number | null;
     };
-    const allCells: CellData[] = [];
+    const cellsByDayAndIndex: { [day: string]: { [index: number]: CellData } } = {};
 
-    // FIRST PASS: Collect all cell data
+    // FIRST PASS: Collect all cell data organized by day and index
     const dataToCheck = isLiveModeEnabled ? state.activeTable.attackData : state.activeTable.data;
 
     DAYS.forEach(day => {
+      cellsByDayAndIndex[day] = {};
       const slots = dayRowsData[day as keyof typeof dayRowsData] || [];
 
       slots.forEach((slotText, index) => {
         if (slotText) {
           const parts = slotText.split(' / ');
-          const theorySlot = parts[0]?.trim();
-          const labSlot = parts[1]?.trim() || null;
+          let theorySlot = parts[0]?.trim();
+          let labSlot = parts[1]?.trim() || null;
+
+          // If there's no lab slot (parts[1] is empty) and the slot starts with 'L', it's a lab-only slot
+          if (!labSlot && theorySlot && theorySlot.startsWith('L')) {
+            labSlot = theorySlot;
+            theorySlot = '';
+          }
 
           // Check for courses in theory slot
           const theoryCoursesInSlot = dataToCheck.filter(course =>
@@ -740,67 +746,107 @@ export default function Timetable() {
             labSlot && course.slots.includes(labSlot)
           );
 
-          // Add theory slot cell if it has courses and valid time
-          if (theoryCoursesInSlot.length > 0 && index < theoryTimes.length && theoryTimes[index]) {
-            const timeSlot = theoryTimes[index]!;
-            allCells.push({
-              day,
-              index,
-              coursesInSlot: theoryCoursesInSlot,
-              startTime: timeToMinutes(timeSlot.start),
-              endTime: timeToMinutes(timeSlot.end)
-            });
-          }
-
-          // Add lab slot cell if it has courses and valid time
-          if (labCoursesInSlot.length > 0 && index < labTimes.length && labTimes[index]) {
-            const timeSlot = labTimes[index]!;
-            allCells.push({
-              day,
-              index,
-              coursesInSlot: labCoursesInSlot,
-              startTime: timeToMinutes(timeSlot.start),
-              endTime: timeToMinutes(timeSlot.end)
-            });
+          // Store cell data if any courses exist
+          if (theoryCoursesInSlot.length > 0 || labCoursesInSlot.length > 0) {
+            cellsByDayAndIndex[day][index] = {
+              theoryCourses: theoryCoursesInSlot,
+              labCourses: labCoursesInSlot,
+              theoryEndTime: (theoryCoursesInSlot.length > 0 && theoryTimes[index])
+                ? timeToMinutes(theoryTimes[index]!.end)
+                : null,
+              labEndTime: (labCoursesInSlot.length > 0 && labTimes[index])
+                ? timeToMinutes(labTimes[index]!.end)
+                : null
+            };
           }
         }
       });
     });
 
-    // SECOND PASS: Check for time overlaps and mark clashing cells
-    // Need to check ALL pairs of cells on the same day, not just adjacent ones
-    for (let i = 0; i < allCells.length; i++) {
-      for (let j = i + 1; j < allCells.length; j++) {
-        const cell1 = allCells[i];
-        const cell2 = allCells[j];
+    // SECOND PASS: Check ADJACENT cells for time overlap (FFCSonTheGo pattern)
+    // Check theory courses against next cell's courses, and lab courses against next cell's courses
+    console.log('🔍 [CLASH DETECTION] Starting adjacent cell check...');
+    DAYS.forEach(day => {
+      for (let index = 0; index < 13; index++) {
+        const currentCell = cellsByDayAndIndex[day]?.[index];
+        const nextCell = cellsByDayAndIndex[day]?.[index + 1];
 
-        // Only check cells on the same day
-        if (cell1.day === cell2.day) {
-          // Check if time ranges overlap
-          // Two ranges overlap if: start1 < end2 AND start2 < end1
-          const overlaps = cell1.startTime < cell2.endTime && cell2.startTime < cell1.endTime;
+        if (!currentCell || !nextCell) continue;
 
-          if (overlaps) {
-            // Mark both cells with time overlap
-            timeOverlapCells.add(`${cell1.day}-${cell1.index}`);
-            timeOverlapCells.add(`${cell2.day}-${cell2.index}`);
+        let hasClash = false;
 
-            // Mark courses in BOTH cells as clashing
-            cell1.coursesInSlot.forEach(course => {
-              if (!clashingCourseIds.includes(course.courseId)) {
-                clashingCourseIds.push(course.courseId);
-              }
+        // Check if current cell's THEORY courses clash with next cell
+        if (currentCell.theoryCourses.length > 0 && currentCell.theoryEndTime) {
+          const theoryEndTime = currentCell.theoryEndTime;
+
+          // Get earliest start time from next cell (theory or lab)
+          let nextStartTime = Infinity;
+
+          if (nextCell.theoryCourses.length > 0 && theoryTimes[index + 1]) {
+            nextStartTime = Math.min(nextStartTime, timeToMinutes(theoryTimes[index + 1]!.start));
+          }
+          if (nextCell.labCourses.length > 0 && labTimes[index + 1]) {
+            nextStartTime = Math.min(nextStartTime, timeToMinutes(labTimes[index + 1]!.start));
+          }
+
+          if (nextStartTime < theoryEndTime) {
+            console.log(`🚨 [THEORY CLASH] ${day.toUpperCase()} index ${index} theory → ${index + 1}`, {
+              theoryEndTime: `${Math.floor(theoryEndTime / 60)}:${(theoryEndTime % 60).toString().padStart(2, '0')}`,
+              nextStartTime: `${Math.floor(nextStartTime / 60)}:${(nextStartTime % 60).toString().padStart(2, '0')}`
             });
-
-            cell2.coursesInSlot.forEach(course => {
-              if (!clashingCourseIds.includes(course.courseId)) {
-                clashingCourseIds.push(course.courseId);
-              }
-            });
+            hasClash = true;
           }
         }
+
+        // Check if current cell's LAB courses clash with next cell
+        if (currentCell.labCourses.length > 0 && currentCell.labEndTime) {
+          const labEndTime = currentCell.labEndTime;
+
+          // Get earliest start time from next cell (theory or lab)
+          let nextStartTime = Infinity;
+
+          if (nextCell.theoryCourses.length > 0 && theoryTimes[index + 1]) {
+            nextStartTime = Math.min(nextStartTime, timeToMinutes(theoryTimes[index + 1]!.start));
+          }
+          if (nextCell.labCourses.length > 0 && labTimes[index + 1]) {
+            nextStartTime = Math.min(nextStartTime, timeToMinutes(labTimes[index + 1]!.start));
+          }
+
+          if (nextStartTime < labEndTime) {
+            console.log(`🚨 [LAB CLASH] ${day.toUpperCase()} index ${index} lab → ${index + 1}`, {
+              labEndTime: `${Math.floor(labEndTime / 60)}:${(labEndTime % 60).toString().padStart(2, '0')}`,
+              nextStartTime: `${Math.floor(nextStartTime / 60)}:${(nextStartTime % 60).toString().padStart(2, '0')}`
+            });
+            hasClash = true;
+          }
+        }
+
+        // If clash detected, mark cells and courses
+        if (hasClash) {
+          // Mark both cells as clash
+          timeOverlapCells.add(`${day}-${index}`);
+          timeOverlapCells.add(`${day}-${index + 1}`);
+
+          // Mark all courses in both cells as clashing
+          [...currentCell.theoryCourses, ...currentCell.labCourses].forEach(course => {
+            if (!clashingCourseIds.includes(course.courseId)) {
+              clashingCourseIds.push(course.courseId);
+            }
+          });
+
+          [...nextCell.theoryCourses, ...nextCell.labCourses].forEach(course => {
+            if (!clashingCourseIds.includes(course.courseId)) {
+              clashingCourseIds.push(course.courseId);
+            }
+          });
+        }
       }
-    }
+    });
+
+    console.log('🔍 [CLASH DETECTION] Final results:', {
+      timeOverlapCells: Array.from(timeOverlapCells),
+      clashingCourseIds
+    });
 
     // THIRD PASS: Render cells with correct classes
     const dayRows: { [key: string]: React.ReactElement[] } = {};
