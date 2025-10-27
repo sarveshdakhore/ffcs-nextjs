@@ -189,7 +189,7 @@ export default function CourseList() {
                     key={`course${course.courseId}`}
                     data-course={`course${course.courseId}`}
                     data-is-project={course.isProject}
-                    className="bg-transparent text-white"
+                    className={`bg-transparent text-white ${state.ui.clashingCourseIds?.includes(course.courseId) ? 'table-danger' : ''}`}
                   >
                     <td className="px-6 py-4 border-none border-b border-white/5">
                       {course.slots.join('+')}

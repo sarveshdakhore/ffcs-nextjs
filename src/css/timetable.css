@@ -418,15 +418,15 @@
 }
 
 #timetable td.clash {
-    background: rgba(255, 68, 68, 0.4) !important;
-    border-color: rgba(255, 68, 68, 0.5) !important;
+    background: #dc3545 !important;
+    border-color: #dc3545 !important;
     color: #ffffff !important;
-    box-shadow: 0 2px 8px rgba(255, 68, 68, 0.3) !important;
-    animation: pulse-clash 2s infinite;
+    box-shadow: none !important;
 }
 
 #timetable td.clash:hover {
-    background: rgba(255, 68, 68, 0.5) !important;
+    background: #c82333 !important;
+    border-color: #c82333 !important;
 }
 
 /* Clashing teacher selections - red highlighting in normal mode */

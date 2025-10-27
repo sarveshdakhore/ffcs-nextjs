@@ -151,6 +151,7 @@ export interface FFCSState {
     attackModeEnabled: boolean;
     pendingQVSlot?: string;
     morningPriority: boolean;
+    clashingCourseIds: number[];
   };
   totalCredits: number;
   
@@ -199,6 +200,7 @@ type FFCSAction =
   | { type: 'REMOVE_COURSE_FROM_TIMETABLE'; payload: number }
   | { type: 'ADD_COURSE_TO_ATTACK_DATA'; payload: CourseData }
   | { type: 'REMOVE_COURSE_FROM_ATTACK_DATA'; payload: number }
+  | { type: 'SET_CLASHING_COURSES'; payload: number[] }
   | { type: 'SET_ATTACK_MODE'; payload: { enabled: boolean } }
   | { type: 'CLEAR_TIMETABLE' }
   | { type: 'REGENERATE_TIMETABLE' }
@@ -255,6 +257,7 @@ const initialState: FFCSState = {
     attackMode: false,
     attackModeEnabled: false,
     morningPriority: true,
+    clashingCourseIds: [],
   },
   totalCredits: 0,
   
@@ -503,6 +506,12 @@ function ffcsReducer(state: FFCSState, action: FFCSAction): FFCSState {
       return {
         ...state,
         ui: { ...state.ui, ...action.payload },
+      };
+
+    case 'SET_CLASHING_COURSES':
+      return {
+        ...state,
+        ui: { ...state.ui, clashingCourseIds: action.payload },
       };
 
     case 'LOAD_DATA': {

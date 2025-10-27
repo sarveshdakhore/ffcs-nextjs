@@ -160,6 +160,24 @@
     cursor: pointer !important;
 }
 
+/* Clashing course row styling (FFCSonTheGo pattern) - Must override alternating row colors */
+#course-list tbody tr.table-danger,
+#course-list tbody tr.table-danger:nth-child(even),
+#course-list tbody tr.table-danger:nth-child(odd) {
+    background: rgba(220, 53, 69, 0.15) !important;
+    border-left: 4px solid #dc3545 !important;
+}
+
+#course-list tbody tr.table-danger:hover,
+#course-list tbody tr.table-danger:nth-child(even):hover,
+#course-list tbody tr.table-danger:nth-child(odd):hover {
+    background: rgba(220, 53, 69, 0.25) !important;
+}
+
+#course-list tbody tr.table-danger td {
+    border-bottom-color: rgba(220, 53, 69, 0.2) !important;
+}
+
 /* Responsive adjustments */
 @media (max-width: 768px) {
     #course-list thead th {

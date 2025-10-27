@@ -55,8 +55,10 @@
   border-color: #28a745 !important;
 }
 
-#timetable .period.clash {
-  background-color: #f8d7da !important;
+/* Clash styling - must override highlight */
+#timetable .period.clash,
+#timetable .period.highlight.clash {
+  background-color: #dc3545 !important;
   border-color: #dc3545 !important;
 }
 

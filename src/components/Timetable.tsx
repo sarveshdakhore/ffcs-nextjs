@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useRef, useMemo } from 'react';
-import { useFFCS } from '@/context/FFCSContext';
+import { useFFCS, CourseData } from '@/context/FFCSContext';
 import velloreSchema from '@/data/schemas/vellore.json';
 import chennaiSchema from '@/data/schemas/chennai.json';
 
@@ -423,25 +423,6 @@ export default function Timetable() {
     return clashInfo.clashingTeachers.includes(teacherName);
   };
 
-  // Helper function to get all clashing teachers across all courses (for red highlighting)
-  const getAllClashingSelections = (): { courseName: string; teacherName: string }[] => {
-    const clashingSelections: { courseName: string; teacherName: string }[] = [];
-    const dataSource = isLiveModeEnabled ? state.activeTable.attackData : state.activeTable.data;
-    
-    // Check each selected course/teacher combination
-    dataSource.forEach((courseData) => {
-      const courseName = courseData.courseCode ? 
-        `${courseData.courseCode}-${courseData.courseTitle}` : 
-        courseData.courseTitle;
-      const teacherName = courseData.faculty;
-      
-      if (isTeacherClashing(courseName, teacherName)) {
-        clashingSelections.push({ courseName, teacherName });
-      }
-    });
-    
-    return clashingSelections;
-  };
 
   // Calculate occupied slots from attack data (live mode) - Exact FFCSonTheGo logic
   const getOccupiedSlots = () => {
@@ -682,26 +663,166 @@ export default function Timetable() {
       sun: ['', '', '', '', '', '', '', '', '', '', '', '', '']
     };
     
+    // Time slots for each column index - separate for theory and lab
+    const theoryTimes = [
+      { start: '08:00', end: '08:50' },  // index 0
+      { start: '09:00', end: '09:50' },  // index 1
+      { start: '10:00', end: '10:50' },  // index 2
+      { start: '11:00', end: '11:50' },  // index 3
+      { start: '12:00', end: '12:50' },  // index 4
+      null,                               // index 5 (no theory slot)
+      { start: '14:00', end: '14:50' },  // index 6
+      { start: '15:00', end: '15:50' },  // index 7
+      { start: '16:00', end: '16:50' },  // index 8
+      { start: '17:00', end: '17:50' },  // index 9
+      { start: '18:00', end: '18:50' },  // index 10
+      { start: '18:51', end: '19:00' },  // index 11
+      { start: '19:01', end: '19:50' },  // index 12
+    ];
+
+    const labTimes = [
+      { start: '08:00', end: '08:50' },  // index 0
+      { start: '08:51', end: '09:40' },  // index 1
+      { start: '09:51', end: '10:40' },  // index 2
+      { start: '10:41', end: '11:30' },  // index 3
+      { start: '11:40', end: '12:30' },  // index 4
+      { start: '12:31', end: '13:20' },  // index 5
+      { start: '14:00', end: '14:50' },  // index 6
+      { start: '14:51', end: '15:40' },  // index 7
+      { start: '15:51', end: '16:40' },  // index 8
+      { start: '16:41', end: '17:30' },  // index 9
+      { start: '17:40', end: '18:30' },  // index 10
+      { start: '18:31', end: '19:20' },  // index 11
+      null,                               // index 12 (no lab slot)
+    ];
+
+    // Helper: Convert time string to minutes since midnight
+    const timeToMinutes = (timeStr: string): number => {
+      const [hours, minutes] = timeStr.split(':').map(Number);
+      return hours * 60 + minutes;
+    };
+
+    // Collect clashing courseIds during render (FFCSonTheGo pattern)
+    const clashingCourseIds: number[] = [];
+
+    // Track cells that should have 'clash' class due to time overlap
+    const timeOverlapCells = new Set<string>(); // Format: "day-index"
+
+    // Store cell data for time overlap checking (Scenario B)
+    type CellData = {
+      day: string;
+      index: number;
+      coursesInSlot: CourseData[];
+      startTime: number;
+      endTime: number;
+    };
+    const allCells: CellData[] = [];
+
+    // FIRST PASS: Collect all cell data
+    const dataToCheck = isLiveModeEnabled ? state.activeTable.attackData : state.activeTable.data;
+
+    DAYS.forEach(day => {
+      const slots = dayRowsData[day as keyof typeof dayRowsData] || [];
+
+      slots.forEach((slotText, index) => {
+        if (slotText) {
+          const parts = slotText.split(' / ');
+          const theorySlot = parts[0]?.trim();
+          const labSlot = parts[1]?.trim() || null;
+
+          // Check for courses in theory slot
+          const theoryCoursesInSlot = dataToCheck.filter(course =>
+            theorySlot && course.slots.includes(theorySlot)
+          );
+
+          // Check for courses in lab slot
+          const labCoursesInSlot = dataToCheck.filter(course =>
+            labSlot && course.slots.includes(labSlot)
+          );
+
+          // Add theory slot cell if it has courses and valid time
+          if (theoryCoursesInSlot.length > 0 && index < theoryTimes.length && theoryTimes[index]) {
+            const timeSlot = theoryTimes[index]!;
+            allCells.push({
+              day,
+              index,
+              coursesInSlot: theoryCoursesInSlot,
+              startTime: timeToMinutes(timeSlot.start),
+              endTime: timeToMinutes(timeSlot.end)
+            });
+          }
+
+          // Add lab slot cell if it has courses and valid time
+          if (labCoursesInSlot.length > 0 && index < labTimes.length && labTimes[index]) {
+            const timeSlot = labTimes[index]!;
+            allCells.push({
+              day,
+              index,
+              coursesInSlot: labCoursesInSlot,
+              startTime: timeToMinutes(timeSlot.start),
+              endTime: timeToMinutes(timeSlot.end)
+            });
+          }
+        }
+      });
+    });
+
+    // SECOND PASS: Check for time overlaps and mark clashing cells
+    // Need to check ALL pairs of cells on the same day, not just adjacent ones
+    for (let i = 0; i < allCells.length; i++) {
+      for (let j = i + 1; j < allCells.length; j++) {
+        const cell1 = allCells[i];
+        const cell2 = allCells[j];
+
+        // Only check cells on the same day
+        if (cell1.day === cell2.day) {
+          // Check if time ranges overlap
+          // Two ranges overlap if: start1 < end2 AND start2 < end1
+          const overlaps = cell1.startTime < cell2.endTime && cell2.startTime < cell1.endTime;
+
+          if (overlaps) {
+            // Mark both cells with time overlap
+            timeOverlapCells.add(`${cell1.day}-${cell1.index}`);
+            timeOverlapCells.add(`${cell2.day}-${cell2.index}`);
+
+            // Mark courses in BOTH cells as clashing
+            cell1.coursesInSlot.forEach(course => {
+              if (!clashingCourseIds.includes(course.courseId)) {
+                clashingCourseIds.push(course.courseId);
+              }
+            });
+
+            cell2.coursesInSlot.forEach(course => {
+              if (!clashingCourseIds.includes(course.courseId)) {
+                clashingCourseIds.push(course.courseId);
+              }
+            });
+          }
+        }
+      }
+    }
+
+    // THIRD PASS: Render cells with correct classes
     const dayRows: { [key: string]: React.ReactElement[] } = {};
-    
+
     DAYS.forEach(day => {
       dayRows[day] = [<td key={`${day}-label`} className="day">{day.toUpperCase()}</td>];
-      
+
       const slots = dayRowsData[day as keyof typeof dayRowsData] || [];
-      
+
       slots.forEach((slotText, index) => {
         if (slotText) {
           // Original logic with theory/lab handling restored
           const parts = slotText.split(' / ');
           const theorySlot = parts[0]?.trim();
           const labSlot = parts[1]?.trim() || null;
-          
+
           // Check for courses in this slot (live mode or normal mode)
           const dataToCheck = isLiveModeEnabled ? state.activeTable.attackData : state.activeTable.data;
           const coursesInSlot = dataToCheck.filter(course =>
             course.slots.includes(theorySlot) || (labSlot && course.slots.includes(labSlot))
           );
-          
+
           // Check if this specific cell is highlighted in quick array
           const quickArray = isLiveModeEnabled ? state.activeTable.attackQuick : state.activeTable.quick;
           const dayRowMap: { [key: string]: number } = {
@@ -712,7 +833,7 @@ export default function Timetable() {
           // Columns 0-5 in dayRowsData map to columns 1-6 in table
           // Columns 6-12 in dayRowsData map to columns 8-14 in table (skip lunch at column 7)
           const currentCol = index < 6 ? index + 1 : index + 2;
-          
+
           const isQuickHighlighted = quickArray.some((entry: any[]) => {
             if (entry.length === 2) {
               // Individual cell highlight [row, col]
@@ -723,27 +844,30 @@ export default function Timetable() {
             }
             return false;
           });
-          
-          // Check for clashing selections (red highlighting in normal mode)
-          const allClashingSelections = isLiveModeEnabled ? [] : getAllClashingSelections();
-          const hasClashingSelection = coursesInSlot.some(course => {
-            const courseName = course.courseCode ? 
-              `${course.courseCode}-${course.courseTitle}` : 
-              course.courseTitle;
-            return allClashingSelections.some(clash => 
-              clash.courseName === courseName && clash.teacherName === course.faculty
-            );
-          });
 
           // Only apply quick highlighting when quickVisualizationEnabled is true (like vanilla JS)
           const isHighlighted = (state.ui.quickVisualizationEnabled && isQuickHighlighted) || coursesInSlot.length > 0;
-          const isClash = coursesInSlot.length > 1; // Multiple courses in same slot
-          
+
           const classNames = ['period', theorySlot].filter(Boolean);
           if (isHighlighted) classNames.push('highlight');
-          if (isClash) classNames.push('clash');
-          if (hasClashingSelection) classNames.push('clash-selection'); // Red highlighting for clashing selections
-          
+
+          // FFCSonTheGo Scenario A: Multiple courses in same cell
+          if (coursesInSlot.length > 1) {
+            classNames.push('clash');
+
+            // Mark all courses in this cell as clashing
+            coursesInSlot.forEach(course => {
+              if (!clashingCourseIds.includes(course.courseId)) {
+                clashingCourseIds.push(course.courseId);
+              }
+            });
+          }
+
+          // FFCSonTheGo Scenario B: Time overlap with adjacent cells
+          if (timeOverlapCells.has(`${day}-${index}`)) {
+            classNames.push('clash');
+          }
+
           dayRows[day].push(
             <td
               key={`${day}-${index}`}
@@ -753,32 +877,29 @@ export default function Timetable() {
                 handleCellClick(currentRow, currentCol, slotText);
               }}
             >
-              {coursesInSlot.length > 0 ? (
+              {/* Always show slot label (A1 / L1) at the top */}
+              <div className="slot-label" style={{ fontSize: '0.75em', color: '#e0e0e0', marginBottom: '2px' }}>
+                {slotText}
+              </div>
+
+              {/* Show course codes below the slot label */}
+              {coursesInSlot.length > 0 && (
                 coursesInSlot.map((course, courseIndex) => {
                   // Find the teacher's color from the subject data
-                  const subjectName = course.courseCode ? 
-                    `${course.courseCode}-${course.courseTitle}` : 
+                  const subjectName = course.courseCode ?
+                    `${course.courseCode}-${course.courseTitle}` :
                     course.courseTitle;
                   const teacherData = state.activeTable.subject[subjectName]?.teacher[course.faculty];
-                  
-                  // Check if this specific course has a clashing selection
-                  const isThisCourseClashing = !isLiveModeEnabled && allClashingSelections.some(clash => 
-                    clash.courseName === subjectName && clash.teacherName === course.faculty
-                  );
-                  
+
                   return (
-                    <div 
+                    <div
                       key={`${course.courseId}-${courseIndex}`}
                       data-course={`course${course.courseId}`}
-                      className={isThisCourseClashing ? 'clashing-course' : ''}
-                      style={{ 
+                      className="course-code"
+                      style={{
                         marginBottom: courseIndex < coursesInSlot.length - 1 ? '2px' : '0',
-                        // Red styling for clashing courses in normal mode
-                        backgroundColor: isThisCourseClashing ? '#ff6b6b' : undefined,
-                        color: isThisCourseClashing ? 'white' : undefined,
-                        fontWeight: isThisCourseClashing ? 'bold' : undefined,
-                        borderRadius: isThisCourseClashing ? '3px' : undefined,
-                        padding: isThisCourseClashing ? '2px 4px' : undefined,
+                        fontSize: '0.85em',
+                        fontWeight: '500'
                       }}
                     >
                       {course.courseCode || course.courseTitle}
@@ -786,13 +907,6 @@ export default function Timetable() {
                     </div>
                   );
                 })
-              ) : isQuickHighlighted ? (
-                // Show empty highlighted slot from quick array
-                <div >
-                  {slotText}
-                </div>
-              ) : (
-                slotText
               )}
             </td>
           );
@@ -820,8 +934,18 @@ export default function Timetable() {
       );
     });
 
-    return rows;
+    return { rows, clashingCourseIds };
   };
+
+  // Compute timetable rendering result (rows + clashing course IDs)
+  const timetableResult = useMemo(() => {
+    return renderTimetableRows();
+  }, [dataKey, state.activeTable.data, state.activeTable.attackData, state.ui.attackMode]);
+
+  // Dispatch clashing course IDs to context
+  useEffect(() => {
+    dispatch({ type: 'SET_CLASHING_COURSES', payload: timetableResult.clashingCourseIds });
+  }, [timetableResult.clashingCourseIds, dispatch]);
 
   const renderQuickButtons = () => {
     const handleQuickButtonClick = (slot: string) => {
@@ -1241,7 +1365,7 @@ export default function Timetable() {
         <div id="timetable" className="table-responsive">
           <table className="mb-0 mt-2 table table-bordered">
             <tbody>
-              {renderTimetableRows()}
+              {timetableResult.rows}
             </tbody>
           </table>
         </div>
