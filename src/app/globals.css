@@ -542,16 +542,14 @@
 /* Sortable.js drag and drop styles */
 .sortable-ghost {
   opacity: 0 !important;
-  visibility: hidden !important;
 }
 
 .sortable-chosen {
-  opacity: 0.5 !important;
+  opacity: 1 !important;
   background: rgba(78, 205, 196, 0.1) !important;
 }
 
 .sortable-drag {
-  opacity: 1 !important;
+  opacity: 0 !important;
   cursor: grabbing !important;
-  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3) !important;
 }

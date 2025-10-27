@@ -1234,7 +1234,7 @@ html, body {
     border-top: none !important;
     border-bottom: none !important;
     color: white !important;
-    border-radius: 20px 20px 0 0 !important;
+    border-radius: 4px 4px 0 0 !important;
 }
 
 .card-body {
@@ -1255,7 +1255,7 @@ html, body {
     border-right: none !important;
     border-top: none !important;
     border-bottom: none !important;
-    border-radius: 0 0 20px 20px !important;
+    border-radius: 0 0 4px 4px !important;
 }
 
 /* Comprehensive border removal for all card elements */

@@ -25,8 +25,9 @@ export const activateCoursesSortable = () => {
   const leftBox = document.querySelector('.left-box') as HTMLElement;
   if (leftBox) {
     courseSortableInstance = Sortable.create(leftBox, {
-      animation: 150,
-      delay: isMobile ? 170 : 5,
+      animation: 0,
+      delay: isMobile ? 170 : 0,
+      delayOnTouchOnly: true,
       chosenClass: 'sortable-chosen',
       ghostClass: 'sortable-ghost',
       dragClass: 'sortable-drag',
@@ -92,8 +93,9 @@ export const activateTeachersSortable = () => {
   const dropdownLists = document.querySelectorAll('.dropdown-list') as NodeListOf<HTMLElement>;
   dropdownLists.forEach((dropdownList) => {
     const teachersSortable = Sortable.create(dropdownList, {
-      animation: 70,
-      delay: isMobile ? 170 : 5,
+      animation: 0,
+      delay: isMobile ? 170 : 0,
+      delayOnTouchOnly: true,
       chosenClass: 'sortable-chosen',
       ghostClass: 'sortable-ghost',
       dragClass: 'sortable-drag',
