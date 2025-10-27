@@ -1,14 +1,14 @@
 
 #option-buttons .btn {
     border: none !important;
-    border-radius: 15px !important;
+    border-radius: 4px !important;
     padding: 0.75rem 1.5rem !important;
     font-weight: 500 !important;
     transition: background-color 0.2s ease, transform 0.2s ease !important;
 }
 
 #option-buttons .btn:hover {
-    transform: translateY(-1px) !important;
+    
 }
 
 #option-buttons .btn-primary {
@@ -18,7 +18,7 @@
 
 #option-buttons .btn-primary:hover {
     background: rgba(13, 110, 253, 1) !important;
-    transform: translateY(-1px) !important;
+    
 }
 
 #option-buttons .btn-success {
@@ -28,7 +28,7 @@
 
 #option-buttons .btn-success:hover {
     background: rgba(76, 175, 80, 1) !important;
-    transform: translateY(-1px) !important;
+    
 }
 
 #option-buttons .btn-warning {
@@ -38,7 +38,7 @@
 
 #option-buttons .btn-warning:hover {
     background: rgba(255, 193, 7, 1) !important;
-    transform: translateY(-1px) !important;
+    
 }
 
 #option-buttons .btn-danger {
@@ -48,7 +48,7 @@
 
 #option-buttons .btn-danger:hover {
     background: rgba(220, 53, 69, 1) !important;
-    transform: translateY(-1px) !important;
+    
 }
 
 #tt-picker-button {
@@ -61,7 +61,7 @@
     background: rgba(255, 255, 255, 0.15);
     backdrop-filter: blur(10px);
     border: 1px solid rgba(255, 255, 255, 0.2);
-    border-radius: 15px;
+    border-radius: 4px;
     box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
 }
 
@@ -69,7 +69,7 @@
     color: var(--text-color);
     text-decoration: none;
     padding: 8px 16px;
-    border-radius: 10px;
+    border-radius: 4px;
     transition: background-color 0.2s ease;
 }
 
@@ -129,7 +129,7 @@
     margin: 0.3rem;
     background: rgba(255, 149, 0, 1);
     border: 1px solid rgba(255, 149, 0, 1);
-    border-radius: 20px;
+    border-radius: 6px;
     padding: 8px 16px;
     transition: background-color 0.2s ease, transform 0.2s ease;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
@@ -151,7 +151,7 @@
 
 #timetable {
     background: rgba(0, 0, 0, 0.6);
-    border-radius: 16px;
+    border-radius: 6px;
     padding: 1.5rem;
     box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
     border: 1px solid rgba(255, 255, 255, 0.08);
@@ -160,7 +160,7 @@
 }
 
 #timetable .table-responsive {
-    border-radius: 12px;
+    border-radius: 4px;
     overflow: hidden;
     background: transparent;
 }
@@ -186,7 +186,7 @@
 /* Day labels (left column) */
 #timetable .table .day {
     background: #0c0d24 !important;
-    border-radius: 8px !important;
+    border-radius: 2px !important;
     color: white !important;
     font-weight: 600;
     font-size: 0.8rem;
@@ -202,7 +202,7 @@
 /* Time headers (top row) */
 #timetable .table tr:first-child td:not(.day) {
     background: #131444 !important;
-    border-radius: 8px !important;
+    border-radius: 2px !important;
     color: white !important;
     font-weight: 700;
     font-size: 0.75rem;
@@ -216,7 +216,7 @@
 /* Lab hours time headers (second row) */
 #timetable .table tr:nth-child(2) td:not(.day) {
     background: #0a2051 !important;
-    border-radius: 8px !important;
+    border-radius: 2px !important;
     color: white !important;
     font-weight: 700;
     font-size: 0.75rem;
@@ -230,7 +230,7 @@
 /* Regular timetable cells */
 #timetable .table td:not(.day) {
     background: #382f5e !important;
-    border-radius: 8px !important;
+    border-radius: 2px !important;
     margin: 2px;
     padding: 12px 6px !important;
     transition: background-color 0.2s ease, border-color 0.2s ease;
@@ -485,7 +485,7 @@
 
 .container-xxl .table-responsive {
     background: transparent;
-    border-radius: 12px;
+    border-radius: 4px;
     padding: 0;
     backdrop-filter: none;
     box-shadow: none;
@@ -514,7 +514,7 @@
 @media screen and (max-width: 768px) {
     #timetable {
         padding: 1rem;
-        border-radius: 15px;
+        border-radius: 4px;
     }
     
     #timetable .table {
@@ -555,13 +555,13 @@
         padding: 6px 2px !important;
         font-size: 0.65rem;
         min-height: 35px;
-        border-radius: 8px !important;
+        border-radius: 2px !important;
     }
     
     #timetable .table .day {
         padding: 6px 4px !important;
         font-size: 0.7rem;
-        border-radius: 8px !important;
+        border-radius: 2px !important;
     }
 }
 

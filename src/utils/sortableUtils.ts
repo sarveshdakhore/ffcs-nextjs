@@ -32,6 +32,10 @@ export const activateCoursesSortable = () => {
       dragClass: 'sortable-drag',
       handle: '.dropdown-heading', // Only allow dragging by course header
       forceFallback: true, // Force HTML5 fallback for better control
+      scroll: true, // Enable auto-scroll during drag
+      scrollSensitivity: 100, // Pixel distance from edge to start scrolling
+      scrollSpeed: 10, // Scroll speed
+      bubbleScroll: true, // Enable scroll on nested containers
       onEnd: (evt) => {
         // Remove any lingering classes from the dragged item
         if (evt.item) {
@@ -94,6 +98,10 @@ export const activateTeachersSortable = () => {
       ghostClass: 'sortable-ghost',
       dragClass: 'sortable-drag',
       forceFallback: true,
+      scroll: true, // Enable auto-scroll during drag
+      scrollSensitivity: 100, // Pixel distance from edge to start scrolling
+      scrollSpeed: 10, // Scroll speed
+      bubbleScroll: true, // Enable scroll on nested containers
       onEnd: (evt) => {
         // Remove any lingering classes from the dragged item
         if (evt.item) {

@@ -1815,61 +1815,181 @@ export default function CoursePanel() {
 
   return (
     <>
-      <div key={`course-panel-${dataKey}`} className="flex gap-6 min-h-[600px] h-[80vh] p-4 w-full">
-      {/* Left Column */}
-      <div className="flex-[3] flex flex-col h-full min-w-0">
+      <div key={`course-panel-${dataKey}`} style={{
+        display: 'flex',
+        flexDirection: 'row',
+        gap: '24px',
+        minHeight: '450px',
+        height: '70vh',
+        padding: '0',
+        width: '100%',
+        boxSizing: 'border-box'
+      }}>
+      {/* Left Column - 64% minus gap */}
+      <div style={{
+        flex: '0 0 calc(64% - 15.36px)',
+        display: 'flex',
+        flexDirection: 'column',
+        height: '100%',
+        minWidth: 0
+      }}>
         {/* Course Preferences Card */}
-        <div className="card h-full flex flex-col">
-          <div className="card-header text-left fw-bold header-button">
-            <div className="flex items-center justify-between w-full">
-              {/* Left side - Title */}
-              <div className="c_pref flex items-center gap-3">
-                <span>Course Preferences</span>
-                {state.ui.attackMode && <span className="badge bg-warning text-dark">Live FFCS Mode</span>}
-
-                {/* Morning/Evening Toggle */}
-                <div className="flex items-center gap-2 ml-4">
-                  <label className="text-sm font-normal text-white/80">
+        <div className="card" style={{
+          flex: 1,
+          display: 'flex',
+          flexDirection: 'column',
+          overflow: 'hidden',
+          minHeight: 0
+        }}>
+          <div className="card-header text-left fw-bold header-button" style={{ padding: '1rem 1.25rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', gap: '1rem' }}>
+              {/* Left side - Controls */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                {/* Morning/Evening Toggle - Modern Design */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <label style={{
+                    fontSize: '13px',
+                    fontWeight: '500',
+                    color: 'rgba(255, 255, 255, 0.85)',
+                    margin: 0
+                  }}>
                     Priority:
                   </label>
                   <button
                     onClick={() => dispatch({ type: 'SET_UI_STATE', payload: { morningPriority: !state.ui.morningPriority } })}
-                    className={`px-3 py-1 rounded-md text-xs font-medium transition-all ${
-                      state.ui.morningPriority
-                        ? 'bg-blue-500/80 text-white border border-blue-400'
-                        : 'bg-orange-500/80 text-white border border-orange-400'
-                    }`}
+                    style={{
+                      padding: '4px 10px',
+                      fontSize: '12px',
+                      fontWeight: '600',
+                      borderRadius: '4px',
+                      border: 'none',
+                      background: state.ui.morningPriority
+                        ? 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)'
+                        : 'linear-gradient(135deg, #f97316 0%, #ea580c 100%)',
+                      color: 'white',
+                      cursor: 'pointer',
+                      transition: 'all 0.2s ease',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '4px',
+                      whiteSpace: 'nowrap'
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.filter = 'brightness(1.1)';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.filter = 'brightness(1)';
+                    }}
                   >
-                    {state.ui.morningPriority ? '☀️ Morning' : '🌙 Evening'}
+                    <span>{state.ui.morningPriority ? '☀️' : '🌙'}</span>
+                    <span>{state.ui.morningPriority ? 'Morning' : 'Evening'}</span>
                   </button>
                 </div>
+
+                {/* Collapse All Button - Disabled during edit mode */}
+                <button
+                  className="btn btn-secondary btn-sm"
+                  type="button"
+                  onClick={closeAllDropdowns}
+                  disabled={state.globalVars.editSub || state.globalVars.editTeacher}
+                  style={{
+                    marginLeft: '4px',
+                    opacity: (state.globalVars.editSub || state.globalVars.editTeacher) ? 0.5 : 1,
+                    cursor: (state.globalVars.editSub || state.globalVars.editTeacher) ? 'not-allowed' : 'pointer'
+                  }}
+                >
+                  <i className="fas fa-chevron-up"></i>
+                  <span>&nbsp;&nbsp;Collapse All</span>
+                </button>
               </div>
 
-              {/* Right side - Search Bar */}
-              <div className="flex items-center gap-2">
-                <input
-                  type="text"
-                  placeholder="Search teachers..."
-                  value={teacherSearchQuery}
-                  onChange={(e) => setTeacherSearchQuery(e.target.value)}
-                  className="px-3 py-1.5 bg-white/10 border border-white/30 rounded-lg text-white placeholder-white/50 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent w-64"
-                />
-                {teacherSearchQuery && (
-                  <button
-                    onClick={() => setTeacherSearchQuery('')}
-                    className="text-white/70 hover:text-white"
-                    title="Clear search"
-                  >
-                    <i className="fas fa-times"></i>
-                  </button>
-                )}
+              {/* Right side - Search Bar - Modern Design */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+                  <i className="fas fa-search" style={{
+                    position: 'absolute',
+                    left: '12px',
+                    color: 'rgba(255, 255, 255, 0.5)',
+                    fontSize: '13px',
+                    pointerEvents: 'none'
+                  }}></i>
+                  <input
+                    type="text"
+                    placeholder="Search teachers..."
+                    value={teacherSearchQuery}
+                    onChange={(e) => setTeacherSearchQuery(e.target.value)}
+                    style={{
+                      padding: '6px 32px 6px 32px',
+                      backgroundColor: 'rgba(255, 255, 255, 0.08)',
+                      border: '1.5px solid rgba(255, 255, 255, 0.2)',
+                      borderRadius: '4px',
+                      color: 'white',
+                      fontSize: '12px',
+                      width: '220px',
+                      outline: 'none',
+                      transition: 'all 0.2s ease',
+                      fontWeight: '400'
+                    }}
+                    onFocus={(e) => {
+                      e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.12)';
+                      e.currentTarget.style.borderColor = 'rgba(59, 130, 246, 0.6)';
+                    }}
+                    onBlur={(e) => {
+                      e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.08)';
+                      e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.2)';
+                    }}
+                  />
+                  {teacherSearchQuery && (
+                    <button
+                      onClick={() => setTeacherSearchQuery('')}
+                      title="Clear search"
+                      style={{
+                        position: 'absolute',
+                        right: '10px',
+                        background: 'none',
+                        border: 'none',
+                        color: 'rgba(255, 255, 255, 0.6)',
+                        cursor: 'pointer',
+                        padding: '4px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        transition: 'color 0.2s ease'
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.color = 'rgba(255, 255, 255, 0.9)';
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.color = 'rgba(255, 255, 255, 0.6)';
+                      }}
+                    >
+                      <i className="fas fa-times"></i>
+                    </button>
+                  )}
+                </div>
               </div>
             </div>
           </div>
 
-          <div className="card-body p-4 flex-1 overflow-hidden flex flex-col">
+          <div className="card-body" style={{
+            flex: 1,
+            overflow: 'hidden',
+            display: 'flex',
+            flexDirection: 'column',
+            minHeight: 0,
+            padding: '0 1rem 1rem 1rem'
+          }}>
         {/* Subject Area */}
-        <section className="left-border left-box flex-1 overflow-y-auto scrollbar-thin scrollbar-thumb-[#4a5568] scrollbar-track-[#2d3748] pr-2" id="subjectArea">
+        <section
+          className="left-border left-box scrollbar-thin scrollbar-thumb-[#4a5568] scrollbar-track-[#2d3748] pr-2"
+          id="subjectArea"
+          style={{
+            flex: 1,
+            overflowY: 'auto',
+            minHeight: 0,
+            paddingTop: 0
+          }}
+        >
           {Object.entries(subjects).map(([subjectName, subjectData]) => {
             return (
             <div key={subjectName} className="dropdown dropdown-teacher">
@@ -2039,142 +2159,243 @@ export default function CoursePanel() {
           </section>
           </div>
         </div>
-
-        {/* Live Mode Toggle Card */}
-        <div className="card" style={{ marginTop: '1rem' }}>
-          <div className="card-body" style={{ padding: '1rem' }}>
-            <div className="form-check form-switch">
-              <label className="form-check-label" htmlFor="live-mode-toggle" style={{ color: 'white', fontWeight: '500' }}>
-                Live FFCS Mode
-              </label>
-              <input
-                className="form-check-input"
-                type="checkbox"
-                id="live-mode-toggle"
-                checked={liveFfcsMode}
-                onChange={(e) => handleLiveFfcsModeToggle(e.target.checked)}
-                style={{ marginLeft: '1rem' }}
-              />
-            </div>
-            
-            {/* Autofocus Toggle - Only visible in Live FFCS Mode */}
-            {liveFfcsMode && (
-              <div className="form-check form-switch mt-2">
-                <label className="form-check-label" htmlFor="autofocus-toggle" style={{ color: 'white', fontWeight: '500' }}>
-                  Autofocus
-                </label>
-                <input
-                  className="form-check-input"
-                  type="checkbox"
-                  id="autofocus-toggle"
-                  checked={autoFocus}
-                  onChange={(e) => {
-                    setAutoFocus(e.target.checked);
-                    dispatch({ type: 'SET_UI_STATE', payload: { autoFocusEnabled: e.target.checked } });
-                  }}
-                  style={{ marginLeft: '1rem' }}
-                />
-              </div>
-            )}
-          </div>
-        </div>
       </div>
 
-      {/* Right Column */}
-      <div className="flex-[2] flex flex-col h-full min-w-0">
+      {/* Right Column - 36% minus gap */}
+      <div style={{
+        flex: '0 0 calc(36% - 8.64px)',
+        display: 'flex',
+        flexDirection: 'column',
+        height: '100%',
+        minWidth: 0
+      }}>
         {/* Top Buttons Card */}
-        <div className="card">
-          <div className="card-body p-4">
-              <button
-                id="tt-teacher-add"
-                type="button"
-                className="btn btn-success"
-                onClick={showAddTeacherDiv}
-                style={{ display: state.globalVars.editTeacher || state.globalVars.editSub || state.ui.attackMode ? 'none' : 'inline-block' }}
-              >
-                <i className="fas fa-plus"></i> Teachers
-              </button>
-              <button
-                id="tt-subject-add"
-                type="button"
-                className="btn btn-primary"
-                onClick={() => {
-                  setShowAddCourse(true);
-                  setShowAddTeacher(false);
-                  setShowEditCourse(false);
-                  setShowEditTeacher(false);
-                }}
-                style={{ display: state.globalVars.editTeacher || state.globalVars.editSub || state.ui.attackMode ? 'none' : 'inline-block', marginLeft: '0.5rem' }}
-              >
-                <i className="fas fa-plus"></i> Course
-              </button>
-
-              <button
-                id="tt-subject-edit"
-                className="btn btn-warning"
-                type="button"
-                onClick={handleEditClick}
-                style={{ display: state.globalVars.editTeacher || state.globalVars.editSub || state.ui.attackMode ? 'none' : 'inline-block' }}
-              >
-                <i className="fas fa-pencil"></i>
-                <span>&nbsp;&nbsp;Edit</span>
-              </button>
-
-              {/* Edit Mode Toggle - shown when in edit mode */}
+        <div style={{ background: 'transparent', border: 'none', boxShadow: 'none' }}>
+          <div style={{ padding: '0', paddingTop: '1rem' }}>
+              {/* Buttons/Toggles Container with Fixed Width */}
               <div style={{
-                display: state.globalVars.editSub || state.globalVars.editTeacher ? 'inline-flex' : 'none',
+                display: 'flex',
+                gap: '10px',
                 alignItems: 'center',
-                gap: '0.5rem',
-                marginLeft: '0.5rem'
+                minHeight: '38px',
+                flexWrap: 'nowrap',
+                width: '100%',
+                overflow: 'hidden'
               }}>
-                <button
-                  onClick={() => handleEditModeToggle(false)}
-                  className={`px-3 py-1 rounded-md text-xs font-medium transition-all ${
-                    state.globalVars.editTeacher
-                      ? 'bg-orange-500/80 text-white border border-orange-400'
-                      : 'bg-gray-600/50 text-white/60 border border-gray-500/50'
-                  }`}
-                  style={{ fontSize: '0.875rem', padding: '0.375rem 0.75rem' }}
-                >
-                  ✏️ Teachers
-                </button>
-                <button
-                  onClick={() => handleEditModeToggle(true)}
-                  className={`px-3 py-1 rounded-md text-xs font-medium transition-all ${
-                    state.globalVars.editSub
-                      ? 'bg-blue-500/80 text-white border border-blue-400'
-                      : 'bg-gray-600/50 text-white/60 border border-gray-500/50'
-                  }`}
-                  style={{ fontSize: '0.875rem', padding: '0.375rem 0.75rem' }}
-                >
-                  📚 Courses
-                </button>
-              </div>
+                {/* Buttons Container - Fixed width to prevent reflow */}
+                <div style={{
+                  display: 'flex',
+                  gap: '10px',
+                  alignItems: 'center',
+                  flex: '1 1 auto',
+                  minWidth: 0
+                }}>
+                  {/* Buttons - Hidden in Live FFCS Mode */}
+                  {!state.ui.attackMode && !state.globalVars.editTeacher && !state.globalVars.editSub && (
+                    <>
+                      <button
+                        id="tt-teacher-add"
+                        type="button"
+                        className="btn btn-success"
+                        onClick={showAddTeacherDiv}
+                      >
+                        <i className="fas fa-plus"></i> Teachers
+                      </button>
+                      <button
+                        id="tt-subject-add"
+                        type="button"
+                        className="btn btn-primary"
+                        onClick={() => {
+                          setShowAddCourse(true);
+                          setShowAddTeacher(false);
+                          setShowEditCourse(false);
+                          setShowEditTeacher(false);
+                        }}
+                      >
+                        <i className="fas fa-plus"></i> Course
+                      </button>
+                      <button
+                        id="tt-subject-edit"
+                        className="btn btn-warning"
+                        type="button"
+                        onClick={handleEditClick}
+                      >
+                        <i className="fas fa-pencil"></i>
+                        <span>&nbsp;&nbsp;Edit</span>
+                      </button>
+                    </>
+                  )}
 
-              <button
-                id="tt-subject-done"
-                className="btn btn-primary"
-                type="button"
-                onClick={handleDoneClick}
-                style={{
-                  display: state.globalVars.editSub || state.globalVars.editTeacher ? 'inline-block' : 'none',
-                  marginLeft: '0.5rem'
-                }}
-              >
-                <span>Done</span>
-              </button>
-              <button
-                id="tt-subject-collapse"
-                className="btn btn-secondary"
-                type="button"
-                onClick={closeAllDropdowns}
-                style={{ 
-                  display: state.globalVars.editSub || state.globalVars.editTeacher ? 'inline-block' : 'none'
-                }}
-              >
-                <i className="fas fa-chevron-up"></i>
-                <span>&nbsp;&nbsp;Collapse All</span>
-              </button>
+                  {/* Edit Mode Toggle - shown when in edit mode */}
+                  {(state.globalVars.editSub || state.globalVars.editTeacher) && (
+                    <div style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '8px',
+                      background: 'rgba(255, 255, 255, 0.05)',
+                      padding: '4px',
+                      borderRadius: '4px'
+                    }}>
+                      <button
+                        onClick={() => handleEditModeToggle(false)}
+                        style={{
+                          padding: '6px 12px',
+                          fontSize: '13px',
+                          fontWeight: '600',
+                          borderRadius: '4px',
+                          border: 'none',
+                          background: state.globalVars.editTeacher
+                            ? 'linear-gradient(135deg, #f97316 0%, #ea580c 100%)'
+                            : 'rgba(255, 255, 255, 0.08)',
+                          color: state.globalVars.editTeacher ? 'white' : 'rgba(255, 255, 255, 0.5)',
+                          cursor: 'pointer',
+                          transition: 'all 0.2s ease',
+                          whiteSpace: 'nowrap'
+                        }}
+                        onMouseEnter={(e) => {
+                          if (state.globalVars.editTeacher) {
+                            e.currentTarget.style.filter = 'brightness(1.1)';
+                          } else {
+                            e.currentTarget.style.background = 'rgba(255, 255, 255, 0.12)';
+                          }
+                        }}
+                        onMouseLeave={(e) => {
+                          if (state.globalVars.editTeacher) {
+                            e.currentTarget.style.filter = 'brightness(1)';
+                          } else {
+                            e.currentTarget.style.background = 'rgba(255, 255, 255, 0.08)';
+                          }
+                        }}
+                      >
+                        ✏️ Teachers
+                      </button>
+                      <button
+                        onClick={() => handleEditModeToggle(true)}
+                        style={{
+                          padding: '6px 12px',
+                          fontSize: '13px',
+                          fontWeight: '600',
+                          borderRadius: '4px',
+                          border: 'none',
+                          background: state.globalVars.editSub
+                            ? 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)'
+                            : 'rgba(255, 255, 255, 0.08)',
+                          color: state.globalVars.editSub ? 'white' : 'rgba(255, 255, 255, 0.5)',
+                          cursor: 'pointer',
+                          transition: 'all 0.2s ease',
+                          whiteSpace: 'nowrap'
+                        }}
+                        onMouseEnter={(e) => {
+                          if (state.globalVars.editSub) {
+                            e.currentTarget.style.filter = 'brightness(1.1)';
+                          } else {
+                            e.currentTarget.style.background = 'rgba(255, 255, 255, 0.12)';
+                          }
+                        }}
+                        onMouseLeave={(e) => {
+                          if (state.globalVars.editSub) {
+                            e.currentTarget.style.filter = 'brightness(1)';
+                          } else {
+                            e.currentTarget.style.background = 'rgba(255, 255, 255, 0.08)';
+                          }
+                        }}
+                      >
+                        📚 Courses
+                      </button>
+                    </div>
+                  )}
+
+                  {/* Autofocus Toggle - Shown when in Live FFCS Mode */}
+                  {state.ui.attackMode && (
+                    <div className="form-check form-switch" style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.5rem',
+                      margin: 0,
+                      border: '1px solid rgba(255, 255, 255, 0.2)',
+                      borderRadius: '4px',
+                      padding: '0.35rem 1rem',
+                      background: 'rgba(0, 0, 0, 0.3)',
+                      fontSize: '0.8rem',
+                      minHeight: '38px',
+                      boxSizing: 'border-box'
+                    }}>
+                      <label className="form-check-label" htmlFor="autofocus-toggle" style={{
+                        color: 'white',
+                        fontWeight: '500',
+                        fontSize: '0.8rem',
+                        margin: 0,
+                        whiteSpace: 'nowrap',
+                        lineHeight: 1
+                      }}>
+                        Auto Focus
+                      </label>
+                      <input
+                        className="form-check-input"
+                        type="checkbox"
+                        id="autofocus-toggle"
+                        checked={autoFocus}
+                        onChange={(e) => {
+                          setAutoFocus(e.target.checked);
+                          dispatch({ type: 'SET_UI_STATE', payload: { autoFocusEnabled: e.target.checked } });
+                        }}
+                        style={{ margin: 0 }}
+                      />
+                    </div>
+                  )}
+
+                  {/* Done Button - Shown when in edit mode */}
+                  {(state.globalVars.editSub || state.globalVars.editTeacher) && (
+                    <button
+                      id="tt-subject-done"
+                      className="btn btn-primary"
+                      type="button"
+                      onClick={handleDoneClick}
+                      style={{
+                        flexShrink: 0,
+                        whiteSpace: 'nowrap'
+                      }}
+                    >
+                      <span>Done</span>
+                    </button>
+                  )}
+                </div>
+
+                {/* Live FFCS Toggle - Fixed position on right */}
+                <div className="form-check form-switch" style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.5rem',
+                  margin: 0,
+                  flexShrink: 0,
+                  border: '1px solid rgba(255, 255, 255, 0.2)',
+                  borderRadius: '4px',
+                  padding: '0.35rem 1rem',
+                  background: 'rgba(0, 0, 0, 0.3)',
+                  fontSize: '0.8rem',
+                  minHeight: '38px',
+                  boxSizing: 'border-box'
+                }}>
+                  <label className="form-check-label" htmlFor="live-mode-toggle" style={{
+                    color: 'white',
+                    fontWeight: '500',
+                    fontSize: '0.8rem',
+                    margin: 0,
+                    whiteSpace: 'nowrap',
+                    lineHeight: 1
+                  }}>
+                    Live FFCS
+                  </label>
+                  <input
+                    className="form-check-input"
+                    type="checkbox"
+                    id="live-mode-toggle"
+                    checked={liveFfcsMode}
+                    onChange={(e) => handleLiveFfcsModeToggle(e.target.checked)}
+                    style={{ margin: 0 }}
+                  />
+                </div>
+              </div>
             </div>
           </div>
 
@@ -2224,7 +2445,7 @@ export default function CoursePanel() {
                 </h4>
               </div>
 
-              <div style={{ backgroundColor: 'rgba(255, 255, 255, 0.1)', borderRadius: '8px', padding: '1rem' }}>
+              <div style={{ backgroundColor: 'rgba(255, 255, 255, 0.1)', borderRadius: '4px', padding: '1rem' }}>
                 <div className="alert alert-info mb-3">
                   <strong>Live Mode Active:</strong> This mode shows occupied slots based on your course selections.
                 </div>
@@ -2439,16 +2660,16 @@ export default function CoursePanel() {
                     Add Teachers
                   </h4>
                 </div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
                   {/* Course select option dropdown input */}
                   <div>
-                    <label htmlFor="course-select-add-teacher" style={{ color: 'white', fontWeight: '500', marginBottom: '0.5rem', display: 'block' }}>
-                      Course 
+                    <label htmlFor="course-select-add-teacher" style={{ color: 'white', fontWeight: '500', marginBottom: '0.25rem', display: 'block' }}>
+                      Course
                       {Object.keys(subjects).length === 0 && (
-                        <a 
-                          id="course_link" 
-                          href="#" 
-                          onClick={(e) => { e.preventDefault(); setShowAddCourse(true); setShowAddTeacher(false); }} 
+                        <a
+                          id="course_link"
+                          href="#"
+                          onClick={(e) => { e.preventDefault(); setShowAddCourse(true); setShowAddTeacher(false); }}
                           style={{ color: '#4ECDCC', textDecoration: 'none', marginLeft: '1rem', fontSize: '0.9rem' }}
                         >
                           Add Courses
@@ -2479,7 +2700,7 @@ export default function CoursePanel() {
 
                   <div style={{ display: 'flex', flexDirection: 'row' }}>
                     <div style={{ width: '72%' }}>
-                      <label htmlFor="teacher-input_remove" style={{ color: 'white', fontWeight: '500', marginBottom: '0.5rem', display: 'block' }}>
+                      <label htmlFor="teacher-input_remove" style={{ color: 'white', fontWeight: '500', marginBottom: '0.25rem', display: 'block' }}>
                         Teacher Name
                       </label>
                       <input
@@ -2494,7 +2715,7 @@ export default function CoursePanel() {
                     </div>
                     <div style={{ width: '2%' }}></div>
                     <div style={{ width: '26%' }}>
-                      <label htmlFor="color1-select" style={{ color: 'white', fontWeight: '500', marginBottom: '0.5rem', display: 'block' }}>
+                      <label htmlFor="color1-select" style={{ color: 'white', fontWeight: '500', marginBottom: '0.25rem', display: 'block' }}>
                         Color
                       </label>
                       <select
@@ -2512,7 +2733,7 @@ export default function CoursePanel() {
 
                   <div style={{ display: 'flex', gap: '1rem' }}>
                     <div style={{ flex: 1 }}>
-                      <label htmlFor="slot-input" style={{ color: 'white', fontWeight: '500', marginBottom: '0.5rem', display: 'block' }}>
+                      <label htmlFor="slot-input" style={{ color: 'white', fontWeight: '500', marginBottom: '0.25rem', display: 'block' }}>
                         Slots
                       </label>
                       <input
@@ -2743,14 +2964,14 @@ export default function CoursePanel() {
           </div> {/* End Add/Edit Course Card */}
 
           {/* Bottom Buttons Card */}
-          <div className="card" style={{ marginTop: '1rem' }}>
-            <div className="card-body" style={{ padding: '1rem' }}>
-              <div style={{ display: 'flex', flexDirection: 'row', gap: '0.5rem', flexWrap: 'wrap' }}>
+          <div style={{ marginTop: '0.5rem', background: 'transparent', border: 'none', boxShadow: 'none' }}>
+            <div style={{ padding: '0' }}>
+              <div style={{ display: 'flex', flexDirection: 'row', gap: '0.5rem', flexWrap: 'nowrap', alignItems: 'center' }}>
                 <button
                   id="save-panel-button"
                   type="button"
                   className="btn btn-success"
-                  style={{ borderRadius: '12px', padding: '0.5rem 0.75rem', fontWeight: '500', fontSize: '0.875rem', flex: '1' }}
+                  style={{ flex: '1' }}
                   onClick={handleDirectDownload}
                 >
                   Save TT
@@ -2759,7 +2980,7 @@ export default function CoursePanel() {
                   id="load-panel-button"
                   type="button"
                   className="btn btn-success"
-                  style={{ borderRadius: '12px', padding: '0.5rem 0.75rem', fontWeight: '500', fontSize: '0.875rem', flex: '1' }}
+                  style={{ flex: '1' }}
                   onClick={() => {
                     document.getElementById('upload-modal')?.click();
                   }}
@@ -2770,7 +2991,7 @@ export default function CoursePanel() {
                   id="clear-course-button"
                   type="button"
                   className="btn btn-danger"
-                  style={{ borderRadius: '12px', padding: '0.5rem 0.75rem', fontWeight: '500', fontSize: '0.875rem', flex: '1' }}
+                  style={{ flex: '1' }}
                   onClick={() => {
                     // Different confirmation messages for normal vs attack mode (like vanilla JS)
                     const confirmMessage = state.ui.attackMode

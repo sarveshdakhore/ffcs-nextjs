@@ -160,7 +160,7 @@ footer {
 
 ::-webkit-scrollbar-thumb {
     background: #303030;
-    border-radius: 4px;
+    border-radius: 10px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
@@ -183,13 +183,13 @@ footer {
 /* Dark theme styles for form inputs - Modern design using Tailwind */
 .form-control,
 .form-select {
-    @apply bg-black/40 border border-white/20 text-white rounded-[4px] px-4 py-2 font-medium transition-all duration-300 backdrop-blur-[10px] min-h-[36px];
+    @apply bg-black/40 border border-white/20 text-white rounded-[4px] px-4 py-2 font-medium transition-all duration-300 backdrop-blur-[10px] shadow-[0_4px_15px_rgba(0,0,0,0.2)] min-h-[36px];
     font-size: 0.875rem !important;
 }
 
 .form-control:focus,
 .form-select:focus {
-    @apply bg-black/60 border-primary text-white;
+    @apply bg-black/60 border-primary text-white shadow-[0_0_0_0.2rem_rgba(78,205,196,0.25)] -translate-y-0.5;
 }
 
 /* Dark theme styles for modals */
@@ -312,17 +312,17 @@ div[class*="h2s"],
     background: #121212;
     backdrop-filter: blur(20px) !important;
     -webkit-backdrop-filter: blur(20px) !important;
-    border: none !important;
+    border: 2px solid rgba(255, 255, 255, 0.5) !important;
     border-radius: 4px !important;
-    padding: 0.75rem 1.25rem !important;
-    margin: 0.0625rem 0 !important;
-    box-shadow: none !important;
+    padding: 0.6rem 1.25rem !important;
+    margin: 0.5rem 0 !important;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3) !important;
     transition: all 0.3s ease !important;
     overflow: hidden !important;
     display: flex !important;
     align-items: center !important;
     justify-content: space-between !important;
-    min-height: 48px !important;
+    min-height: 40px !important;
     width: 100% !important;
 }
 
@@ -354,6 +354,9 @@ div.h2s:hover,
 .col .h2s:hover {
     background: rgba(0, 0, 0, 0.9) !important;
     background-color: rgba(0, 0, 0, 0.9) !important;
+    border-color: rgba(78, 205, 196, 0.4) !important;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4), 0 0 0 0.1rem rgba(78, 205, 196, 0.2) !important;
+    transform: translateY(-1px) !important;
 }
 
 /* Style the inner h2 elements only */
@@ -665,7 +668,7 @@ p, span, div {
 #div-for-edit-course .form-control {
     background: rgba(255, 255, 255, 0.05);
     border: 1px solid rgba(255, 255, 255, 0.15);
-    border-radius: 4px;
+    border-radius: 10px;
     color: white;
     padding: 0.75rem 1rem;
     transition: all 0.3s ease;
@@ -736,18 +739,18 @@ hr {
 
     .card-header {
         padding: 0.75rem 1rem;
-        border-radius: 4px 4px 0 0 !important;
+        border-radius: 15px 15px 0 0 !important;
     }
 
     .card-body {
         padding: 0.75rem;
-        border-radius: 0 0 4px 4px;
+        border-radius: 0 0 15px 15px;
     }
 
     .left-box, .right-box {
         margin: 0.125rem;
         padding: 0.75rem;
-        border-radius: 4px;
+        border-radius: 10px;
         min-width: 0;
     }
     
@@ -819,7 +822,7 @@ hr {
     .header-button-element .btn {
         padding: 0.3rem 0.6rem !important;
         font-size: 0.8rem !important;
-        border-radius: 4px !important;
+        border-radius: 10px !important;
     }
     
     .card-header .c_pref {
@@ -837,14 +840,14 @@ hr {
         padding: 0.4rem 0.8rem !important;
         margin: 0.25rem 0 !important;
         min-height: 32px !important;
-        border-radius: 4px !important;
+        border-radius: 10px !important;
     }
     
     .form-control,
     .form-select {
         padding: 0.4rem 0.8rem;
         min-height: 30px;
-        border-radius: 4px;
+        border-radius: 15px;
         font-size: 0.9rem;
     }
 }
@@ -974,7 +977,7 @@ html, body {
 .bootstrap-select .dropdown-item {
     color: white !important;
     padding: 0.75rem 1.5rem;
-    border-radius: 4px;
+    border-radius: 10px;
     margin: 0.25rem 0;
     transition: all 0.3s ease;
     font-weight: 500;
@@ -1012,13 +1015,13 @@ html, body {
 
 /* Custom dropdown styling for course/teacher selection - Modern dark theme */
 .dropdown-teacher {
-    margin: 0.25rem 0;
-    border-radius: 4px;
+    margin: 0.75rem 0;
+    border-radius: 15px;
     overflow: hidden;
-    box-shadow: none;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
     transition: all 0.3s ease;
     background: #161616 !important;
-    border: none;
+    border: 1px solid rgba(255, 255, 255, 0.1);
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
 }
@@ -1040,23 +1043,26 @@ html, body {
 
 .dropdown-heading .h2s {
     background: rgba(0, 0, 0, 0.8) !important;
-    border: none !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
     border-radius: 4px !important;
     margin: 0 !important;
 }
 
 .dropdown-heading .h2s:hover {
-    background: rgba(20, 20, 20, 0.9) !important;
+    border-color: rgba(78, 205, 196, 0.4) !important;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4), 0 0 0 0.1rem rgba(78, 205, 196, 0.2) !important;
 }
 
 /* Course Edit Mode - Blue border on hover */
 .dropdown-heading[data-course-edit-mode="true"] .h2s:hover {
-    border: 2px solid rgba(59, 130, 246, 0.6) !important;
+    border: 4px solid rgba(59, 130, 246, 0.6) !important;
+    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.3) !important;
 }
 
 /* Course Edit Mode - Blue border when selected */
 .dropdown-heading.course-selected .h2s {
-    border: 2px solid #3b82f6 !important;
+    border: 4px solid #3b82f6 !important;
+    box-shadow: 0 0 0 2px #3b82f6 !important;
 }
 
 .dropdown-heading.open .h2s {
@@ -1069,10 +1075,9 @@ html, body {
     border-radius: 0 0 4px 4px !important;
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
-    box-shadow: none;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
     padding: 0.5rem;
     margin: 0;
-    background: rgba(0, 0, 0, 0.8) !important;
     list-style: none !important;
     list-style-type: none !important;
     max-height: 0;
@@ -1306,7 +1311,7 @@ html, body {
 }
 
 .dropdown-heading .h2s {
-    border: none !important;
+    border: 2px solid rgba(255, 255, 255, 0.5) !important;
     background: #161616 !important;
 }
 

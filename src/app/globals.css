@@ -64,7 +64,7 @@
 
 #timetable .period div[data-course] {
   padding: 2px 4px;
-  border-radius: 3px;
+  border-radius: 0px;
   font-weight: 500;
   font-size: 0.7rem;
   line-height: 1;
@@ -85,14 +85,15 @@
 
 .quick-buttons .quick-button {
   margin: 2px;
-  padding: 8px 12px;
-  font-size: 0.8rem;
+  padding: 6px 10px;
+  font-size: 0.75rem;
   border: 1px solid #dee2e6;
   background-color: #fff;
   color: #495057;
   cursor: pointer;
   border-radius: 4px;
   transition: all 0.2s;
+  white-space: nowrap;
 }
 
 .quick-buttons .quick-button:hover {
@@ -198,6 +199,9 @@
   border-left: 1px solid #dee2e6;
 }
 
+/* REMOVED: Legacy .left-box and .right-box styles that conflicted with new two-column layout */
+/* These were for the old single-card two-box layout, not the new side-by-side column layout */
+/*
 .left-box {
   flex: 1;
   min-height: 400px;
@@ -207,6 +211,7 @@
   flex: 1;
   padding: 0 15px;
 }
+*/
 
 /* Course List Sortable Styles */
 #course-list th {
@@ -275,6 +280,15 @@
 /* Button hover animations */
 .btn {
   transition: all 0.3s ease !important;
+  border-radius: 4px !important;
+  font-size: 0.8rem !important;
+  padding: 0.35rem 0.75rem !important;
+  white-space: nowrap !important;
+}
+
+.btn-sm {
+  font-size: 0.75rem !important;
+  padding: 0.3rem 0.65rem !important;
 }
 
 /* Modal enhancements */
@@ -287,7 +301,7 @@
 .modal-content {
   background: rgba(25, 25, 25, 0.95) !important;
   border: 1px solid rgba(255, 255, 255, 0.2) !important;
-  border-radius: 15px !important;
+  border-radius: 6px !important;
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
   color: white !important;
@@ -296,13 +310,13 @@
 .modal-header {
   border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
   background: rgba(35, 35, 35, 0.9) !important;
-  border-radius: 15px 15px 0 0 !important;
+  border-radius: 6px 6px 0 0 !important;
 }
 
 .modal-footer {
   border-top: 1px solid rgba(255, 255, 255, 0.1) !important;
   background: rgba(35, 35, 35, 0.9) !important;
-  border-radius: 0 0 15px 15px !important;
+  border-radius: 0 0 6px 6px !important;
 }
 
 .modal-title {
@@ -495,8 +509,9 @@
   box-shadow: 0 0 0 0.2rem rgba(66, 133, 244, 0.25) !important;
 }
 
+/* Removed transform animation - buttons should only darken on hover */
 .btn:hover {
-  transform: translateY(-2px);
+  /* transform: translateY(-2px); */
 }
 
 /* Dropdown menu styling */
@@ -504,7 +519,7 @@
   background-color: rgba(33, 37, 41, 0.95) !important;
   backdrop-filter: blur(10px);
   border: 1px solid rgba(255, 255, 255, 0.1) !important;
-  border-radius: 15px !important;
+  border-radius: 4px !important;
 }
 
 .dropdown-item:hover {
@@ -522,4 +537,21 @@
 }
 .collab-room {
   background-image: none !important;
+}
+
+/* Sortable.js drag and drop styles */
+.sortable-ghost {
+  opacity: 0 !important;
+  visibility: hidden !important;
+}
+
+.sortable-chosen {
+  opacity: 0.5 !important;
+  background: rgba(78, 205, 196, 0.1) !important;
+}
+
+.sortable-drag {
+  opacity: 1 !important;
+  cursor: grabbing !important;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3) !important;
 }

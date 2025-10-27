@@ -174,16 +174,18 @@ export default function Home() {
             <Navbar />
 
             {/* Course Panel */}
-            <div style={{ 
-              marginTop: '140px', 
+            <div style={{
+              marginTop: '140px',
               marginBottom: '2rem',
               position: 'relative',
-              width: 'calc(100% - 48px)',
+              width: '90%',
               maxWidth: '90%',
+              paddingLeft: '1rem',
+              paddingRight: '1rem',
               marginLeft: 'auto',
               marginRight: 'auto'
             }}>
-              
+
               <CoursePanel />
             </div>
 

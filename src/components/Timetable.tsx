@@ -1275,8 +1275,15 @@ export default function Timetable() {
   return (
     <div key={`timetable-${dataKey}`}>
       {/* Option buttons for the timetable */}
-      <div className="container-sm px-4">
-        <div id="option-buttons" className="row justify-content-between">
+      <div style={{
+        width: '90%',
+        maxWidth: '90%',
+        marginLeft: 'auto',
+        marginRight: 'auto',
+        paddingLeft: '1rem',
+        paddingRight: '1rem'
+      }}>
+        <div id="option-buttons" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1rem' }}>
           <div className="col-auto mb-2 text-center">
             <div className="btn-group" role="group" style={{gap: '0px'}}>
                             <div className="btn-group" ref={dropdownRef}>
@@ -1353,13 +1360,20 @@ export default function Timetable() {
             </div>
           </div>
 
-          <div className="col-auto mb-2 text-center">
+          <div style={{
+            display: 'flex',
+            gap: '0.5rem',
+            alignItems: 'center',
+            flexWrap: 'nowrap',
+            marginBottom: '0.5rem'
+          }}>
             <button
-              className="btn btn-success m-2"
+              className="btn btn-success"
               type="button"
               onClick={() => {
                 document.getElementById('download-modal')?.click();
               }}
+              style={{ whiteSpace: 'nowrap' }}
             >
               <i className="fas fa-download"></i>
               <span>&nbsp;&nbsp;Download Timetable</span>
@@ -1367,9 +1381,10 @@ export default function Timetable() {
 
             <button
               id="quick-toggle"
-              className={`btn ms-1 me-1 btn-warning text-white m-2`}
+              className="btn btn-warning text-white"
               type="button"
               onClick={handleQuickToggle}
+              style={{ whiteSpace: 'nowrap' }}
             >
               <i className="fas fa-eye text-white"></i>
               <span className='text-white'>&nbsp;&nbsp;
@@ -1378,11 +1393,12 @@ export default function Timetable() {
             </button>
 
             <button
-              className="btn btn-danger m-2"
+              className="btn btn-danger"
               type="button"
               onClick={() => {
                 document.getElementById('reset-modal')?.click();
               }}
+              style={{ whiteSpace: 'nowrap' }}
             >
               <i className="fas fa-redo"></i>
               <span>&nbsp;&nbsp;Reset Table</span>
@@ -1395,9 +1411,17 @@ export default function Timetable() {
       {renderQuickButtons()}
 
       {/* Main Timetable */}
-      <div className="container-xxl text-center noselect">
+      <div style={{
+        width: '90%',
+        maxWidth: '90%',
+        marginLeft: 'auto',
+        marginRight: 'auto',
+        paddingLeft: '1rem',
+        paddingRight: '1rem',
+        textAlign: 'center'
+      }} className="noselect">
         <div id="timetable" className="table-responsive">
-          <table className="mb-0 mt-2 table table-bordered">
+          <table className="mb-0 table table-bordered">
             <tbody>
               {timetableResult.rows}
             </tbody>
