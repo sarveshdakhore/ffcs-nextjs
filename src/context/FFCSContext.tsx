@@ -217,7 +217,8 @@ type FFCSAction =
   | { type: 'SET_SYNC_STATUS'; payload: { isSynced: boolean; lastSyncTime?: number; error?: string } }
   | { type: 'ENTER_EDIT_MODE_WITH_TEACHER'; payload: { courseName: string; teacherName: string; teacherData: TeacherData } }
   | { type: 'REORDER_COURSES_IN_TABLE'; payload: CourseData[] }
-  | { type: 'REORDER_ATTACK_DATA'; payload: CourseData[] };
+  | { type: 'REORDER_ATTACK_DATA'; payload: CourseData[] }
+  | { type: 'UPDATE_TEACHER_SLOTS'; payload: { courseName: string; teacherName: string; newSlots: string } };
 
 // Initial state matching vanilla JS structure
 const defaultTable: TimetableData = {
@@ -606,6 +607,9 @@ function ffcsReducer(state: FFCSState, action: FFCSAction): FFCSState {
     case 'ADD_SUBJECT': {
       const updatedTable = state.timetableStoragePref.map(table => {
         if (table.id === state.currentTableId) {
+          // Only add/update if not already exists or needs update
+          const existingSubject = table.subject[action.payload.courseName];
+
           // Update credits in selected courses (data and attackData)
           const updatedData = table.data.map(course =>
             course.courseTitle === action.payload.courseName
@@ -623,10 +627,15 @@ function ffcsReducer(state: FFCSState, action: FFCSAction): FFCSState {
             ...table,
             subject: {
               ...table.subject,
-              [action.payload.courseName]: {
-                ...table.subject[action.payload.courseName],
-                credits: action.payload.credits
-              }
+              [action.payload.courseName]: existingSubject
+                ? {
+                    ...existingSubject,
+                    credits: action.payload.credits
+                  }
+                : {
+                    teacher: {},
+                    credits: action.payload.credits
+                  }
             },
             data: updatedData,
             attackData: updatedAttackData
@@ -648,14 +657,21 @@ function ffcsReducer(state: FFCSState, action: FFCSAction): FFCSState {
           : course
       );
 
+      const existingActiveSubject = state.activeTable.subject[action.payload.courseName];
+
       const updatedActive = {
         ...state.activeTable,
         subject: {
           ...state.activeTable.subject,
-          [action.payload.courseName]: {
-            ...state.activeTable.subject[action.payload.courseName],
-            credits: action.payload.credits
-          }
+          [action.payload.courseName]: existingActiveSubject
+            ? {
+                ...existingActiveSubject,
+                credits: action.payload.credits
+              }
+            : {
+                teacher: {},
+                credits: action.payload.credits
+              }
         },
         data: updatedActiveData,
         attackData: updatedActiveAttackData
@@ -669,27 +685,122 @@ function ffcsReducer(state: FFCSState, action: FFCSAction): FFCSState {
     }
 
     case 'REMOVE_SUBJECT': {
+      console.log('\n🔥🔥🔥 [REDUCER] REMOVE_SUBJECT 🔥🔥🔥');
+      console.log(`📋 Payload (courseName): "${action.payload}"`);
+      console.log(`   - Payload type: ${typeof action.payload}`);
+      console.log(`   - Payload length: ${action.payload.length}`);
+      console.log(`   - Current tableId: ${state.currentTableId}`);
+
+      console.log('\n📊 BEFORE state:');
+      console.log(`   - subject object:`, state.activeTable.subject);
+      console.log(`   - subject keys:`, Object.keys(state.activeTable.subject));
+      console.log(`   - data.length: ${state.activeTable.data.length}`);
+      console.log(`   - data courses:`, state.activeTable.data.map(c => ({
+        id: c.courseId,
+        title: c.courseTitle,
+        titleLength: c.courseTitle.length
+      })));
+      console.log(`   - attackData.length: ${state.activeTable.attackData.length}`);
+
+      // Check if the key exists in subject
+      const subjectExists = state.activeTable.subject.hasOwnProperty(action.payload);
+      console.log(`\n🔍 Subject key "${action.payload}" exists: ${subjectExists}`);
+
       const updatedTable = state.timetableStoragePref.map(table => {
         if (table.id === state.currentTableId) {
+          console.log(`\n   🎯 Processing table ${table.id}`);
+          console.log(`      - Table subject keys:`, Object.keys(table.subject));
+          console.log(`      - Looking for key: "${action.payload}"`);
+
+          // Remove from subject object
           const { [action.payload]: removed, ...remainingSubjects } = table.subject;
+          console.log(`      - Removed from subject:`, removed);
+          console.log(`      - Remaining subject keys:`, Object.keys(remainingSubjects));
+
+          // CRITICAL FIX: Also remove from data and attackData arrays
+          // Match by courseTitle (which is the subject name)
+          console.log(`\n      📋 Filtering data array:`);
+          console.log(`         - BEFORE: ${table.data.length} courses`);
+          table.data.forEach(course => {
+            const matches = course.courseTitle === action.payload;
+            console.log(`         - "${course.courseTitle}" === "${action.payload}" ? ${matches}`);
+          });
+
+          const filteredData = table.data.filter(course => {
+            const keep = course.courseTitle !== action.payload;
+            if (!keep) {
+              console.log(`         ✅ REMOVING: "${course.courseTitle}"`);
+            }
+            return keep;
+          });
+          console.log(`         - AFTER: ${filteredData.length} courses`);
+
+          console.log(`\n      📋 Filtering attackData array:`);
+          console.log(`         - BEFORE: ${table.attackData.length} courses`);
+          const filteredAttackData = table.attackData.filter(course => {
+            const keep = course.courseTitle !== action.payload;
+            if (!keep) {
+              console.log(`         ✅ REMOVING: "${course.courseTitle}"`);
+            }
+            return keep;
+          });
+          console.log(`         - AFTER: ${filteredAttackData.length} courses`);
+
           return {
             ...table,
-            subject: remainingSubjects
+            subject: remainingSubjects,
+            data: filteredData,
+            attackData: filteredAttackData
           };
         }
         return table;
       });
 
+      // Remove from active table
+      console.log(`\n   🎯 Processing activeTable`);
       const { [action.payload]: removed, ...remainingSubjects } = state.activeTable.subject;
+      console.log(`      - Removed from activeTable subject:`, removed);
+      console.log(`      - Remaining subject keys:`, Object.keys(remainingSubjects));
+
+      const filteredActiveData = state.activeTable.data.filter(course => {
+        const keep = course.courseTitle !== action.payload;
+        if (!keep) {
+          console.log(`      ✅ REMOVING from activeTable.data: "${course.courseTitle}"`);
+        }
+        return keep;
+      });
+
+      const filteredActiveAttackData = state.activeTable.attackData.filter(course => {
+        const keep = course.courseTitle !== action.payload;
+        if (!keep) {
+          console.log(`      ✅ REMOVING from activeTable.attackData: "${course.courseTitle}"`);
+        }
+        return keep;
+      });
+
       const updatedActive = {
         ...state.activeTable,
-        subject: remainingSubjects
+        subject: remainingSubjects,
+        data: filteredActiveData,
+        attackData: filteredActiveAttackData
       };
+
+      // Recalculate total credits
+      const newTotalCredits = filteredActiveData.reduce((sum, course) => sum + course.credits, 0);
+
+      console.log('\n📊 AFTER state:');
+      console.log(`   - subject keys:`, Object.keys(remainingSubjects));
+      console.log(`   - data.length: ${filteredActiveData.length}`);
+      console.log(`   - data courses:`, filteredActiveData.map(c => c.courseTitle));
+      console.log(`   - attackData.length: ${filteredActiveAttackData.length}`);
+      console.log(`   - Total credits: ${newTotalCredits}`);
+      console.log('🔥🔥🔥 [REDUCER] REMOVE_SUBJECT COMPLETE 🔥🔥🔥\n');
 
       return {
         ...state,
         timetableStoragePref: updatedTable,
-        activeTable: updatedActive
+        activeTable: updatedActive,
+        totalCredits: newTotalCredits
       };
     }
 
@@ -1150,10 +1261,83 @@ function ffcsReducer(state: FFCSState, action: FFCSAction): FFCSState {
       return {
         ...state,
         // Same implementation as ADD_TEACHER_TO_SUBJECT since it's an update
-        ...ffcsReducer(state, { 
-          type: 'ADD_TEACHER_TO_SUBJECT', 
-          payload: action.payload 
+        ...ffcsReducer(state, {
+          type: 'ADD_TEACHER_TO_SUBJECT',
+          payload: action.payload
         })
+      };
+    }
+
+    case 'UPDATE_TEACHER_SLOTS': {
+      // Update slots for an existing teacher (for smart slot merging)
+      // Import deduplication and validation functions
+      const { slotsProcessingForCourseList, isSlotExist } = require('@/utils/teacherUtils');
+
+      // Process slots - trim, uppercase, and deduplicate
+      let processedSlots = action.payload.newSlots.trim().toUpperCase();
+
+      console.log(`\n🔄 [UPDATE_TEACHER_SLOTS] Updating ${action.payload.teacherName}`);
+      console.log(`   - Course: ${action.payload.courseName}`);
+      console.log(`   - Raw slots: "${action.payload.newSlots}"`);
+
+      // Deduplicate slots using Set (exactly like original FFCSOnTheGo)
+      processedSlots = slotsProcessingForCourseList(processedSlots);
+
+      // Validate slots exist
+      if (!isSlotExist(processedSlots)) {
+        console.error(`   ❌ [UPDATE_TEACHER_SLOTS] Invalid slots: "${processedSlots}"`);
+        return state; // Don't update if slots are invalid
+      }
+
+      console.log(`   ✅ Final processed slots: "${processedSlots}"`);
+
+      const updatedTable = state.timetableStoragePref.map(table => {
+        if (table.id === state.currentTableId && table.subject[action.payload.courseName]) {
+          const teacher = table.subject[action.payload.courseName].teacher[action.payload.teacherName];
+          if (teacher) {
+            return {
+              ...table,
+              subject: {
+                ...table.subject,
+                [action.payload.courseName]: {
+                  ...table.subject[action.payload.courseName],
+                  teacher: {
+                    ...table.subject[action.payload.courseName].teacher,
+                    [action.payload.teacherName]: {
+                      ...teacher,
+                      slots: processedSlots
+                    }
+                  }
+                }
+              }
+            };
+          }
+        }
+        return table;
+      });
+
+      const activeTableSubject = state.activeTable.subject[action.payload.courseName];
+      const activeTeacher = activeTableSubject?.teacher[action.payload.teacherName];
+
+      return {
+        ...state,
+        timetableStoragePref: updatedTable,
+        activeTable: activeTeacher ? {
+          ...state.activeTable,
+          subject: {
+            ...state.activeTable.subject,
+            [action.payload.courseName]: {
+              ...activeTableSubject,
+              teacher: {
+                ...activeTableSubject.teacher,
+                [action.payload.teacherName]: {
+                  ...activeTeacher,
+                  slots: processedSlots
+                }
+              }
+            }
+          }
+        } : state.activeTable
       };
     }
 
@@ -1568,24 +1752,76 @@ function ffcsReducer(state: FFCSState, action: FFCSAction): FFCSState {
     }
 
     case 'REMOVE_COURSE_FROM_TIMETABLE': {
+      console.log('\n🔥🔥🔥 [REDUCER] REMOVE_COURSE_FROM_TIMETABLE 🔥🔥🔥');
+      console.log(`📋 Payload (courseId): ${action.payload}`);
+
+      // Find the course being removed to get its courseTitle
+      const courseToRemove = state.activeTable.data.find(course => course.courseId === action.payload);
+      const courseTitle = courseToRemove?.courseTitle;
+
+      console.log(`📚 Course to remove:`, courseToRemove);
+      console.log(`   - Course ID: ${action.payload}`);
+      console.log(`   - Course title: ${courseTitle}`);
+      console.log(`   - Current tableId: ${state.currentTableId}`);
+
+      console.log('\n📊 BEFORE state:');
+      console.log(`   - data.length: ${state.activeTable.data.length}`);
+      console.log(`   - data courses: ${state.activeTable.data.map(c => `${c.courseId}:${c.courseTitle}`).join(', ')}`);
+      console.log(`   - subject keys: ${Object.keys(state.activeTable.subject).join(', ')}`);
+
       const updatedTables = state.timetableStoragePref.map(table => {
         if (table.id === state.currentTableId) {
+          console.log(`   🎯 Updating table ${table.id}`);
+          console.log(`      - BEFORE: ${table.data.length} courses`);
+
+          // Remove from subject object if courseTitle exists
+          const updatedSubject = { ...table.subject };
+          if (courseTitle && updatedSubject[courseTitle]) {
+            delete updatedSubject[courseTitle];
+            console.log(`      ✅ Deleted "${courseTitle}" from subject object`);
+          } else {
+            console.log(`      ⚠️ Course title "${courseTitle}" not found in subject object`);
+            console.log(`      Available keys: ${Object.keys(updatedSubject).join(', ')}`);
+          }
+
+          const filteredData = table.data.filter(course => course.courseId !== action.payload);
+          console.log(`      - AFTER: ${filteredData.length} courses`);
+          console.log(`      - Subject keys after delete: ${Object.keys(updatedSubject).join(', ')}`);
+
           return {
             ...table,
-            data: table.data.filter(course => course.courseId !== action.payload)
+            data: filteredData,
+            subject: updatedSubject
           };
         }
         return table;
       });
-      
+
+      // Remove from active table as well
+      const updatedSubject = { ...state.activeTable.subject };
+      if (courseTitle && updatedSubject[courseTitle]) {
+        delete updatedSubject[courseTitle];
+        console.log(`   ✅ Deleted "${courseTitle}" from activeTable subject`);
+      }
+
+      const filteredActiveData = state.activeTable.data.filter(course => course.courseId !== action.payload);
+
       const updatedActive = {
         ...state.activeTable,
-        data: state.activeTable.data.filter(course => course.courseId !== action.payload)
+        data: filteredActiveData,
+        subject: updatedSubject
       };
-      
+
       // Update total credits
       const newTotalCredits = updatedActive.data.reduce((sum, course) => sum + course.credits, 0);
-      
+
+      console.log('\n📊 AFTER state:');
+      console.log(`   - data.length: ${updatedActive.data.length}`);
+      console.log(`   - data courses: ${updatedActive.data.map(c => `${c.courseId}:${c.courseTitle}`).join(', ')}`);
+      console.log(`   - subject keys: ${Object.keys(updatedSubject).join(', ')}`);
+      console.log(`   - Total credits: ${newTotalCredits}`);
+      console.log('🔥🔥🔥 [REDUCER] REMOVE_COURSE_FROM_TIMETABLE COMPLETE 🔥🔥🔥\n');
+
       return {
         ...state,
         timetableStoragePref: updatedTables,
@@ -1622,21 +1858,43 @@ function ffcsReducer(state: FFCSState, action: FFCSAction): FFCSState {
     }
 
     case 'REMOVE_COURSE_FROM_ATTACK_DATA': {
+      // Find the course being removed to get its courseTitle
+      const courseToRemove = state.activeTable.attackData.find(course => course.courseId === action.payload);
+      const courseTitle = courseToRemove?.courseTitle;
+
+      console.log(`🗑️ [REMOVE_ATTACK_COURSE] Removing attack course ID: ${action.payload}`);
+      console.log(`   - Course title: ${courseTitle}`);
+
       const updatedTables = state.timetableStoragePref.map(table => {
         if (table.id === state.currentTableId) {
+          // Remove from subject object if courseTitle exists
+          const updatedSubject = { ...table.subject };
+          if (courseTitle && updatedSubject[courseTitle]) {
+            delete updatedSubject[courseTitle];
+            console.log(`   ✅ Removed "${courseTitle}" from subject object (attack data)`);
+          }
+
           return {
             ...table,
-            attackData: table.attackData.filter(course => course.courseId !== action.payload)
+            attackData: table.attackData.filter(course => course.courseId !== action.payload),
+            subject: updatedSubject
           };
         }
         return table;
       });
-      
+
+      // Remove from active table as well
+      const updatedSubject = { ...state.activeTable.subject };
+      if (courseTitle && updatedSubject[courseTitle]) {
+        delete updatedSubject[courseTitle];
+      }
+
       const updatedActive = {
         ...state.activeTable,
-        attackData: state.activeTable.attackData.filter(course => course.courseId !== action.payload)
+        attackData: state.activeTable.attackData.filter(course => course.courseId !== action.payload),
+        subject: updatedSubject
       };
-      
+
       return {
         ...state,
         timetableStoragePref: updatedTables,

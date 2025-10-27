@@ -18,18 +18,48 @@ export default function CourseList() {
   const sortableInstance = useRef<Sortable | null>(null);
 
   const handleRemoveCourse = (courseId: number) => {
-    if (confirm('Are you sure you want to remove this course?')) {
+    console.log('\n🚨🚨🚨 ============= COURSE DELETION STARTED ============= 🚨🚨🚨');
+    console.log(`📋 Course ID to delete: ${courseId}`);
+    console.log(`🎯 Attack mode: ${state.ui.attackMode}`);
+
+    // Find the course in current list
+    const courseToDelete = courses.find(c => c.courseId === courseId);
+    console.log(`📚 Course to delete:`, courseToDelete);
+    console.log(`   - Course Title: ${courseToDelete?.courseTitle}`);
+    console.log(`   - Course Code: ${courseToDelete?.courseCode}`);
+    console.log(`   - Faculty: ${courseToDelete?.faculty}`);
+
+    // Log current state BEFORE deletion
+    console.log('\n📊 BEFORE DELETION:');
+    console.log(`   - Total courses in data: ${state.activeTable.data.length}`);
+    console.log(`   - Total courses in attackData: ${state.activeTable.attackData.length}`);
+    console.log(`   - Subject keys: ${Object.keys(state.activeTable.subject).join(', ')}`);
+    console.log(`   - Data courses:`, state.activeTable.data.map(c => `${c.courseId}: ${c.courseTitle}`));
+    console.log(`   - Subject object:`, state.activeTable.subject);
+
+    if (window.confirm('⚠️ Are you sure you want to remove this course?')) {
+      console.log('✅ User confirmed deletion');
+
       if (state.ui.attackMode) {
+        console.log('🎯 Dispatching REMOVE_COURSE_FROM_ATTACK_DATA');
         dispatch({
           type: 'REMOVE_COURSE_FROM_ATTACK_DATA',
           payload: courseId
         });
       } else {
+        console.log('📝 Dispatching REMOVE_COURSE_FROM_TIMETABLE');
         dispatch({
           type: 'REMOVE_COURSE_FROM_TIMETABLE',
           payload: courseId
         });
       }
+
+      // Log after dispatch (state will update on next render)
+      console.log('✅ Dispatch completed - waiting for state update...');
+      console.log('🚨🚨🚨 ============= COURSE DELETION DISPATCHED ============= 🚨🚨🚨\n');
+    } else {
+      console.log('❌ User cancelled deletion');
+      console.log('🚨🚨🚨 ============= COURSE DELETION CANCELLED ============= 🚨🚨🚨\n');
     }
   };
 
@@ -180,6 +210,16 @@ export default function CourseList() {
   };
 
   const sortedCourses = getSortedCourses();
+
+  // Log state changes (for debugging deletion)
+  useEffect(() => {
+    console.log('\n📊 [CourseList] State updated:');
+    console.log(`   - data.length: ${state.activeTable.data.length}`);
+    console.log(`   - attackData.length: ${state.activeTable.attackData.length}`);
+    console.log(`   - subject keys: ${Object.keys(state.activeTable.subject).join(', ')}`);
+    console.log(`   - courses displayed: ${courses.length}`);
+    console.log(`   - Attack mode: ${state.ui.attackMode}`);
+  }, [state.activeTable.data.length, state.activeTable.attackData.length, Object.keys(state.activeTable.subject).length, state.ui.attackMode]);
 
   // Initialize Sortable for drag-and-drop reordering
   useEffect(() => {

@@ -423,7 +423,11 @@ export default function CoursePanel() {
   };
 
   // Sort teachers by color priority (Green > Orange > Red), clash status, and morning/evening preference
-  const sortTeachersByColor = (teachers: { [key: string]: any }, courseName: string): [string, any][] => {
+  const sortTeachersByColor = (teachers: { [key: string]: any } | undefined, courseName: string): [string, any][] => {
+    // Handle undefined or null teachers
+    if (!teachers) {
+      return [];
+    }
     const teacherEntries = Object.entries(teachers);
 
     // Get data based on mode (normal vs attack)
@@ -914,16 +918,38 @@ export default function CoursePanel() {
 
   // Handle course delete
   const handleDeleteCourse = () => {
-    if (!confirm(`Are you sure you want to delete ${editingCourse}?`)) {
+    console.log('\n🚨🚨🚨 ============= COURSE DELETE FROM EDIT PANEL ============= 🚨🚨🚨');
+    console.log(`📋 Course to delete: "${editingCourse}"`);
+    console.log(`📊 Current state:`);
+    console.log(`   - subject keys: ${Object.keys(state.activeTable.subject).join(', ')}`);
+    console.log(`   - data.length: ${state.activeTable.data.length}`);
+    console.log(`   - attackData.length: ${state.activeTable.attackData.length}`);
+
+    // Use window.confirm to ensure it works
+    const userConfirmed = window.confirm(`⚠️ Are you sure you want to delete "${editingCourse}"?\n\nThis will remove the course and all its teachers.`);
+
+    console.log(`🔍 User confirmed: ${userConfirmed}`);
+
+    if (!userConfirmed) {
+      console.log('❌ User cancelled deletion');
       setCourseMessage({ text: 'Course not deleted', color: 'red' });
       setTimeout(() => setCourseMessage({ text: '', color: '' }), 4000);
       return;
     }
 
+    console.log('✅ User confirmed deletion');
+    console.log(`📝 Dispatching REMOVE_SUBJECT with payload: "${editingCourse}"`);
+
     dispatch({
       type: 'REMOVE_SUBJECT',
       payload: editingCourse
     });
+
+    console.log('✅ Dispatch completed');
+    console.log('🚨🚨🚨 ============= COURSE DELETE DISPATCHED ============= 🚨🚨🚨\n');
+
+    setCourseMessage({ text: 'Course deleted successfully', color: 'green' });
+    setTimeout(() => setCourseMessage({ text: '', color: '' }), 3000);
 
     setShowEditCourse(false);
     setEditingCourse('');
@@ -932,7 +958,7 @@ export default function CoursePanel() {
 
   // Handle teacher delete
   const handleDeleteTeacher = () => {
-    if (!confirm(`Are you sure you want to delete ${editingTeacher}?`)) {
+    if (!window.confirm(`⚠️ Are you sure you want to delete teacher "${editingTeacher}"?`)) {
       setTeacherMessage({ text: 'Teacher not deleted', color: 'red' });
       setTimeout(() => setTeacherMessage({ text: '', color: '' }), 4000);
       return;
@@ -1859,11 +1885,12 @@ export default function CoursePanel() {
         height: '70vh',
         padding: '0',
         width: '100%',
+        margin: '0 auto',
         boxSizing: 'border-box'
       }}>
-      {/* Left Column - 64% minus gap */}
+      {/* Left Column - 60% minus gap */}
       <div style={{
-        flex: '0 0 calc(64% - 15.36px)',
+        flex: '0 0 calc(57% - 14.4px)',
         display: 'flex',
         flexDirection: 'column',
         height: '100%',
@@ -2198,9 +2225,9 @@ export default function CoursePanel() {
         </div>
       </div>
 
-      {/* Right Column - 36% minus gap */}
+      {/* Right Column - 40% minus gap */}
       <div style={{
-        flex: '0 0 calc(36% - 8.64px)',
+        flex: '0 0 calc(43% - 9.6px)',
         display: 'flex',
         flexDirection: 'column',
         height: '100%',

@@ -2,10 +2,11 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { useFFCS } from '@/context/FFCSContext';
-import { 
-  parseTextToListForMultipleAdd, 
-  validateTeacherData, 
-  processTeacherName 
+import {
+  parseTextToListForMultipleAdd,
+  validateTeacherData,
+  processTeacherName,
+  checkTeacherAndSlotsMatch
 } from '@/utils/teacherUtils';
 
 export default function AddTeacherForm() {
@@ -166,44 +167,118 @@ export default function AddTeacherForm() {
       const teacherList = parseTextToListForMultipleAdd(multipleTeachersText);
       let addedCount = 0;
       let skippedCount = 0;
+      let mergedCount = 0;
+
+      // Find the course or create a generic name
+      const courseObj = state.courses.find(course => course.code === selectedCourse);
+      const courseName = courseObj?.name || 'Unknown Course';
+      const fullCourseName = `${selectedCourse} - ${courseName}`;
+
+      console.log(`\n📚 [ADD MULTIPLE] Processing for course: "${fullCourseName}"`);
+      console.log(`   - Selected course code: ${selectedCourse}`);
+      console.log(`   - Course name: ${courseName}`);
+      console.log(`   - Already exists: ${!!state.activeTable.subject[fullCourseName]}`);
+
+      // Ensure the course exists in subject data (add if it doesn't exist)
+      if (!state.activeTable.subject[fullCourseName]) {
+        console.log(`   ➕ Adding new subject to state`);
+        dispatch({
+          type: 'ADD_SUBJECT',
+          payload: {
+            courseName: fullCourseName,
+            credits: courseObj?.credits || 0
+          }
+        });
+      }
+
+      // Get current teachers for the course (for smart slot matching)
+      const currentTeachers = state.activeTable.subject[fullCourseName]?.teacher || {};
+      console.log(`   - Existing teachers: ${Object.keys(currentTeachers).length}`);
 
       // Process each teacher
-      teacherList.forEach((teacherData) => {
+      teacherList.forEach((teacherData, index) => {
+        console.log(`\n👤 [TEACHER ${index + 1}] Processing: ${teacherData.faculty}`);
+        console.log(`   - Slots: ${teacherData.slots}`);
+        console.log(`   - Venue: ${teacherData.venue}`);
+
         // Validate teacher data
         if (!validateTeacherData(teacherData)) {
+          console.log(`   ❌ Validation failed - skipping`);
           skippedCount++;
           return;
         }
 
         // Process teacher name (add (E) for evening classes if needed)
-        const processedTeacherName = processTeacherName(
-          teacherData.faculty.trim().toUpperCase(), 
+        let processedTeacherName = processTeacherName(
+          teacherData.faculty.trim().toUpperCase(),
           teacherData.slots.trim().toUpperCase()
         );
 
-        // Find the course or create a generic name
-        const courseObj = state.courses.find(course => course.code === selectedCourse);
-        const courseName = courseObj?.name || 'Unknown Course';
-        const fullCourseName = `${selectedCourse} - ${courseName}`;
+        const slotString = teacherData.slots.trim().toUpperCase();
+        console.log(`   - Processed name: ${processedTeacherName}`);
+        console.log(`   - Processed slots: ${slotString}`);
 
-        // Ensure the course exists in subject data (add if it doesn't exist)
-        if (!state.activeTable.subject[fullCourseName]) {
+        // Create update callback for slot merging
+        const updateCallback = (courseName: string, teacherName: string, newSlots: string) => {
+          console.log(`   🔄 [UPDATE CALLBACK] Merging slots for ${teacherName}: ${newSlots}`);
           dispatch({
-            type: 'ADD_SUBJECT',
+            type: 'UPDATE_TEACHER_SLOTS',
             payload: {
-              courseName: fullCourseName,
-              credits: courseObj?.credits || 0
+              courseName,
+              teacherName,
+              newSlots
             }
           });
+
+          // CRITICAL: Update currentTeachers object for next iteration
+          // This ensures the next teacher can see the merged slots
+          currentTeachers[teacherName] = {
+            ...currentTeachers[teacherName],
+            slots: newSlots
+          };
+          console.log(`   🔄 Updated currentTeachers[${teacherName}].slots = "${newSlots}"`);
+
+          mergedCount++;
+        };
+
+        console.log(`   🔍 Checking for duplicates/merge opportunities...`);
+        console.log(`   📋 Current teachers: ${Object.keys(currentTeachers).join(', ')}`);
+
+        // Smart teacher and slot matching logic
+        const matchResult = checkTeacherAndSlotsMatch(
+          fullCourseName,
+          processedTeacherName,
+          slotString,
+          currentTeachers,
+          updateCallback
+        );
+
+        console.log(`   📊 Match result:`, matchResult);
+
+        // Handle the result
+        if (matchResult === false) {
+          // Duplicate - skip
+          console.log(`   ⏭️  Duplicate detected - skipping`);
+          skippedCount++;
+          return;
+        } else if (matchResult === true) {
+          // Merged successfully - already handled by updateCallback
+          console.log(`   ✅ Merged successfully (currentTeachers updated in callback)`);
+          return;
+        } else {
+          // Use unique name (could be "Teacher 2", "Teacher 3", etc.)
+          console.log(`   📝 Using unique name: ${matchResult}`);
+          processedTeacherName = matchResult;
         }
 
-        // Add teacher to subject data first (this matches vanilla JS structure)
+        // Add new teacher with unique name
+        console.log(`   ➕ Adding new teacher to subject...`);
         dispatch({
           type: 'ADD_TEACHER_TO_SUBJECT',
           payload: {
             courseName: fullCourseName,
             teacherName: processedTeacherName,
-            slots: teacherData.slots.trim().toUpperCase(),
+            slots: slotString,
             venue: teacherData.venue.trim().toUpperCase() || 'VENUE',
             color: color
           }
@@ -212,7 +287,7 @@ export default function AddTeacherForm() {
         // Also add to legacy teacher structure for compatibility
         const newTeacher = {
           name: processedTeacherName,
-          slot: teacherData.slots.trim().toUpperCase(),
+          slot: slotString,
           venue: teacherData.venue.trim().toUpperCase() || 'VENUE',
           color: color,
           course: selectedCourse,
@@ -223,25 +298,49 @@ export default function AddTeacherForm() {
           payload: { courseCode: selectedCourse, teacher: newTeacher }
         });
 
+        // CRITICAL: Update currentTeachers object for next iteration
+        // This ensures subsequent teachers can see this newly added teacher
+        currentTeachers[processedTeacherName] = {
+          slots: slotString,
+          venue: teacherData.venue.trim().toUpperCase() || 'VENUE',
+          color: color
+        };
+        console.log(`   🔄 Updated currentTeachers[${processedTeacherName}].slots = "${slotString}"`);
+
         addedCount++;
+        console.log(`   ✅ Teacher added successfully (total added: ${addedCount})`);
       });
 
       // Show success/error message
-      if (addedCount > 0) {
-        setError(`✅ Successfully added ${addedCount} teacher${addedCount > 1 ? 's' : ''}${skippedCount > 0 ? ` (⚠️ ${skippedCount} skipped due to invalid data)` : ''}`);
+      const totalProcessed = addedCount + mergedCount;
+      if (totalProcessed > 0) {
+        let message = `✅ Successfully processed ${totalProcessed} teacher${totalProcessed > 1 ? 's' : ''}`;
+        if (addedCount > 0) {
+          message += ` (${addedCount} added`;
+          if (mergedCount > 0) {
+            message += `, ${mergedCount} merged`;
+          }
+          message += ')';
+        } else if (mergedCount > 0) {
+          message = `✅ Successfully merged ${mergedCount} teacher${mergedCount > 1 ? 's' : ''}`;
+        }
+        if (skippedCount > 0) {
+          message += ` ⚠️ ${skippedCount} skipped (duplicate or invalid data)`;
+        }
+        setError(message);
       } else {
         setMultipleError('❌ No valid teachers found in the provided data. Please check the format.');
       }
 
       // Close modal and clear form if successful
-      if (addedCount > 0) {
+      if (totalProcessed > 0) {
         // Close modal using Bootstrap API
         if (bootstrapModalRef.current) {
           bootstrapModalRef.current.hide();
         }
         setMultipleTeachersText('');
         setMultipleError('');
-        
+
         // Clear success message after 5 seconds
         setTimeout(() => {
           setError('');
