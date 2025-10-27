@@ -524,13 +524,13 @@ export default function CoursePanel() {
   useEffect(() => {
     const trimmedQuery = teacherSearchQuery.trim();
 
-    if (!trimmedQuery || trimmedQuery.length < 2) {
-      // No search query or less than 2 characters - close all dropdowns
+    if (!trimmedQuery) {
+      // No search query - close all dropdowns
       setOpenDropdowns(new Set());
       return;
     }
 
-    // Search query exists with 2+ characters - open dropdowns that have matching results
+    // Search query exists - open dropdowns that have matching results
     const newOpenDropdowns = new Set<string>();
 
     Object.entries(activeTable.subject).forEach(([subjectName, subjectData]) => {
