@@ -14,14 +14,14 @@ import '../css/course-list.css';
 import '../css/timetable.css';
 
 export const metadata: Metadata = {
-  title: "FFCS GDSC",
+  title: "FFCS GDG",
   description: "Visualize and make the most optimum timetable for yourself.",
-  keywords: "VIT,University,Vellore,chennai,FFCS,ffcPlanner,ffcsPlanner,course,registration,timetable,visualize,ffcsonthego new,FFCS NEW,ffcsonthego pref, VIT Vellore, Vellore institute of technology, VIT chennai, FFCS VIT, VIT FFCS, FFCS VIT Planner, Save Vit FFCS, FFCS On The Go, FFCSOnTheGo, FFCSOnTheGo new, FFCS On The Go New, FFCS, Fully Flexible Credit System, gdsc, gdsc vit",
+  keywords: "VIT,University,Vellore,chennai,FFCS,ffcPlanner,ffcsPlanner,course,registration,timetable,visualize,ffcsonthego new,FFCS NEW,ffcsonthego pref, VIT Vellore, Vellore institute of technology, VIT chennai, FFCS VIT, VIT FFCS, FFCS VIT Planner, Save Vit FFCS, FFCS On The Go, FFCSOnTheGo, FFCSOnTheGo new, FFCS On The Go New, FFCS, Fully Flexible Credit System, gdg, gdg vit, Google Developer Group",
   openGraph: {
-    title: "FFCS GDSC",
+    title: "FFCS GDG",
     description: "Visualize and make the most optimum timetable for yourself.",
     url: "https://ffcs.devansharora.in/",
-    siteName: "FFCS GDSC",
+    siteName: "FFCS GDG",
     images: [
       {
         url: "/images/og_image.png",

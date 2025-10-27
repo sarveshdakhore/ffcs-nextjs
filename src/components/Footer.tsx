@@ -14,19 +14,19 @@ export default function Footer() {
         <div className="row align-items-center text-center">
           <div className="col-12">
             <div className="d-flex align-items-center justify-content-center mb-2">
-              <img 
-                src="./images/icons/gdsc.png" 
-                alt="GDSC Logo" 
+              <img
+                src="./images/icons/gdsc.png"
+                alt="GDG Logo"
                 style={{ width: '24px', marginRight: '8px' }}
               />
-              <span 
+              <span
                 style={{
                   color: 'rgba(255, 255, 255, 0.8)',
                   fontSize: '0.9rem',
                   fontWeight: '500'
                 }}
               >
-                GDSC VIT
+                GDG VIT
               </span>
             </div>
             <p 

@@ -36,12 +36,12 @@ export default function Navbar() {
         WebkitBackdropFilter: 'blur(10px)'
       }}>
         <div className="container-xl px-4 py-2" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          {/* Left side - GDSC Logo and Text */}
+          {/* Left side - GDG Logo and Text */}
           <div className="navbar-brand d-flex align-items-center" style={{ flex: 1, margin: 0 }}>
             <div className="d-flex align-items-center">
-              <img src="./images/icons/gdsc.png" alt="GDSC Logo" className="gdsc-logo" style={{ paddingRight: '10px' }} />
+              <img src="./images/icons/gdsc.png" alt="GDG Logo" className="gdsc-logo" style={{ paddingRight: '10px' }} />
               <div className="d-flex flex-column">
-                <span style={{ color: '#ffffff', fontSize: '14px', fontWeight: 600, lineHeight: 1.2 }}>Google Developer Student Clubs</span>
+                <span style={{ color: '#ffffff', fontSize: '14px', fontWeight: 600, lineHeight: 1.2 }}>Google Developer Group</span>
                 <span style={{ color: '#bdc3c7', fontSize: '12px', fontWeight: 400, lineHeight: 1.2 }}>Vellore Institute of Technology</span>
               </div>
             </div>

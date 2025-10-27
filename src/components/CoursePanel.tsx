@@ -43,7 +43,7 @@ export default function CoursePanel() {
   const [teacherName, setTeacherName] = useState('');
   const [slots, setSlots] = useState('');
   const [venue, setVenue] = useState('');
-  const [color, setColor] = useState('rgb(255, 228, 135)'); // Default orange
+  const [color, setColor] = useState('#4a2c0f'); // Default very dark orange (better contrast)
   
   // Multiple teachers modal states
   const [multipleTeachersText, setMultipleTeachersText] = useState('');
@@ -70,7 +70,17 @@ export default function CoursePanel() {
   const [editSlots, setEditSlots] = useState('');
   const [editVenue, setEditVenue] = useState('');
   const [editColor, setEditColor] = useState('');
-  
+
+  // Teacher search and selection
+  const [teacherSearchQuery, setTeacherSearchQuery] = useState('');
+  const [selectedEditTeacher, setSelectedEditTeacher] = useState<string | null>(null);
+
+  // Dropdown state management (React state instead of DOM manipulation)
+  const [openDropdowns, setOpenDropdowns] = useState<Set<string>>(new Set());
+
+  // Clicking state to prevent hover flash during updates
+  const [isClicking, setIsClicking] = useState(false);
+
   // Success/error messages
   const [courseMessage, setCourseMessage] = useState({ text: '', color: '' });
   const [teacherMessage, setTeacherMessage] = useState({ text: '', color: '' });
@@ -353,17 +363,17 @@ export default function CoursePanel() {
     clearPanel();
   };
 
-  // Sort teachers by color priority (Green > Orange > Red) and clash status (EXACTLY like vanilla JS)
+  // Sort teachers by color priority (Green > Orange > Red), clash status, and morning/evening preference
   const sortTeachersByColor = (teachers: { [key: string]: any }, courseName: string): [string, any][] => {
     const teacherEntries = Object.entries(teachers);
-    
+
     // Get data based on mode (normal vs attack)
     const dataToCheck = state.ui.attackMode ? activeTable.attackData : activeTable.data;
-    
+
     // Following vanilla JS rearrangeTeacherLiInSubjectArea logic EXACTLY
     let slotsOfCourse: string[];
     let activeSlots: string[];
-    
+
     if (state.ui.attackMode) {
       slotsOfCourse = getCourseSlotsAttack(courseName, activeTable.attackData);
       activeSlots = slotsForAttack(activeTable.attackData);
@@ -371,36 +381,73 @@ export default function CoursePanel() {
       slotsOfCourse = getSlotsOfCourse(courseName, activeTable.data);
       activeSlots = getSlots(activeTable.data);
     }
-    
+
     // This is the KEY: subtract current course slots from all selected slots
     const consideredSlots = subtractArray(slotsOfCourse, activeSlots);
-    
+
     const colorPriority = {
-      'rgb(214, 255, 214)': 1, // Green - highest priority
-      'rgb(255, 228, 135)': 2, // Orange - medium priority  
-      'rgb(255, 205, 205)': 3, // Red - lowest priority
+      '#0d3320': 1, // Very dark green - highest priority (better contrast)
+      '#1a4d2e': 1, // Dark green (legacy) - highest priority
+      'rgb(214, 255, 214)': 1, // Light green (legacy) - highest priority
+      '#4a2c0f': 2, // Very dark orange - medium priority (better contrast)
+      '#8b4513': 2, // Dark orange (legacy) - medium priority
+      'rgb(255, 228, 135)': 2, // Light orange (legacy) - medium priority
+      '#3d1a1a': 3, // Very dark red - lowest priority (better contrast)
+      '#7a1a1a': 3, // Dark red (legacy) - lowest priority
+      'rgb(255, 205, 205)': 3, // Light red (legacy) - lowest priority
     };
-    
+
     return teacherEntries.sort(([teacherNameA, teacherDataA], [teacherNameB, teacherDataB]) => {
       // Check for slot clashes using EXACT vanilla JS logic
       const teacherSlotsA = slotsProcessingForCourseList(teacherDataA.slots);
       const teacherSlotsB = slotsProcessingForCourseList(teacherDataB.slots);
-      
+
       const hasClashA = isCommonSlot(teacherSlotsA, consideredSlots);
       const hasClashB = isCommonSlot(teacherSlotsB, consideredSlots);
-      
-      // Non-clashing teachers come first
+
+      // 1. Non-clashing teachers come first
       if (hasClashA && !hasClashB) return 1;
       if (!hasClashA && hasClashB) return -1;
-      
-      // If both have same clash status, sort by color priority
+
+      // 2. Sort by morning/evening preference FIRST (before color)
+      // Use (E) marker to determine evening classes instead of slot parsing
+      const isEveningA = teacherNameA.includes('(E)');
+      const isEveningB = teacherNameB.includes('(E)');
+
+      if (state.ui.morningPriority) {
+        // Morning first: teachers without (E) come before those with (E)
+        if (!isEveningA && isEveningB) return -1;
+        if (isEveningA && !isEveningB) return 1;
+      } else {
+        // Evening first: teachers with (E) come before those without (E)
+        if (isEveningA && !isEveningB) return -1;
+        if (!isEveningA && isEveningB) return 1;
+      }
+
+      // 3. If same morning/evening status, THEN sort by color priority
       const priorityA = colorPriority[teacherDataA.color as keyof typeof colorPriority] || 4;
       const priorityB = colorPriority[teacherDataB.color as keyof typeof colorPriority] || 4;
-      
-      return priorityA - priorityB;
+
+      if (priorityA !== priorityB) {
+        return priorityA - priorityB;
+      }
+
+      return 0;
     });
   };
   
+
+  // Filter teachers by search query
+  const filterTeachersBySearch = (teachers: [string, any][]): [string, any][] => {
+    if (!teacherSearchQuery.trim()) return teachers;
+
+    const query = teacherSearchQuery.toLowerCase();
+    return teachers.filter(([teacherName, teacherData]) =>
+      teacherName.toLowerCase().includes(query) ||
+      teacherData.slots.toLowerCase().includes(query) ||
+      teacherData.venue.toLowerCase().includes(query)
+    );
+  };
 
   // Check if a teacher is selected (in the timetable data or attack data)
   const isTeacherSelected = (courseName: string, teacherName: string): boolean => {
@@ -422,9 +469,9 @@ export default function CoursePanel() {
 
   // Refresh clash status for all teachers (like rearrangeTeacherRefresh in vanilla JS)
   const rearrangeTeacherRefresh = () => {
-    // This will trigger a re-render which updates clash status for all teachers
-    // The sortTeachersByColor function already handles clash detection properly
-    triggerUpdate(); // Force component re-render to update clash status
+    // NO-OP: Clash detection happens automatically during render in sortTeachersByColor
+    // The component will re-render when Redux state changes (dispatch already triggers it)
+    // We DON'T want to call triggerUpdate() as it closes all dropdowns and feels laggy
   };
 
   // Handle teacher click for selection/deselection (with radio button integration)
@@ -570,34 +617,34 @@ export default function CoursePanel() {
           }
         }
       }
-      // NORMAL MODE: do nothing, dropdown stays open
+      // NORMAL MODE and LIVE MODE without autofocus: dropdown stays open (no toggle)
     }
   };
 
-  // Toggle dropdown
+  // Toggle dropdown (React state-based, not DOM manipulation)
   const toggleDropdown = (courseName: string) => {
     if (!state.globalVars.editSub && !state.globalVars.editTeacher) {
-      const dropdown = document.querySelector(`[data-course="${courseName}"]`)?.nextElementSibling;
-      dropdown?.classList.toggle('show');
-      const heading = document.querySelector(`[data-course="${courseName}"]`);
-      heading?.classList.toggle('open');
+      setOpenDropdowns(prev => {
+        const newSet = new Set(prev);
+        if (newSet.has(courseName)) {
+          newSet.delete(courseName);
+        } else {
+          newSet.add(courseName);
+        }
+        return newSet;
+      });
     }
   };
 
   // Close all dropdowns
   const closeAllDropdowns = () => {
-    document.querySelectorAll('.dropdown-list').forEach((list) => {
-      list.classList.remove('show');
-      list.previousElementSibling?.classList.remove('open');
-    });
+    setOpenDropdowns(new Set());
   };
 
   // Open all dropdowns
   const openAllDropdowns = () => {
-    document.querySelectorAll('.dropdown-list').forEach((list) => {
-      list.classList.add('show');
-      list.previousElementSibling?.classList.add('open');
-    });
+    const allCourseNames = Object.keys(subjects);
+    setOpenDropdowns(new Set(allCourseNames));
   };
 
   // Handle course add
@@ -941,8 +988,19 @@ export default function CoursePanel() {
     setTeacherMessage({ text: 'Teacher updated successfully', color: 'green' });
     setTimeout(() => setTeacherMessage({ text: '', color: '' }), 4000);
 
-    setShowEditTeacher(false);
-    setEditingTeacher('');
+    // Update selection to new teacher name (important if (E) was added or name changed)
+    setSelectedEditTeacher(`${editingCourse}|${processedTeacherName}`);
+    setEditingTeacher(processedTeacherName);
+    setEditTeacherName(processedTeacherName);
+
+    // Keep edit mode active and form open with updated teacher selected
+    // Blue border will stay on the updated teacher name
+
+    // Re-initialize Sortable after DOM updates (teacher list changed)
+    setTimeout(() => {
+      deactivateSortable();
+      activateSortable();
+    }, 100);
   };
 
   // Handle edit button click
@@ -968,22 +1026,62 @@ export default function CoursePanel() {
     dispatch({ type: 'SET_GLOBAL_VAR', payload: { key: 'sortableIsActive', value: false } });
     setShowEditCourse(false);
     setShowEditTeacher(false);
+    setSelectedEditTeacher(null); // Clear edit selection
     showAddTeacherDiv();
-    
+
     // Deactivate sortable
     deactivateSortable();
   };
 
-  // Handle course edit switch change
-  const handleCourseEditSwitch = (checked: boolean) => {
-    dispatch({ type: 'SET_GLOBAL_VAR', payload: { key: 'editSub', value: checked } });
-    if (checked) {
+  // Handle course/teacher edit toggle
+  const handleEditModeToggle = (toCourseEdit: boolean) => {
+    if (toCourseEdit) {
+      // Switch to Course Edit mode
+      dispatch({ type: 'SET_GLOBAL_VAR', payload: { key: 'editSub', value: true } });
+      dispatch({ type: 'SET_GLOBAL_VAR', payload: { key: 'editTeacher', value: false } });
       closeAllDropdowns();
       setShowEditTeacher(false);
-    } else {
       setShowEditCourse(false);
+      setSelectedEditTeacher(null);
+      // Deactivate sortable in course edit mode
+      deactivateSortable();
+    } else {
+      // Switch to Teacher Edit mode
+      dispatch({ type: 'SET_GLOBAL_VAR', payload: { key: 'editSub', value: false } });
+      dispatch({ type: 'SET_GLOBAL_VAR', payload: { key: 'editTeacher', value: true } });
+      openAllDropdowns();
       setShowEditTeacher(false);
+      setShowEditCourse(false);
+      // Re-activate sortable after DOM updates
+      setTimeout(() => {
+        activateSortable();
+      }, 100);
     }
+  };
+
+  // Handle direct timetable download (Save TT button)
+  const handleDirectDownload = () => {
+    // Exit edit modes before export
+    if (state.globalVars.editSub || state.globalVars.editTeacher) {
+      dispatch({ type: 'SET_GLOBAL_VAR', payload: { key: 'editSub', value: false } });
+      dispatch({ type: 'SET_GLOBAL_VAR', payload: { key: 'editTeacher', value: false } });
+    }
+
+    // Export activeTable matching vanilla JS format
+    const activeTable = state.activeTable;
+    const jsonStr = JSON.stringify(activeTable);
+    const utf8Str = btoa(encodeURIComponent(jsonStr));
+
+    const blob = new Blob([utf8Str], { type: 'application/octet-stream' });
+    const url = URL.createObjectURL(blob);
+
+    const linkElement = document.createElement('a');
+    linkElement.setAttribute('href', url);
+    linkElement.setAttribute('download', `${activeTable.name}.ffcsplanner`);
+    document.body.appendChild(linkElement);
+    linkElement.click();
+    document.body.removeChild(linkElement);
+    URL.revokeObjectURL(url);
   };
 
   // Character filtering functions (from original FFCSonTheGo)
@@ -1666,9 +1764,49 @@ export default function CoursePanel() {
         {/* Course Preferences Card */}
         <div className="card h-full flex flex-col">
           <div className="card-header text-left fw-bold header-button">
-            <div className="c_pref w-[28%] self-center">
-              Course Preferences
-              {state.ui.attackMode && <span className="badge bg-warning text-dark ms-2">Live FFCS Mode</span>}
+            <div className="flex items-center justify-between w-full">
+              {/* Left side - Title */}
+              <div className="c_pref flex items-center gap-3">
+                <span>Course Preferences</span>
+                {state.ui.attackMode && <span className="badge bg-warning text-dark">Live FFCS Mode</span>}
+
+                {/* Morning/Evening Toggle */}
+                <div className="flex items-center gap-2 ml-4">
+                  <label className="text-sm font-normal text-white/80">
+                    Priority:
+                  </label>
+                  <button
+                    onClick={() => dispatch({ type: 'SET_UI_STATE', payload: { morningPriority: !state.ui.morningPriority } })}
+                    className={`px-3 py-1 rounded-md text-xs font-medium transition-all ${
+                      state.ui.morningPriority
+                        ? 'bg-blue-500/80 text-white border border-blue-400'
+                        : 'bg-orange-500/80 text-white border border-orange-400'
+                    }`}
+                  >
+                    {state.ui.morningPriority ? '☀️ Morning' : '🌙 Evening'}
+                  </button>
+                </div>
+              </div>
+
+              {/* Right side - Search Bar */}
+              <div className="flex items-center gap-2">
+                <input
+                  type="text"
+                  placeholder="Search teachers..."
+                  value={teacherSearchQuery}
+                  onChange={(e) => setTeacherSearchQuery(e.target.value)}
+                  className="px-3 py-1.5 bg-white/10 border border-white/30 rounded-lg text-white placeholder-white/50 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent w-64"
+                />
+                {teacherSearchQuery && (
+                  <button
+                    onClick={() => setTeacherSearchQuery('')}
+                    className="text-white/70 hover:text-white"
+                    title="Clear search"
+                  >
+                    <i className="fas fa-times"></i>
+                  </button>
+                )}
+              </div>
             </div>
           </div>
 
@@ -1678,9 +1816,10 @@ export default function CoursePanel() {
           {Object.entries(subjects).map(([subjectName, subjectData]) => {
             return (
             <div key={subjectName} className="dropdown dropdown-teacher">
-              <div 
-                className="dropdown-heading" 
+              <div
+                className={`dropdown-heading ${openDropdowns.has(subjectName) ? 'open' : ''} ${state.globalVars.editSub && editingCourse === subjectName ? 'course-selected' : ''}`}
                 data-course={subjectName}
+                data-course-edit-mode={state.globalVars.editSub ? 'true' : 'false'}
                 onClick={() => {
                   if (state.globalVars.editSub) {
                     setEditingCourse(subjectName);
@@ -1690,7 +1829,8 @@ export default function CoursePanel() {
                     setShowEditTeacher(false);
                     setShowAddCourse(false);
                     setShowAddTeacher(false);
-                  } else {
+                  } else if (!state.globalVars.editTeacher) {
+                    // Only toggle if not in teacher edit mode
                     toggleDropdown(subjectName);
                   }
                 }}
@@ -1704,48 +1844,73 @@ export default function CoursePanel() {
                   <h4>[{subjectData.credits}]</h4>
                 </div>
               </div>
-              <ul className="dropdown-list bg-[#0b0b0b]" >
-                {sortTeachersByColor(subjectData.teacher, subjectName).map(([teacherName, teacherData]) => {
-                  // Check if this teacher has slot clashes (EXACTLY like vanilla JS rearrangeTeacherLiInSubjectArea)
-                  const teacherSlots = slotsProcessingForCourseList(teacherData.slots);
-                  
-                  // Get data based on mode
-                  const dataToCheck = state.ui.attackMode ? activeTable.attackData : activeTable.data;
-                  
-                  let slotsOfCourse: string[];
-                  let activeSlots: string[];
+              <ul
+                className={`dropdown-list bg-[#0b0b0b] ${openDropdowns.has(subjectName) ? 'show' : ''}`}
+                data-edit-mode={state.globalVars.editTeacher ? 'true' : 'false'}
+              >
+                {(() => {
+                  const sortedTeachers = sortTeachersByColor(subjectData.teacher, subjectName);
+                  const filteredTeachers = filterTeachersBySearch(sortedTeachers);
 
-                  if (state.ui.attackMode) {
-                    slotsOfCourse = getCourseSlotsAttack(subjectName, activeTable.attackData);
-
-                    // CRITICAL: Use occupiedSlots (theory + lab) as activeSlots
-                    // This includes BOTH attackData AND attackQuick (when QV is enabled)
-                    const occupiedTheory = occupiedSlots.theory || [];
-                    const occupiedLab = occupiedSlots.lab || [];
-                    activeSlots = [...occupiedTheory, ...occupiedLab];
-                  } else {
-                    slotsOfCourse = getSlotsOfCourse(subjectName, activeTable.data);
-                    activeSlots = getSlots(activeTable.data);
+                  if (filteredTeachers.length === 0 && teacherSearchQuery.trim()) {
+                    return (
+                      <li className="text-white/50 text-center py-4 text-sm italic">
+                        No teachers found matching "{teacherSearchQuery}"
+                      </li>
+                    );
                   }
-                  
-                  // CRITICAL: This is the vanilla JS pattern - subtract same course slots
-                  const consideredSlots = subtractArray(slotsOfCourse, activeSlots);
-                  
-                  // Check clash against OTHER courses only
-                  const hasClash = isCommonSlot(teacherSlots, consideredSlots);
-                  
-                  // Check if this teacher is selected and clashing in normal mode (for red highlighting)
-                  const isSelected = isTeacherSelected(subjectName, teacherName);
-                  const isClashingAndSelected = hasClash && isSelected && !state.ui.attackMode;
-                  
+
+                  return filteredTeachers.map(([teacherName, teacherData]) => {
+                  // Skip clash detection entirely in edit mode (when setting priority)
+                  let hasClash = false;
+                  let isClashingAndSelected = false;
+
+                  if (!state.globalVars.editTeacher) {
+                    // Only check clashes in normal mode, not edit mode
+                    const teacherSlots = slotsProcessingForCourseList(teacherData.slots);
+
+                    // Get data based on mode
+                    const dataToCheck = state.ui.attackMode ? activeTable.attackData : activeTable.data;
+
+                    let slotsOfCourse: string[];
+                    let activeSlots: string[];
+
+                    if (state.ui.attackMode) {
+                      slotsOfCourse = getCourseSlotsAttack(subjectName, activeTable.attackData);
+
+                      // CRITICAL: Use occupiedSlots (theory + lab) as activeSlots
+                      // This includes BOTH attackData AND attackQuick (when QV is enabled)
+                      const occupiedTheory = occupiedSlots.theory || [];
+                      const occupiedLab = occupiedSlots.lab || [];
+                      activeSlots = [...occupiedTheory, ...occupiedLab];
+                    } else {
+                      slotsOfCourse = getSlotsOfCourse(subjectName, activeTable.data);
+                      activeSlots = getSlots(activeTable.data);
+                    }
+
+                    // CRITICAL: This is the vanilla JS pattern - subtract same course slots
+                    const consideredSlots = subtractArray(slotsOfCourse, activeSlots);
+
+                    // Check clash against OTHER courses only
+                    hasClash = isCommonSlot(teacherSlots, consideredSlots);
+
+                    // Check if this teacher is selected and clashing in normal mode (for red highlighting)
+                    const isSelected = isTeacherSelected(subjectName, teacherName);
+                    isClashingAndSelected = hasClash && isSelected && !state.ui.attackMode;
+                  }
+
+                  const isEditSelected = state.globalVars.editTeacher && selectedEditTeacher === `${subjectName}|${teacherName}`;
+
                   return (
-                  <li 
-                    key={teacherName} 
-                    className={hasClash ? 'clashLi' : ''}
-                    style={{ 
-                      backgroundColor: isClashingAndSelected ? '#ff6b6b' : teacherData.color, 
+                  <li
+                    key={teacherName}
+                    className={`${!state.globalVars.editTeacher && hasClash ? 'clashLi' : ''} ${isClicking ? 'clicking' : ''}`}
+                    style={{
+                      backgroundColor: isClashingAndSelected ? '#ff6b6b' : teacherData.color,
                       color: isClashingAndSelected ? 'white' : undefined,
                       fontWeight: isClashingAndSelected ? 'bold' : undefined,
+                      border: isEditSelected ? '4px solid #3b82f6' : undefined,
+                      boxShadow: isEditSelected ? '0 0 0 2px #3b82f6' : undefined,
                       cursor: (() => {
                         if (state.globalVars.editTeacher || (!state.globalVars.editSub && !state.globalVars.editTeacher)) {
                           // In attack mode, disable clicking on clashing teachers
@@ -1757,9 +1922,17 @@ export default function CoursePanel() {
                         return 'default';
                       })()
                     }}
-                    onClick={() => {
+                    onClick={(e) => {
+                      // Prevent click from bubbling up to parent elements (which might close dropdown)
+                      e.stopPropagation();
+
+                      // Set clicking state to prevent hover flash during state update
+                      setIsClicking(true);
+                      setTimeout(() => setIsClicking(false), 300);
+
                       if (state.globalVars.editTeacher && !state.globalVars.editSub) {
-                        // Edit mode
+                        // Edit mode - set selected teacher for highlighting
+                        setSelectedEditTeacher(`${subjectName}|${teacherName}`);
                         setEditingCourse(subjectName);
                         setEditingTeacher(teacherName);
                         setEditTeacherName(teacherName);
@@ -1780,20 +1953,27 @@ export default function CoursePanel() {
                       }
                     }}
                   >
-                    <input 
-                      type="radio" 
-                      name={subjectName} 
-                      value={teacherName} 
+                    {/* Radio button - 5% */}
+                    <input
+                      type="radio"
+                      name={subjectName}
+                      value={teacherName}
                       checked={isTeacherSelected(subjectName, teacherName)}
                       onChange={() => {}} // Handled by li click
-                      style={{ marginRight: '8px' }} 
+                      style={{ marginRight: '12px', flexShrink: 0 }}
                     />
-                    <div className={hasClash ? 'clash' : ''} style={{ paddingLeft: '4%', width: '47%' }}>{teacherName}</div>
-                    <div style={{ width: '38%', opacity: '70%' }}>{teacherData.slots}</div>
-                    <div style={{ width: '15%', opacity: '70%' }}>{teacherData.venue}</div>
+
+                    {/* Teacher name - 45% */}
+                    <div className={!state.globalVars.editTeacher && hasClash ? 'clash' : ''} style={{ width: '45%', flexShrink: 0 }}>{teacherName}</div>
+
+                    {/* Slots - 35% */}
+                    <div style={{ width: '35%', opacity: '70%', flexShrink: 0 }}>{teacherData.slots}</div>
+
+                    {/* Venue - 15% */}
+                    <div style={{ width: '15%', opacity: '70%', flexShrink: 0 }}>{teacherData.venue}</div>
                   </li>
                   );
-                })}
+                })})()}
               </ul>
             </div>
           );
@@ -1881,14 +2061,46 @@ export default function CoursePanel() {
                 <i className="fas fa-pencil"></i>
                 <span>&nbsp;&nbsp;Edit</span>
               </button>
-              
+
+              {/* Edit Mode Toggle - shown when in edit mode */}
+              <div style={{
+                display: state.globalVars.editSub || state.globalVars.editTeacher ? 'inline-flex' : 'none',
+                alignItems: 'center',
+                gap: '0.5rem',
+                marginLeft: '0.5rem'
+              }}>
+                <button
+                  onClick={() => handleEditModeToggle(false)}
+                  className={`px-3 py-1 rounded-md text-xs font-medium transition-all ${
+                    state.globalVars.editTeacher
+                      ? 'bg-orange-500/80 text-white border border-orange-400'
+                      : 'bg-gray-600/50 text-white/60 border border-gray-500/50'
+                  }`}
+                  style={{ fontSize: '0.875rem', padding: '0.375rem 0.75rem' }}
+                >
+                  ✏️ Teachers
+                </button>
+                <button
+                  onClick={() => handleEditModeToggle(true)}
+                  className={`px-3 py-1 rounded-md text-xs font-medium transition-all ${
+                    state.globalVars.editSub
+                      ? 'bg-blue-500/80 text-white border border-blue-400'
+                      : 'bg-gray-600/50 text-white/60 border border-gray-500/50'
+                  }`}
+                  style={{ fontSize: '0.875rem', padding: '0.375rem 0.75rem' }}
+                >
+                  📚 Courses
+                </button>
+              </div>
+
               <button
                 id="tt-subject-done"
                 className="btn btn-primary"
                 type="button"
                 onClick={handleDoneClick}
-                style={{ 
-                  display: state.globalVars.editSub || state.globalVars.editTeacher ? 'inline-block' : 'none'
+                style={{
+                  display: state.globalVars.editSub || state.globalVars.editTeacher ? 'inline-block' : 'none',
+                  marginLeft: '0.5rem'
                 }}
               >
                 <span>Done</span>
@@ -2207,29 +2419,37 @@ export default function CoursePanel() {
                     </select>
                   </div>
 
-                  <div>
-                    <label htmlFor="teacher-input_remove" style={{ color: 'white', fontWeight: '500', marginBottom: '0.5rem', display: 'block' }}>
-                      Teacher Name
-                    </label>
-                    <input
-                      type="text"
-                      className="form-control"
-                      id="teacher-input_remove"
-                      placeholder="KIM JONG UN"
-                      value={teacherName}
-                      onChange={(e) => setTeacherName(removeDotsLive(e.target.value))}
-                      autoComplete="off"
-                    />
-                    {/* Hidden color field for JavaScript compatibility */}
-                    <select
-                      id="color1-select"
-                      className="form-select"
-                      style={{ display: 'none' }}
-                      value={color}
-                      onChange={(e) => setColor(e.target.value)}
-                    >
-                      <option value="rgb(255, 228, 135)">Orange</option>
-                    </select>
+                  <div style={{ display: 'flex', flexDirection: 'row' }}>
+                    <div style={{ width: '72%' }}>
+                      <label htmlFor="teacher-input_remove" style={{ color: 'white', fontWeight: '500', marginBottom: '0.5rem', display: 'block' }}>
+                        Teacher Name
+                      </label>
+                      <input
+                        type="text"
+                        className="form-control"
+                        id="teacher-input_remove"
+                        placeholder="KIM JONG UN"
+                        value={teacherName}
+                        onChange={(e) => setTeacherName(removeDotsLive(e.target.value))}
+                        autoComplete="off"
+                      />
+                    </div>
+                    <div style={{ width: '2%' }}></div>
+                    <div style={{ width: '26%' }}>
+                      <label htmlFor="color1-select" style={{ color: 'white', fontWeight: '500', marginBottom: '0.5rem', display: 'block' }}>
+                        Color
+                      </label>
+                      <select
+                        id="color1-select"
+                        className="form-select"
+                        value={color}
+                        onChange={(e) => setColor(e.target.value)}
+                      >
+                        <option value="#0d3320">Green</option>
+                        <option value="#4a2c0f">Orange</option>
+                        <option value="#3d1a1a">Red</option>
+                      </select>
+                    </div>
                   </div>
 
                   <div style={{ display: 'flex', gap: '1rem' }}>
@@ -2374,13 +2594,13 @@ export default function CoursePanel() {
                           backdropFilter: 'blur(10px)' 
                         }}
                       >
-                        <option value="rgb(214, 255, 214)" style={{ backgroundColor: 'rgba(0, 0, 0, 0.8)', color: 'white' }}>
+                        <option value="#0d3320" style={{ backgroundColor: 'rgba(0, 0, 0, 0.8)', color: 'white' }}>
                           Green
                         </option>
-                        <option value="rgb(255, 228, 135)" style={{ backgroundColor: 'rgba(0, 0, 0, 0.8)', color: 'white' }}>
+                        <option value="#4a2c0f" style={{ backgroundColor: 'rgba(0, 0, 0, 0.8)', color: 'white' }}>
                           Orange
                         </option>
-                        <option value="rgb(255, 205, 205)" style={{ backgroundColor: 'rgba(0, 0, 0, 0.8)', color: 'white' }}>
+                        <option value="#3d1a1a" style={{ backgroundColor: 'rgba(0, 0, 0, 0.8)', color: 'white' }}>
                           Red
                         </option>
                       </select>
@@ -2473,9 +2693,7 @@ export default function CoursePanel() {
                   type="button"
                   className="btn btn-success"
                   style={{ borderRadius: '12px', padding: '0.5rem 0.75rem', fontWeight: '500', fontSize: '0.875rem', flex: '1' }}
-                  onClick={() => {
-                    document.getElementById('download-modal')?.click();
-                  }}
+                  onClick={handleDirectDownload}
                 >
                   Save TT
                 </button>

@@ -8,11 +8,16 @@ import CourseList from '@/components/CourseList';
 import Footer from '@/components/Footer';
 import Modals from '@/components/Modals';
 import LoadingDots from '@/components/LoadingDots';
+import UpdateNotification from '@/components/UpdateNotification';
 import { FFCSProvider } from '@/context/FFCSContext';
+import { useServiceWorker } from '@/hooks/useServiceWorker';
 
 export default function Home() {
   const [showMobileMessage, setShowMobileMessage] = useState(false);
   const [showLoading, setShowLoading] = useState(true);
+
+  // Register service worker for update detection
+  useServiceWorker();
 
   useEffect(() => {
     // Hide loading screen after page loads
@@ -49,6 +54,9 @@ export default function Home() {
   return (
     <FFCSProvider>
       <div className="ffcs-app">
+        {/* Update Notification */}
+        <UpdateNotification />
+
         {/* Loading Screen */}
         {showLoading && (
           <div id="loading-screen" style={{ opacity: 1 }}>

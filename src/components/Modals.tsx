@@ -88,6 +88,32 @@ export default function Modals() {
     setShowResetModal(false);
   };
 
+  // Normalize teacher colors to valid hex values, default to red for unknown
+  const normalizeTeacherColor = (color: any): string => {
+    if (!color || typeof color !== 'string') {
+      return '#3d1a1a'; // Default to red
+    }
+
+    // Map old colors to new colors
+    const colorMap: { [key: string]: string } = {
+      // Green variants
+      'rgb(214, 255, 214)': '#0d3320',
+      '#1a4d2e': '#0d3320',
+      '#0d3320': '#0d3320',
+      // Orange variants
+      'rgb(255, 228, 135)': '#4a2c0f',
+      '#8b4513': '#4a2c0f',
+      '#4a2c0f': '#4a2c0f',
+      // Red variants
+      'rgb(255, 205, 205)': '#3d1a1a',
+      '#7a1a1a': '#3d1a1a',
+      '#3d1a1a': '#3d1a1a',
+    };
+
+    const normalizedColor = colorMap[color.trim()];
+    return normalizedColor || '#3d1a1a'; // Default to red if not found
+  };
+
   const handleUploadTimetable = () => {
     const input = document.createElement('input');
     input.type = 'file';
@@ -117,7 +143,22 @@ export default function Modals() {
         
         // Parse the JSON string back into an object
         const activeTableUpdate = JSON.parse(jsonStr);
-        
+
+        // Normalize all teacher colors in subject data
+        if (activeTableUpdate.subject) {
+          Object.keys(activeTableUpdate.subject).forEach((courseName) => {
+            const courseData = activeTableUpdate.subject[courseName];
+            if (courseData.teacher) {
+              Object.keys(courseData.teacher).forEach((teacherName) => {
+                const teacher = courseData.teacher[teacherName];
+                if (teacher.color) {
+                  teacher.color = normalizeTeacherColor(teacher.color);
+                }
+              });
+            }
+          });
+        }
+
         // Preserve current table ID and name
         activeTableUpdate.id = state.activeTable.id;
         activeTableUpdate.name = state.activeTable.name;

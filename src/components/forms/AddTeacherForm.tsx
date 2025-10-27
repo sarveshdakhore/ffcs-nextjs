@@ -14,7 +14,7 @@ export default function AddTeacherForm() {
   const [teacherName, setTeacherName] = useState('');
   const [slot, setSlot] = useState('');
   const [venue, setVenue] = useState('');
-  const [color, setColor] = useState('rgb(255, 228, 135)'); // Default orange
+  const [color, setColor] = useState('#4a2c0f'); // Default very dark orange (better contrast)
   const [error, setError] = useState('');
   const [multipleTeachersText, setMultipleTeachersText] = useState('');
   const [multipleError, setMultipleError] = useState('');
@@ -25,9 +25,9 @@ export default function AddTeacherForm() {
   const bootstrapModalRef = useRef<any>(null);
 
   const colors = [
-    { value: 'rgb(214, 255, 214)', name: 'Green' },
-    { value: 'rgb(255, 228, 135)', name: 'Orange' },
-    { value: 'rgb(255, 205, 205)', name: 'Red' },
+    { value: '#0d3320', name: 'Green' },
+    { value: '#4a2c0f', name: 'Orange' },
+    { value: '#3d1a1a', name: 'Red' },
   ];
 
   // No modal initialization in useEffect - following original pattern
@@ -75,7 +75,7 @@ export default function AddTeacherForm() {
     setTeacherName('');
     setSlot('');
     setVenue('');
-    setColor('rgb(255, 228, 135)');
+    setColor('#4a2c0f');
     setError('');
   };
 

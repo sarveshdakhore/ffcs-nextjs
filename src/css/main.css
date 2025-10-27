@@ -291,7 +291,7 @@ footer {
 
 .dropdown-item:hover,
 .dropdown-item:focus {
-    background: rgba(78, 205, 196, 0.8);
+    /* No background change - brightness filter handles hover */
     color: white;
 }
 
@@ -982,7 +982,7 @@ html, body {
 
 .bootstrap-select .dropdown-item:hover,
 .bootstrap-select .dropdown-item:focus {
-    background: rgba(78, 205, 196, 0.8) !important;
+    /* No background change - brightness filter handles hover */
     color: white !important;
     transform: translateX(5px);
     box-shadow: 0 4px 15px rgba(78, 205, 196, 0.3);
@@ -1050,6 +1050,23 @@ html, body {
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4), 0 0 0 0.1rem rgba(78, 205, 196, 0.2) !important;
 }
 
+/* Course Edit Mode - Blue border on hover */
+.dropdown-heading[data-course-edit-mode="true"] .h2s:hover {
+    border: 4px solid rgba(59, 130, 246, 0.6) !important;
+    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.3) !important;
+}
+
+/* Course Edit Mode - Blue border when selected */
+.dropdown-heading.course-selected .h2s {
+    border: 4px solid #3b82f6 !important;
+    box-shadow: 0 0 0 2px #3b82f6 !important;
+}
+
+.dropdown-heading.open .h2s {
+    border-bottom-left-radius: 0 !important;
+    border-bottom-right-radius: 0 !important;
+}
+
 .dropdown-list {
     border: none !important;
     border-radius: 0 0 15px 15px !important;
@@ -1058,11 +1075,20 @@ html, body {
     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
     padding: 0.5rem;
     margin: 0;
-    list-style: none;
-    max-height: 300px;
-    overflow-y: auto;
+    list-style: none !important;
+    list-style-type: none !important;
+    max-height: 0;
+    overflow: hidden;
+    opacity: 0;
+    transition: max-height 0.3s ease, opacity 0.3s ease;
     scrollbar-width: none;
     -ms-overflow-style: none;
+}
+
+.dropdown-list.show {
+    max-height: 300px;
+    opacity: 1;
+    overflow-y: auto;
 }
 
 .dropdown-list::-webkit-scrollbar {
@@ -1081,13 +1107,24 @@ html, body {
     font-weight: 500 !important;
     border: none !important;
     min-height: 48px !important;
+    list-style: none !important;
+    list-style-type: none !important;
 }
 
+/* Hover effect for teacher list items (both normal and edit mode) */
 .dropdown-list li:hover {
-    background: rgba(78, 205, 196, 0.8) !important;
+    /* Brighten the existing background color slightly */
+    filter: brightness(1.3) !important;
     color: white !important;
-    transform: translateX(5px) !important;
-    box-shadow: 0 4px 15px rgba(78, 205, 196, 0.3) !important;
+    /* No transition - instant feedback */
+    transition: none !important;
+}
+
+/* Keep hover state during clicking to prevent flash */
+.dropdown-list li.clicking:hover {
+    /* Maintain the brightened state */
+    filter: brightness(1.3) !important;
+    transition: none !important;
 }
 
 .dropdown-list li input[type="radio"] {
@@ -1117,33 +1154,19 @@ html, body {
 }
 
 .dropdown-list li[style]:hover {
-    background: rgba(78, 205, 196, 0.8) !important;
-    background-color: rgba(78, 205, 196, 0.8) !important;
+    /* Removed - brightness filter handles hover instead */
 }
 
-/* Additional override for specific inline background colors */
+/* Allow teacher color backgrounds to show through */
 .dropdown-list li[style*="background-color"] {
     color: white !important;
+    /* Background color is set inline, no override needed */
 }
 
+/* Brighten on hover while maintaining color (both normal and edit mode) */
 .dropdown-list li[style*="background-color"]:hover {
-    background: rgba(78, 205, 196, 0.8) !important;
-    background-color: rgba(78, 205, 196, 0.8) !important;
-}
-
-/* Force override all possible inline color variations */
-.dropdown-list li[style*="rgb(255, 228, 135)"],
-.dropdown-list li[style*="rgb(214, 255, 214)"],
-.dropdown-list li[style*="rgb(255, 205, 205)"] {
-    background: none !important;
-    background-color: none !important;
-}
-
-.dropdown-list li[style*="rgb(255, 228, 135)"]:hover,
-.dropdown-list li[style*="rgb(214, 255, 214)"]:hover,
-.dropdown-list li[style*="rgb(255, 205, 205)"]:hover {
-    background: rgba(78, 205, 196, 0.8) !important;
-    background-color: rgba(78, 205, 196, 0.8) !important;
+    /* Brighten on hover while maintaining color */
+    filter: brightness(1.3) !important;
 }
 
 /* Enhanced form controls to match the dropdown style */

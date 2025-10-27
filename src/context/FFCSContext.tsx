@@ -150,6 +150,7 @@ export interface FFCSState {
     attackMode: boolean;
     attackModeEnabled: boolean;
     pendingQVSlot?: string;
+    morningPriority: boolean;
   };
   totalCredits: number;
   
@@ -251,6 +252,7 @@ const initialState: FFCSState = {
     liveModeEnabled: false,
     attackMode: false,
     attackModeEnabled: false,
+    morningPriority: true,
   },
   totalCredits: 0,
   

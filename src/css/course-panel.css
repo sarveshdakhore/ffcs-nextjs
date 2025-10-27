@@ -122,7 +122,7 @@
 
 .bootstrap-select .dropdown-menu .dropdown-item:hover,
 .bootstrap-select .dropdown-menu .dropdown-item:focus {
-    background: rgba(78, 205, 196, 0.2);
+    /* No background change - brightness filter from main.css handles hover */
     color: white;
 }
 
@@ -160,7 +160,7 @@
 
 .add-course-card .dropdown-item:hover,
 .add-course-card .dropdown-item:focus {
-    background: rgba(78, 205, 196, 0.3) !important;
+    /* No background change - brightness filter from main.css handles hover */
     color: white !important;
 }
 
