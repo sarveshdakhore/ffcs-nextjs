@@ -152,6 +152,11 @@ export interface FFCSState {
     pendingQVSlot?: string;
     morningPriority: boolean;
     clashingCourseIds: number[];
+    editModeTeacherInfo?: {
+      courseName: string;
+      teacherName: string;
+      teacherData: TeacherData;
+    };
   };
   totalCredits: number;
   
@@ -209,7 +214,10 @@ type FFCSAction =
   | { type: 'SAVE_TO_BACKEND_START' }
   | { type: 'SAVE_TO_BACKEND_SUCCESS' }
   | { type: 'SAVE_TO_BACKEND_ERROR'; payload: string }
-  | { type: 'SET_SYNC_STATUS'; payload: { isSynced: boolean; lastSyncTime?: number; error?: string } };
+  | { type: 'SET_SYNC_STATUS'; payload: { isSynced: boolean; lastSyncTime?: number; error?: string } }
+  | { type: 'ENTER_EDIT_MODE_WITH_TEACHER'; payload: { courseName: string; teacherName: string; teacherData: TeacherData } }
+  | { type: 'REORDER_COURSES_IN_TABLE'; payload: CourseData[] }
+  | { type: 'REORDER_ATTACK_DATA'; payload: CourseData[] };
 
 // Initial state matching vanilla JS structure
 const defaultTable: TimetableData = {
@@ -1796,6 +1804,74 @@ function ffcsReducer(state: FFCSState, action: FFCSAction): FFCSState {
           ...action.payload
         }
       };
+
+    case 'ENTER_EDIT_MODE_WITH_TEACHER': {
+      // This action is handled by CoursePanel via useEffect
+      // We just set the global vars to trigger edit mode
+      return {
+        ...state,
+        globalVars: {
+          ...state.globalVars,
+          editTeacher: true,
+          sortableIsActive: true
+        },
+        // Store the teacher info in a temporary location for CoursePanel to pick up
+        ui: {
+          ...state.ui,
+          editModeTeacherInfo: action.payload
+        }
+      };
+    }
+
+    case 'REORDER_COURSES_IN_TABLE': {
+      const updatedTables = state.timetableStoragePref.map(table => {
+        if (table.id === state.currentTableId) {
+          return {
+            ...table,
+            data: action.payload
+          };
+        }
+        return table;
+      });
+
+      const updatedActive = {
+        ...state.activeTable,
+        data: action.payload
+      };
+
+      return {
+        ...state,
+        timetableStoragePref: updatedTables,
+        activeTable: updatedActive
+      };
+    }
+
+    case 'REORDER_ATTACK_DATA': {
+      const updatedTables = state.timetableStoragePref.map(table => {
+        if (table.id === state.currentTableId) {
+          return {
+            ...table,
+            attackData: action.payload
+          };
+        }
+        return table;
+      });
+
+      const updatedActive = {
+        ...state.activeTable,
+        attackData: action.payload
+      };
+
+      return {
+        ...state,
+        timetableStoragePref: updatedTables,
+        activeTable: updatedActive,
+        globalVars: {
+          ...state.globalVars,
+          attackData: action.payload
+        }
+      };
+    }
 
     default:
       return state;

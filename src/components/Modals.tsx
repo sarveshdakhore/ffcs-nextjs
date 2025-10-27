@@ -67,36 +67,79 @@ export default function Modals() {
   // Helper function to create branded header
   const appendHeader = (container: HTMLElement, tableName: string) => {
     const header = document.createElement('div');
-    header.style.padding = '20px';
-    header.style.backgroundColor = '#ffffff';
-    header.style.borderBottom = '2px solid #e0e0e0';
+    header.style.padding = '20px 30px';
+    header.style.background = 'linear-gradient(135deg, #0a0a0a 0%, #1a1a1a 100%)';
+    header.style.borderBottom = '1px solid rgba(255, 255, 255, 0.1)';
+    header.style.display = 'flex';
+    header.style.alignItems = 'center';
+    header.style.justifyContent = 'space-between';
+
+    // Left side - GDG Logo and Text
+    const leftDiv = document.createElement('div');
+    leftDiv.style.display = 'flex';
+    leftDiv.style.alignItems = 'center';
+    leftDiv.style.gap = '15px';
+
+    const logo = document.createElement('img');
+    logo.src = './images/icons/gdsc.png';
+    logo.alt = 'GDG Logo';
+    logo.style.width = '50px';
+    logo.style.height = 'auto';
+
+    const textDiv = document.createElement('div');
+    textDiv.style.display = 'flex';
+    textDiv.style.flexDirection = 'column';
+
+    const gdgText = document.createElement('span');
+    gdgText.textContent = 'Google Developer Group';
+    gdgText.style.color = '#ffffff';
+    gdgText.style.fontSize = '16px';
+    gdgText.style.fontWeight = '600';
+    gdgText.style.lineHeight = '1.2';
+
+    const vitText = document.createElement('span');
+    vitText.textContent = 'Vellore Institute of Technology';
+    vitText.style.color = '#bdc3c7';
+    vitText.style.fontSize = '13px';
+    vitText.style.fontWeight = '400';
+    vitText.style.lineHeight = '1.2';
+
+    textDiv.appendChild(gdgText);
+    textDiv.appendChild(vitText);
+    leftDiv.appendChild(logo);
+    leftDiv.appendChild(textDiv);
+
+    // Center - FFCS PLANNER
+    const centerDiv = document.createElement('div');
+    centerDiv.style.flex = '1';
+    centerDiv.style.textAlign = 'center';
 
     const title = document.createElement('h1');
-    title.textContent = 'FFCS Planner';
-    title.style.color = '#4ECDCC';
-    title.style.fontSize = '32px';
-    title.style.fontWeight = 'bold';
-    title.style.margin = '0 0 10px 0';
-    title.style.display = 'inline-block';
+    title.textContent = 'FFCS PLANNER';
+    title.style.color = '#ffffff';
+    title.style.fontSize = '28px';
+    title.style.fontWeight = '700';
+    title.style.margin = '0';
+    title.style.letterSpacing = '2px';
+    title.style.textShadow = '2px 2px 4px rgba(0,0,0,0.3)';
 
-    const campus = document.createElement('span');
-    campus.textContent = state.currentCampus || 'VIT';
-    campus.style.color = '#666';
-    campus.style.fontSize = '18px';
-    campus.style.float = 'right';
-    campus.style.marginTop = '8px';
+    centerDiv.appendChild(title);
+
+    // Right side - Table Name
+    const rightDiv = document.createElement('div');
+    rightDiv.style.textAlign = 'right';
 
     const tableNameDiv = document.createElement('div');
     tableNameDiv.textContent = tableName;
-    tableNameDiv.style.color = '#333';
-    tableNameDiv.style.fontSize = '20px';
-    tableNameDiv.style.fontWeight = '500';
-    tableNameDiv.style.marginTop = '10px';
-    tableNameDiv.style.clear = 'both';
+    tableNameDiv.style.color = '#4ECDCC';
+    tableNameDiv.style.fontSize = '16px';
+    tableNameDiv.style.fontWeight = '600';
 
-    header.appendChild(title);
-    header.appendChild(campus);
-    header.appendChild(tableNameDiv);
+    rightDiv.appendChild(tableNameDiv);
+
+    header.appendChild(leftDiv);
+    header.appendChild(centerDiv);
+    header.appendChild(rightDiv);
     container.appendChild(header);
   };
 
@@ -112,8 +155,8 @@ export default function Modals() {
     const container = document.createElement('div');
     container.style.position = 'absolute';
     container.style.left = '-9999px';
-    container.style.backgroundColor = '#ffffff';
-    container.style.padding = '20px';
+    container.style.background = 'linear-gradient(135deg, #0a0a0a 0%, #1a1a1a 100%)';
+    container.style.padding = '0';
     document.body.appendChild(container);
 
     try {
@@ -122,24 +165,25 @@ export default function Modals() {
 
       // Clone and style timetable
       const clone = timetableElement.cloneNode(true) as HTMLElement;
-      clone.style.margin = '20px 0';
-      clone.style.backgroundColor = '#ffffff';
+      clone.style.margin = '20px';
+      clone.style.backgroundColor = '#232323';
 
-      // Apply white background to table cells
+      // Apply dark theme to table cells
       const cells = clone.querySelectorAll('td, th');
       cells.forEach(cell => {
-        (cell as HTMLElement).style.backgroundColor = '#ffffff';
-        (cell as HTMLElement).style.color = '#000000';
+        (cell as HTMLElement).style.backgroundColor = '#232323';
+        (cell as HTMLElement).style.color = '#ffffff';
+        (cell as HTMLElement).style.borderColor = '#dee2e6';
       });
 
       container.appendChild(clone);
 
       // Render with html2canvas
       const canvas = await html2canvas(container, {
-        backgroundColor: '#ffffff',
+        backgroundColor: '#0a0a0a',
         scale: 2,
         logging: false
-      });
+      } as any);
 
       // Convert to blob and download
       canvas.toBlob((blob) => {
@@ -174,8 +218,8 @@ export default function Modals() {
     const container = document.createElement('div');
     container.style.position = 'absolute';
     container.style.left = '-9999px';
-    container.style.backgroundColor = '#ffffff';
-    container.style.padding = '20px';
+    container.style.background = 'linear-gradient(135deg, #0a0a0a 0%, #1a1a1a 100%)';
+    container.style.padding = '0';
     document.body.appendChild(container);
 
     try {
@@ -184,33 +228,48 @@ export default function Modals() {
 
       // Clone and style course list
       const clone = courseListElement.cloneNode(true) as HTMLElement;
-      clone.style.margin = '20px 0';
-      clone.style.backgroundColor = '#ffffff';
+      clone.style.margin = '20px';
+      clone.style.backgroundColor = '#232323';
 
-      // Remove action column (last column)
-      const rows = clone.querySelectorAll('tr');
-      rows.forEach(row => {
-        const cells = row.querySelectorAll('td, th');
+      // Remove action column (last column) from thead and tbody only, not tfoot
+      const theadRows = clone.querySelectorAll('thead tr');
+      theadRows.forEach(row => {
+        const cells = row.querySelectorAll('th');
         if (cells.length > 0) {
           cells[cells.length - 1].remove();
         }
       });
 
-      // Apply white background to table cells
+      const tbodyRows = clone.querySelectorAll('tbody tr');
+      tbodyRows.forEach(row => {
+        const cells = row.querySelectorAll('td');
+        if (cells.length > 0) {
+          cells[cells.length - 1].remove();
+        }
+      });
+
+      // Update tfoot colspan to match new column count (6 instead of 7)
+      const tfootCell = clone.querySelector('tfoot td');
+      if (tfootCell) {
+        tfootCell.setAttribute('colspan', '6');
+      }
+
+      // Apply dark theme to table cells
       const cells = clone.querySelectorAll('td, th');
       cells.forEach(cell => {
-        (cell as HTMLElement).style.backgroundColor = '#ffffff';
-        (cell as HTMLElement).style.color = '#000000';
+        (cell as HTMLElement).style.backgroundColor = '#232323';
+        (cell as HTMLElement).style.color = '#ffffff';
+        (cell as HTMLElement).style.borderColor = '#dee2e6';
       });
 
       container.appendChild(clone);
 
       // Render with html2canvas
       const canvas = await html2canvas(container, {
-        backgroundColor: '#ffffff',
+        backgroundColor: '#0a0a0a',
         scale: 2,
         logging: false
-      });
+      } as any);
 
       // Convert to blob and download
       canvas.toBlob((blob) => {
@@ -562,56 +621,25 @@ export default function Modals() {
                 ></button>
               </div>
               <div className="modal-body">
-                <div style={{ marginBottom: '1rem' }}>
-                  <h6 style={{ color: 'rgba(255, 255, 255, 0.9)', marginBottom: '0.5rem', fontSize: '0.9rem' }}>
-                    Download as Image (JPEG)
-                  </h6>
-                  <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1rem' }}>
-                    <button
-                      type="button"
-                      className="btn btn-success"
-                      style={{ flex: 1 }}
-                      onClick={handleDownloadTimetableAsImage}
-                    >
-                      <i className="fas fa-image"></i>
-                      &nbsp;&nbsp;Timetable
-                    </button>
-                    <button
-                      type="button"
-                      className="btn btn-success"
-                      style={{ flex: 1 }}
-                      onClick={handleDownloadCourseListAsImage}
-                    >
-                      <i className="fas fa-image"></i>
-                      &nbsp;&nbsp;Course List
-                    </button>
-                  </div>
-                </div>
-
-                <div>
-                  <h6 style={{ color: 'rgba(255, 255, 255, 0.9)', marginBottom: '0.5rem', fontSize: '0.9rem' }}>
-                    Download as Data File
-                  </h6>
-                  <div style={{ display: 'flex', gap: '0.5rem' }}>
-                    <button
-                      type="button"
-                      className="btn btn-primary"
-                      style={{ flex: 1 }}
-                      onClick={handleDownloadTimetable}
-                    >
-                      <i className="fas fa-download"></i>
-                      &nbsp;&nbsp;Timetable
-                    </button>
-                    <button
-                      type="button"
-                      className="btn btn-primary"
-                      style={{ flex: 1 }}
-                      onClick={handleDownloadCourseList}
-                    >
-                      <i className="fas fa-download"></i>
-                      &nbsp;&nbsp;Course List
-                    </button>
-                  </div>
+                <div style={{ display: 'flex', gap: '0.5rem' }}>
+                  <button
+                    type="button"
+                    className="btn btn-success"
+                    style={{ flex: 1 }}
+                    onClick={handleDownloadTimetableAsImage}
+                  >
+                    <i className="fas fa-image"></i>
+                    &nbsp;&nbsp;Timetable
+                  </button>
+                  <button
+                    type="button"
+                    className="btn btn-success"
+                    style={{ flex: 1 }}
+                    onClick={handleDownloadCourseListAsImage}
+                  >
+                    <i className="fas fa-image"></i>
+                    &nbsp;&nbsp;Course List
+                  </button>
                 </div>
               </div>
             </div>

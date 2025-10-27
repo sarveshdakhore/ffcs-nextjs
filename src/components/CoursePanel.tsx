@@ -167,6 +167,42 @@ export default function CoursePanel() {
     setDispatch(dispatch);
   }, [dispatch]);
 
+  // Handle double-click from course list to enter edit mode with specific teacher
+  useEffect(() => {
+    if (state.ui.editModeTeacherInfo) {
+      const { courseName, teacherName, teacherData } = state.ui.editModeTeacherInfo;
+
+      // Open all dropdowns
+      const allSubjectNames = Object.keys(state.activeTable.subject);
+      setOpenDropdowns(new Set(allSubjectNames));
+
+      // Set teacher edit states
+      setSelectedEditTeacher(`${courseName}|${teacherName}`);
+      setEditingCourse(courseName);
+      setEditingTeacher(teacherName);
+      setEditingTeacherSlots(teacherData.slots);
+      setEditTeacherName(teacherName);
+      setEditSlots(teacherData.slots);
+      setEditVenue(teacherData.venue === 'VENUE' ? '' : teacherData.venue);
+      setEditColor(teacherData.color);
+      setShowEditTeacher(true);
+      setShowEditCourse(false);
+      setShowAddCourse(false);
+      setShowAddTeacher(false);
+
+      // Activate teacher sortable after a delay
+      setTimeout(() => {
+        activateTeachersSortable();
+      }, 100);
+
+      // Clear the trigger after processing
+      dispatch({
+        type: 'SET_UI_STATE',
+        payload: { editModeTeacherInfo: undefined }
+      });
+    }
+  }, [state.ui.editModeTeacherInfo]);
+
   // Reinitialize sortable when subjects change in edit mode
   useEffect(() => {
     if (state.globalVars.editSub) {
@@ -2081,6 +2117,7 @@ export default function CoursePanel() {
                   return (
                   <li
                     key={teacherName}
+                    data-teacher={`${subjectName}|${teacherName}`}
                     className={`${!state.globalVars.editTeacher && hasClash ? 'clashLi' : ''} ${isClicking ? 'clicking' : ''}`}
                     style={{
                       backgroundColor: isClashingAndSelected ? '#ff6b6b' : teacherData.color,
@@ -2798,7 +2835,7 @@ export default function CoursePanel() {
                     Edit Teachers
                   </h4>
                 </div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                   {/* Course select option dropdown input */}
                   <div>
                     <label htmlFor="teacher-edit-course" style={{ color: 'white', fontWeight: '500', marginBottom: '0.5rem', display: 'block' }}>
@@ -2938,7 +2975,7 @@ export default function CoursePanel() {
                   </span>
                   <br id="hide_br_teacher-edit" style={{ display: teacherMessage.text ? 'none' : 'inline' }} />
                 </div>
-                <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'space-between', marginTop: '1rem', paddingTop: '1rem' }}>
+                <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'space-between', marginTop: '0.5rem', paddingTop: '0.5rem' }}>
                   <button
                     type="button"
                     className="btn btn-danger btn-sm"

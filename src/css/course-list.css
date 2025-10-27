@@ -74,7 +74,7 @@
 
 /* Table header styling */
 #course-list thead th {
-    background: transparent !important;
+    background: rgba(20, 20, 20, 0.9) !important;
     color: white !important;
     cursor: pointer !important;
     border: none !important;
@@ -86,13 +86,13 @@
 }
 
 #course-list thead th:hover:not(:last-child) {
-    background: rgba(78, 205, 196, 0.2) !important;
+    background: rgba(20, 20, 20, 0.95) !important;
     color: rgba(78, 205, 196, 1) !important;
     transition: all 0.3s ease;
 }
 
 #course-list thead th.sorted {
-    background: rgba(78, 205, 196, 0.3) !important;
+    background: rgba(20, 20, 20, 0.95) !important;
     color: rgba(78, 205, 196, 1) !important;
 }
 
@@ -121,6 +121,8 @@
 #course-list tfoot td {
     background: transparent !important;
     color: white !important;
+    border: none !important;
+    border-top: none !important;
 }
 
 /* Legacy compatibility for existing JS selectors */
@@ -135,7 +137,7 @@
 
 #course-list th.sorted,
 #course-list th:hover:not(:last-child) {
-    background-color: rgba(78, 205, 196, 0.3) !important;
+    background-color: rgba(20, 20, 20, 0.95) !important;
     color: rgba(78, 205, 196, 1) !important;
     transition: all 0.3s ease;
 }

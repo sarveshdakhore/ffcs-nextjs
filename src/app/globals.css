@@ -554,3 +554,8 @@
   opacity: 0 !important;
   cursor: grabbing !important;
 }
+
+/* Teacher focus effect when double-clicking from course list */
+.teacher-focused {
+  border: 4px solid #00d9ff !important;
+}
