@@ -2033,7 +2033,7 @@ export default function CoursePanel() {
         flexDirection: 'row',
         gap: '24px',
         minHeight: '580px',
-        height: '70vh',
+        height: '56vh',
         padding: '0',
         width: '100%',
         margin: '0 auto',

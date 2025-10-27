@@ -654,6 +654,15 @@ p, span, div {
 /* Left and right sections styling */
 .left-box, .right-box {
     @apply bg-[#232323] rounded-xl p-4 m-1 border-none flex flex-col min-w-0;
+    max-height: 600px !important;
+    overflow-y: auto !important;
+    flex: 0 1 auto !important;
+}
+
+.left-box {
+    max-height: 600px !important;
+    overflow-y: auto !important;
+    flex: 0 1 auto !important;
 }
 
 .left-border {
@@ -850,11 +859,12 @@ html, body {
 .right-box {
     background: #232323 !important;
     border: none !important;
-    overflow: visible !important;
+    overflow-y: auto !important;
     display: flex;
     flex-direction: column;
-    flex: 1;
+    flex: 0 1 auto !important;
     min-width: 0;
+    max-height: 600px !important;
 }
 
 /* Style labels in the right panel */

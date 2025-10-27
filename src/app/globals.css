@@ -612,6 +612,26 @@
   #course-list h4 {
     font-size: 0.8rem !important;
   }
+
+  /* Reduce header button sizes to prevent overlap */
+  .header-button-element {
+    gap: 0.25rem !important;
+  }
+
+  .header-button-element .btn {
+    padding: 0.25rem 0.5rem !important;
+    font-size: 0.65rem !important;
+    border-radius: 6px !important;
+    white-space: nowrap !important;
+  }
+
+  .card-header .c_pref {
+    font-size: 0.95rem !important;
+  }
+
+  .card-header {
+    padding: 0.75rem 1rem !important;
+  }
 }
 
 /* Smaller screens (phones and small tablets) */

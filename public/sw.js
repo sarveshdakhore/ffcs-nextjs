@@ -1,10 +1,10 @@
 // Service Worker for FFCS App
-// Auto-generated on: 2025-10-27T23:01:25.379Z
-// Build version: c07a766
+// Auto-generated on: 2025-10-27T23:57:04.472Z
+// Build version: 5010944
 // IMPORTANT: This does NOT affect localStorage or localforage data - those persist through reload
 
-const CACHE_NAME = 'ffcs-cache-c07a766-1761606085376';
-const BUILD_VERSION = 'c07a766';
+const CACHE_NAME = 'ffcs-cache-5010944-1761609424470';
+const BUILD_VERSION = '5010944';
 const urlsToCache = [
   '/',
   '/manifest.webmanifest'

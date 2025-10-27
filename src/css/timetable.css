@@ -100,37 +100,48 @@
     padding: 0;
     display: flex;
     justify-content: center;
+    margin: 1.5rem 0;
 }
 
 .quick-buttons > div {
     overflow: auto;
-    width: 60%;
+    width: 100%;
+    max-width: 800px;
+    margin: 0 auto;
 }
 
 .quick-buttons table {
     margin: 0 auto;
     border-collapse: separate;
-    border-spacing: 4px;
+    border-spacing: 0;
     width: 100%;
     table-layout: fixed;
 }
 
 .quick-buttons tr {
+    display: flex;
     width: 100%;
+    gap: 4px;
+    margin-bottom: 4px;
+}
+
+.quick-buttons tr:last-child {
+    margin-bottom: 0;
 }
 
 .quick-buttons td {
+    flex: 1;
     padding: 0;
     border: none;
     text-align: center;
 }
 
 .quick-buttons .quick-button {
-    width: auto;
-    min-width: 60px;
+    width: 100% !important;
+    min-width: unset !important;
     padding: 8px 16px;
     font-size: 0.75rem;
-    border: 1px solid #dee2e6;
+    border: none;
     background-color: #ffc107;
     color: #000;
     cursor: pointer;
