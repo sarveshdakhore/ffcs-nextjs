@@ -116,13 +116,41 @@ export const activateTeachersSortable = () => {
         }
 
         // Clean up any lingering sortable classes from all items in this list
-        const allItems = dropdownList.querySelectorAll('.dropdown-item');
+        const allItems = dropdownList.querySelectorAll('li');
         allItems.forEach(item => {
           item.classList.remove('sortable-chosen', 'sortable-ghost', 'sortable-drag');
         });
 
-        // Update teacher order in state if needed
-        console.log('Teacher order changed');
+        // Get the course name from the dropdown's data-subject attribute
+        const courseName = dropdownList.getAttribute('data-subject');
+        if (!courseName) {
+          console.error('Could not find course name for teacher reordering');
+          return;
+        }
+
+        // Get the new order of teachers from DOM
+        const teacherElements = dropdownList.querySelectorAll('li[data-teacher]');
+        const teacherNames: string[] = [];
+
+        teacherElements.forEach((element) => {
+          const teacherFullName = element.getAttribute('data-teacher');
+          if (teacherFullName) {
+            // Extract just the teacher name (format is "courseName|teacherName")
+            const teacherName = teacherFullName.split('|')[1];
+            if (teacherName) {
+              teacherNames.push(teacherName);
+            }
+          }
+        });
+
+        // Dispatch the new order to update state
+        if (dispatchRef && teacherNames.length > 0) {
+          console.log('Teacher order changed for', courseName, ':', teacherNames);
+          dispatchRef({
+            type: 'REORDER_TEACHERS',
+            payload: { courseName, teacherNames }
+          });
+        }
       }
     });
     teacherSortableInstances.push(teachersSortable);

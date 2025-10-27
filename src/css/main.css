@@ -660,47 +660,9 @@ p, span, div {
     border-left: 0px solid var(--primary-color);
 }
 
-/* Form styling within course preferences */
-#div-for-add-course .form-control,
-#div-for-edit-course .form-control {
-    background: rgba(255, 255, 255, 0.05);
-    border: 1px solid rgba(255, 255, 255, 0.15);
-    border-radius: 4px;
-    color: white;
-    padding: 0.75rem 1rem;
-    transition: all 0.3s ease;
-}
+/* Form styling removed - using global form styles */
 
-#div-for-add-course .form-control:focus,
-#div-for-edit-course .form-control:focus {
-    background: rgba(255, 255, 255, 0.08);
-    border-color: var(--primary-color);
-    box-shadow: 0 0 0 0.2rem rgba(78, 205, 196, 0.25);
-    color: white;
-}
-
-#div-for-add-course .form-control::placeholder,
-#div-for-edit-course .form-control::placeholder {
-    color: rgba(255, 255, 255, 0.6);
-}
-
-/* Modern labels */
-#div-for-add-course label,
-#div-for-edit-course label {
-    color: white;
-    font-weight: 500;
-    margin-bottom: 0.5rem;
-}
-
-/* Modal footer buttons - now using universal glassmorphic style */
-.modal-footer .btn {
-    border-radius: 15px !important;
-    padding: 0.75rem 2rem !important;
-    font-weight: 500 !important;
-    transition: all 0.3s ease !important;
-    border: none !important;
-    backdrop-filter: blur(10px) !important;
-}
+/* Modal footer buttons removed - using component styles */
 
 /* Form switches styling */
 .form-check-label {
@@ -713,13 +675,7 @@ p, span, div {
     border-color: var(--primary-color);
 }
 
-/* Headers within sections */
-#div-for-add-course h4,
-#div-for-edit-course h4 {
-    color: white;
-    font-weight: 600;
-    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
-}
+/* Headers removed - using component styles */
 
 /* HR styling */
 hr {
@@ -1170,18 +1126,18 @@ html, body {
 /* Enhanced form controls to match the dropdown style */
 .form-control,
 .form-select {
-    background-color: rgba(0, 0, 0, 0.8);
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    background-color: transparent;
+    border: 1px solid rgba(255, 255, 255, 0.2);
     color: white;
-    border-radius: 25px;
-    padding: 0.875rem 1.75rem;
-    font-weight: 500;
-    font-size: 0.95rem;
+    border-radius: 4px;
+    padding: 0.5rem 0.75rem;
+    font-weight: 400;
+    font-size: 0.875rem;
     transition: all 0.3s ease;
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
-    min-height: 48px;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    box-shadow: none;
+    min-height: 38px;
     overflow: hidden;
 }
 
@@ -1189,11 +1145,12 @@ html, body {
 
 .form-control:focus,
 .form-select:focus {
-    background-color: rgba(0, 0, 0, 0.9);
-    border-color: rgba(78, 205, 196, 0.4);
+    background-color: rgba(255, 255, 255, 0.05);
+    border-color: rgba(78, 205, 196, 0.5);
     color: white;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4), 0 0 0 0.1rem rgba(78, 205, 196, 0.2);
-    transform: translateY(-1px);
+    box-shadow: 0 0 0 0.2rem rgba(78, 205, 196, 0.15);
+    transform: none;
+    outline: none;
 }
 
 .cardnew {
@@ -1293,12 +1250,13 @@ html, body {
 }
 
 #div-for-add-teacher {
-    border: 2px solid rgba(255, 255, 255, 0.4) !important;
+    border: none !important;
+    background: transparent !important;
 }
 
 #div-for-add-course {
-    border: 2px solid rgba(255, 255, 255, 0.4) !important;
-    background: #1f1f1f !important;
+    border: none !important;
+    background: transparent !important;
 }
 
 .h2s {

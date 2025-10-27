@@ -196,6 +196,7 @@ type FFCSAction =
   | { type: 'REMOVE_SUBJECT'; payload: string }
   | { type: 'RENAME_SUBJECT'; payload: { oldName: string; newName: string; credits: number } }
   | { type: 'REORDER_COURSES'; payload: { courseNames: string[] } }
+  | { type: 'REORDER_TEACHERS'; payload: { courseName: string; teacherNames: string[] } }
   | { type: 'ADD_TEACHER_TO_SUBJECT'; payload: { courseName: string; teacherName: string; oldTeacherName?: string; oldSlots?: string; slots: string; venue: string; color: string } }
   | { type: 'UPDATE_TEACHER_IN_SUBJECT'; payload: { courseName: string; teacherName: string; oldTeacherName?: string; oldSlots?: string; slots: string; venue: string; color: string } }
   | { type: 'REMOVE_TEACHER_FROM_SUBJECT'; payload: { courseName: string; teacherName: string } }
@@ -945,6 +946,54 @@ function ffcsReducer(state: FFCSState, action: FFCSAction): FFCSState {
             ...table,
             subject: newSubject
           };
+        }
+        return table;
+      });
+
+      const updatedActive = updatedTable.find(t => t.id === state.currentTableId) || state.activeTable;
+
+      return {
+        ...state,
+        timetableStoragePref: updatedTable,
+        activeTable: updatedActive
+      };
+    }
+
+    case 'REORDER_TEACHERS': {
+      // Reorder teachers within a specific course
+      const { courseName, teacherNames } = action.payload;
+
+      const updatedTable = state.timetableStoragePref.map(table => {
+        if (table.id === state.currentTableId) {
+          const courseData = table.subject[courseName];
+          if (courseData && courseData.teacher) {
+            const newTeachers: { [key: string]: TeacherData } = {};
+
+            // Add teachers in the new order
+            teacherNames.forEach(teacherName => {
+              if (courseData.teacher[teacherName]) {
+                newTeachers[teacherName] = courseData.teacher[teacherName];
+              }
+            });
+
+            // Add any teachers that weren't in the reorder list (safety check)
+            Object.entries(courseData.teacher).forEach(([key, value]) => {
+              if (!newTeachers[key]) {
+                newTeachers[key] = value;
+              }
+            });
+
+            return {
+              ...table,
+              subject: {
+                ...table.subject,
+                [courseName]: {
+                  ...courseData,
+                  teacher: newTeachers
+                }
+              }
+            };
+          }
         }
         return table;
       });

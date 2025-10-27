@@ -79,21 +79,27 @@
 
 .quick-buttons table {
   margin: 0 auto;
-  width: 100%;
-  table-layout: fixed;
+  border-collapse: collapse;
+  width: auto;
+}
+
+.quick-buttons td {
+  padding: 0;
+  border: none;
 }
 
 .quick-buttons .quick-button {
-  margin: 2px;
-  padding: 6px 10px;
+  width: 100%;
+  padding: 6px 12px;
   font-size: 0.75rem;
   border: 1px solid #dee2e6;
   background-color: #fff;
   color: #495057;
   cursor: pointer;
-  border-radius: 4px;
+  border-radius: 0px;
   transition: all 0.2s;
   white-space: nowrap;
+  min-width: 60px;
 }
 
 .quick-buttons .quick-button:hover {

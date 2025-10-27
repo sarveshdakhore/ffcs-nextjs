@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useRef, useMemo } from 'react';
+import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { useFFCS, CourseData } from '@/context/FFCSContext';
 import velloreSchema from '@/data/schemas/vellore.json';
 import chennaiSchema from '@/data/schemas/chennai.json';
@@ -28,6 +28,13 @@ export default function Timetable() {
   const [showTableDropdown, setShowTableDropdown] = useState(false);
   const [isLiveModeEnabled, setIsLiveModeEnabled] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const stateRef = useRef(state);
+
+  // Update ref whenever state changes
+  useEffect(() => {
+    console.log('🔄 Updating stateRef with QV:', state.ui.quickVisualizationEnabled);
+    stateRef.current = state;
+  }, [state]);
 
   // Console log all table data for debugging
   useEffect(() => {
@@ -501,9 +508,9 @@ export default function Timetable() {
   };
 
   // Helper function to get slotsForAttack (includes attackData + attackQuick if QV enabled)
-  const getSlotsForAttack = () => {
-    const attackData = state.activeTable.attackData || [];
-    const attackQuick = state.activeTable.attackQuick || [];
+  const getSlotsForAttack = useCallback(() => {
+    const attackData = stateRef.current.activeTable.attackData || [];
+    const attackQuick = stateRef.current.activeTable.attackQuick || [];
     const clashMap: { [key: string]: string[] } = {
       A1: ['L1', 'L14'], B1: ['L7', 'L20'], C1: ['L13', 'L26'], D1: ['L3', 'L19', 'L4'], E1: ['L9', 'L25', 'L10'],
       F1: ['L2', 'L15', 'L16'], G1: ['L8', 'L21', 'L22'], TA1: ['L27', 'L28'], TB1: ['L4', 'L5'], TC1: ['L10', 'L11'],
@@ -553,7 +560,7 @@ export default function Timetable() {
     });
 
     // If QV is enabled, process attackQuick
-    if (state.ui.quickVisualizationEnabled) {
+    if (stateRef.current.ui.quickVisualizationEnabled) {
       // Note: In React, we can't query DOM cells like vanilla JS
       // We'll need to use the slot text directly from our quick array entries
       // For now, skip this as it requires passing additional context
@@ -561,11 +568,18 @@ export default function Timetable() {
 
     const combinedSlots = Array.from(thSlots).concat(Array.from(labSlots));
     return combinedSlots;
-  };
+  }, []);
 
   // Handle cell click following FFCSonTheGo logic
-  const handleCellClick = (row: number, col: number, slotText: string) => {
-    const activeQuick = state.ui.attackMode ? state.activeTable.attackQuick : state.activeTable.quick;
+  const handleCellClick = useCallback((row: number, col: number, slotText: string) => {
+    const currentState = stateRef.current;
+    const activeQuick = currentState.ui.attackMode ? currentState.activeTable.attackQuick : currentState.activeTable.quick;
+
+    console.log('🖱️ CELL CLICKED:', {
+      row, col, slotText,
+      qvEnabled: currentState.ui.quickVisualizationEnabled,
+      stateUI: currentState.ui
+    });
 
     // Parse cell text to get lab slots
     const parts = slotText.split(' / ');
@@ -576,21 +590,25 @@ export default function Timetable() {
       entry[0] === row && entry[1] === col
     );
 
+    console.log('   - isHighlighted:', isHighlighted, 'activeQuick:', activeQuick);
+
     // Block click in attack mode if lab slots are already in slotsForAttack
-    if (state.ui.attackMode && labSlots.length > 0 && !isHighlighted) {
+    if (currentState.ui.attackMode && labSlots.length > 0 && !isHighlighted) {
       const occupied = getSlotsForAttack();
       if (isCommonSlot(labSlots, occupied)) {
+        console.log('   ❌ Blocked: clash in attack mode');
         return; // Block the click
       }
     }
 
     // Only process if QV is enabled
-    if (!state.ui.quickVisualizationEnabled) {
+    if (!currentState.ui.quickVisualizationEnabled) {
+      console.log('   ❌ Blocked: QV not enabled');
       return;
     }
 
     // Check if cell has courses (don't allow click if it has courses)
-    const dataToCheck = state.ui.attackMode ? state.activeTable.attackData : state.activeTable.data;
+    const dataToCheck = currentState.ui.attackMode ? currentState.activeTable.attackData : currentState.activeTable.data;
     const theorySlot = parts[0]?.trim();
     const labSlot = parts[1]?.trim() || null;
     const hasCourses = dataToCheck.some(course =>
@@ -598,16 +616,18 @@ export default function Timetable() {
     );
 
     if (hasCourses) {
+      console.log('   ❌ Blocked: cell has courses');
       return; // Don't allow click on cells with courses
     }
 
+    console.log('   ✅ Dispatching PROCESS_CELL_CLICK');
     // Dispatch the cell click action
     // The yellow tile state will automatically update based on the quick array
     dispatch({
       type: 'PROCESS_CELL_CLICK',
       payload: { row, col, slotText }
     });
-  };
+  }, [dispatch, getSlotsForAttack]);
 
   const renderTimetableRows = () => {
     const rows: React.ReactElement[] = [];
@@ -880,8 +900,24 @@ export default function Timetable() {
           // Only apply quick highlighting when quickVisualizationEnabled is true (like vanilla JS)
           const isHighlighted = (state.ui.quickVisualizationEnabled && isQuickHighlighted) || coursesInSlot.length > 0;
 
+          // Debug logging for first few cells
+          if (currentRow === 2 && currentCol <= 3 && quickArray.length > 0) {
+            console.log(`🔍 Cell [${currentRow},${currentCol}] (${theorySlot}):`, {
+              isQuickHighlighted,
+              isHighlighted,
+              qvEnabled: state.ui.quickVisualizationEnabled,
+              quickArray,
+              coursesInSlot: coursesInSlot.length
+            });
+          }
+
           const classNames = ['period', theorySlot].filter(Boolean);
           if (isHighlighted) classNames.push('highlight');
+
+          // Debug: Log when highlight class is added
+          if (currentRow === 2 && currentCol === 5) {
+            console.log(`🎨 Cell [${currentRow},${currentCol}] classes:`, classNames, 'isHighlighted:', isHighlighted, 'isQuickHighlighted:', isQuickHighlighted);
+          }
 
           // FFCSonTheGo Scenario A: Multiple courses in same cell
           if (coursesInSlot.length > 1) {
@@ -904,7 +940,8 @@ export default function Timetable() {
             <td
               key={`${day}-${index}`}
               className={classNames.join(' ')}
-              onClick={() => {
+              onClick={(e) => {
+                console.log('📍 TD CLICKED!', currentRow, currentCol, slotText);
                 // Implement FFCSonTheGo cell click logic
                 handleCellClick(currentRow, currentCol, slotText);
               }}
@@ -974,7 +1011,7 @@ export default function Timetable() {
   // Compute timetable rendering result (rows + clashing course IDs)
   const timetableResult = useMemo(() => {
     return renderTimetableRows();
-  }, [dataKey, state.activeTable.data, state.activeTable.attackData, state.ui.attackMode]);
+  }, [dataKey, state.activeTable.data, state.activeTable.attackData, state.ui.attackMode, state.activeTable.quick, state.activeTable.attackQuick, state.ui.quickVisualizationEnabled]);
 
   // Dispatch clashing course IDs to context
   useEffect(() => {

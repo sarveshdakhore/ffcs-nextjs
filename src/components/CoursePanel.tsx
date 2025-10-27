@@ -439,24 +439,6 @@ export default function CoursePanel() {
     }
     const teacherEntries = Object.entries(teachers);
 
-    // Get data based on mode (normal vs attack)
-    const dataToCheck = state.ui.attackMode ? activeTable.attackData : activeTable.data;
-
-    // Following vanilla JS rearrangeTeacherLiInSubjectArea logic EXACTLY
-    let slotsOfCourse: string[];
-    let activeSlots: string[];
-
-    if (state.ui.attackMode) {
-      slotsOfCourse = getCourseSlotsAttack(courseName, activeTable.attackData);
-      activeSlots = slotsForAttack(activeTable.attackData);
-    } else {
-      slotsOfCourse = getSlotsOfCourse(courseName, activeTable.data);
-      activeSlots = getSlots(activeTable.data);
-    }
-
-    // This is the KEY: subtract current course slots from all selected slots
-    const consideredSlots = subtractArray(slotsOfCourse, activeSlots);
-
     const colorPriority = {
       '#0d3320': 1, // Very dark green - highest priority (better contrast)
       '#1a4d2e': 1, // Dark green (legacy) - highest priority
@@ -469,44 +451,18 @@ export default function CoursePanel() {
       'rgb(255, 205, 205)': 3, // Light red (legacy) - lowest priority
     };
 
-    return teacherEntries.sort(([teacherNameA, teacherDataA], [teacherNameB, teacherDataB]) => {
-      // Check for slot clashes using EXACT vanilla JS logic
-      const teacherSlotsA = slotsProcessingForCourseList(teacherDataA.slots);
-      const teacherSlotsB = slotsProcessingForCourseList(teacherDataB.slots);
-
-      const hasClashA = isCommonSlot(teacherSlotsA, consideredSlots);
-      const hasClashB = isCommonSlot(teacherSlotsB, consideredSlots);
-
-      // 1. Non-clashing teachers come first (SKIP THIS IN EDIT MODE)
-      // In edit mode, we want to preserve the order from the data structure for drag-and-drop
-      if (!state.globalVars.editTeacher) {
-        if (hasClashA && !hasClashB) return 1;
-        if (!hasClashA && hasClashB) return -1;
-      }
-
-      // 2. Sort by morning/evening preference FIRST (before color)
-      // Use (E) marker to determine evening classes instead of slot parsing
-      const isEveningA = teacherNameA.includes('(E)');
-      const isEveningB = teacherNameB.includes('(E)');
-
-      if (state.ui.morningPriority) {
-        // Morning first: teachers without (E) come before those with (E)
-        if (!isEveningA && isEveningB) return -1;
-        if (isEveningA && !isEveningB) return 1;
-      } else {
-        // Evening first: teachers with (E) come before those without (E)
-        if (isEveningA && !isEveningB) return -1;
-        if (!isEveningA && isEveningB) return 1;
-      }
-
-      // 3. If same morning/evening status, THEN sort by color priority
+    // Sort by color ONLY (both in edit mode and normal mode)
+    // Color is the ONLY sorting criteria - preserve insertion order within each color
+    return teacherEntries.sort(([_nameA, teacherDataA], [_nameB, teacherDataB]) => {
       const priorityA = colorPriority[teacherDataA.color as keyof typeof colorPriority] || 4;
       const priorityB = colorPriority[teacherDataB.color as keyof typeof colorPriority] || 4;
 
+      // Sort by color priority only (Green=1 > Orange=2 > Red=3)
       if (priorityA !== priorityB) {
         return priorityA - priorityB;
       }
 
+      // Same color: preserve insertion order (drag-drop order)
       return 0;
     });
   };
@@ -2324,39 +2280,91 @@ export default function CoursePanel() {
                     );
                   }
 
-                  return filteredTeachers.map(([teacherName, teacherData]) => {
-                  // Skip clash detection entirely in edit mode (when setting priority)
-                  let hasClash = false;
+                  // Split teachers into enabled (non-clashing) and disabled (clashing)
+                  // This preserves the sorted order while moving disabled to bottom
+                  const enabledTeachers: [string, any][] = [];
+                  const disabledTeachers: [string, any][] = [];
 
                   if (!state.globalVars.editTeacher) {
-                    // Only check clashes in normal mode, not edit mode
-                    const teacherSlots = slotsProcessingForCourseList(teacherData.slots);
+                    // In normal mode, check for clashes and split
+                    filteredTeachers.forEach(([teacherName, teacherData]) => {
+                      const teacherSlots = slotsProcessingForCourseList(teacherData.slots);
 
-                    // Get data based on mode
-                    const dataToCheck = state.ui.attackMode ? activeTable.attackData : activeTable.data;
+                      let slotsOfCourse: string[];
+                      let activeSlots: string[];
 
-                    let slotsOfCourse: string[];
-                    let activeSlots: string[];
+                      if (state.ui.attackMode) {
+                        slotsOfCourse = getCourseSlotsAttack(subjectName, activeTable.attackData);
+                        const occupiedTheory = occupiedSlots.theory || [];
+                        const occupiedLab = occupiedSlots.lab || [];
+                        activeSlots = [...occupiedTheory, ...occupiedLab];
+                      } else {
+                        slotsOfCourse = getSlotsOfCourse(subjectName, activeTable.data);
+                        activeSlots = getSlots(activeTable.data);
+                      }
 
-                    if (state.ui.attackMode) {
-                      slotsOfCourse = getCourseSlotsAttack(subjectName, activeTable.attackData);
+                      const consideredSlots = subtractArray(slotsOfCourse, activeSlots);
+                      const hasClash = isCommonSlot(teacherSlots, consideredSlots);
 
-                      // CRITICAL: Use occupiedSlots (theory + lab) as activeSlots
-                      // This includes BOTH attackData AND attackQuick (when QV is enabled)
-                      const occupiedTheory = occupiedSlots.theory || [];
-                      const occupiedLab = occupiedSlots.lab || [];
-                      activeSlots = [...occupiedTheory, ...occupiedLab];
-                    } else {
-                      slotsOfCourse = getSlotsOfCourse(subjectName, activeTable.data);
-                      activeSlots = getSlots(activeTable.data);
-                    }
-
-                    // CRITICAL: This is the vanilla JS pattern - subtract same course slots
-                    const consideredSlots = subtractArray(slotsOfCourse, activeSlots);
-
-                    // Check clash against OTHER courses only
-                    hasClash = isCommonSlot(teacherSlots, consideredSlots);
+                      if (hasClash) {
+                        disabledTeachers.push([teacherName, teacherData]);
+                      } else {
+                        enabledTeachers.push([teacherName, teacherData]);
+                      }
+                    });
                   }
+
+                  // In edit mode or after splitting, use the appropriate array
+                  let teachersToRender: [string, any][];
+
+                  if (state.globalVars.editTeacher) {
+                    // Edit mode: use original sorted order
+                    teachersToRender = filteredTeachers;
+                  } else if (state.ui.attackMode) {
+                    // Attack mode (Live FFCS): ALL disabled at bottom regardless of morning/evening
+                    teachersToRender = [...enabledTeachers, ...disabledTeachers];
+                  } else {
+                    // Normal mode: disabled at bottom within their morning/evening section
+                    // Split enabled and disabled by morning/evening
+                    const enabledMorning: [string, any][] = [];
+                    const enabledEvening: [string, any][] = [];
+                    const disabledMorning: [string, any][] = [];
+                    const disabledEvening: [string, any][] = [];
+
+                    enabledTeachers.forEach(([name, data]) => {
+                      if (name.includes('(E)')) {
+                        enabledEvening.push([name, data]);
+                      } else {
+                        enabledMorning.push([name, data]);
+                      }
+                    });
+
+                    disabledTeachers.forEach(([name, data]) => {
+                      if (name.includes('(E)')) {
+                        disabledEvening.push([name, data]);
+                      } else {
+                        disabledMorning.push([name, data]);
+                      }
+                    });
+
+                    // Render order based on morning priority setting
+                    if (state.ui.morningPriority) {
+                      teachersToRender = [
+                        ...enabledMorning, ...disabledMorning,
+                        ...enabledEvening, ...disabledEvening
+                      ];
+                    } else {
+                      teachersToRender = [
+                        ...enabledEvening, ...disabledEvening,
+                        ...enabledMorning, ...disabledMorning
+                      ];
+                    }
+                  }
+
+                  return teachersToRender.map(([teacherName, teacherData]) => {
+                  // Determine if this teacher has a clash based on which array they're in
+                  const hasClash = !state.globalVars.editTeacher &&
+                                   disabledTeachers.some(([name]) => name === teacherName);
 
                   const isEditSelected = state.globalVars.editTeacher && selectedEditTeacher === `${subjectName}|${teacherName}`;
 

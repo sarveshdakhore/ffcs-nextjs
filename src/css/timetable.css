@@ -98,55 +98,64 @@
 
 .quick-buttons {
     padding: 0;
+    display: flex;
+    justify-content: center;
 }
 
 .quick-buttons > div {
     overflow: auto;
+    width: 60%;
 }
 
 .quick-buttons table {
-    margin: auto;
+    margin: 0 auto;
+    border-collapse: separate;
+    border-spacing: 4px;
     width: 100%;
     table-layout: fixed;
 }
 
-.quick-buttons table :first-child {
-    margin-top: 0.3rem;
-}
-
-.quick-buttons table :last-child {
-    margin-bottom: 0.3rem;
-}
-
 .quick-buttons tr {
-    display: flex;
-    margin: 0 0.3rem;
+    width: 100%;
+}
+
+.quick-buttons td {
+    padding: 0;
+    border: none;
+    text-align: center;
 }
 
 .quick-buttons .quick-button {
-    flex-grow: 1;
-    width: fit-content;
-    margin: 0.3rem;
-    background: rgba(255, 149, 0, 1);
-    border: 1px solid rgba(255, 149, 0, 1);
-    border-radius: 6px;
+    width: auto;
+    min-width: 60px;
     padding: 8px 16px;
-    transition: background-color 0.2s ease, transform 0.2s ease;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    font-size: 0.75rem;
+    border: 1px solid #dee2e6;
+    background-color: #ffc107;
+    color: #000;
+    cursor: pointer;
+    border-radius: 0px;
+    transition: all 0.2s;
+    white-space: nowrap;
+    font-weight: 500;
+    display: inline-block;
 }
 
 .quick-buttons .quick-button:hover {
-    transform: translateY(-1px);
-    box-shadow: 0 3px 12px rgba(0, 0, 0, 0.15);
-    background: rgba(255, 149, 0, 1);
-    border-color: rgba(255, 149, 0, 1);
-    color: white;
+    background-color: #ffca2c;
+    border-color: #ffc107;
 }
 
 .quick-buttons .quick-button.highlight {
-    background: rgba(76, 175, 80, 1);
-    border-color: rgba(76, 175, 80, 1);
-    box-shadow: 0 3px 12px rgba(76, 175, 80, 0.2);
+    background-color: #28a745;
+    border-color: #28a745;
+    color: #fff;
+    font-weight: 600;
+}
+
+.quick-buttons .quick-button.highlight:hover {
+    background-color: #218838;
+    border-color: #1e7e34;
 }
 
 #timetable {

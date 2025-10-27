@@ -67,24 +67,24 @@ export default function AddCourseForm({ onSuccess }: AddCourseFormProps) {
   };
 
   return (
-    <div>
-      <h4 style={{ padding: '4.5%', paddingBottom: '0' }}>
-        Add Course
-      </h4>
-      <hr />
-      
-      <form onSubmit={handleSubmit}>
-        <div
-          style={{
-            margin: '4.5%',
-            paddingTop: '10px',
-            paddingBottom: '0',
-            paddingRight: '0%',
-          }}
-          className="modal-body"
-        >
-          <label htmlFor="course-input_remove">
-            &nbsp;Course
+    <form onSubmit={handleSubmit} style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+      <div style={{ marginBottom: '1rem' }}>
+        <h4 style={{ color: 'white', fontWeight: '600', margin: 0, fontSize: '1.25rem' }}>
+          Add Course
+        </h4>
+      </div>
+
+      <div
+        style={{
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '0.5rem',
+          flex: '1',
+        }}
+      >
+        <div>
+          <label htmlFor="course-input_remove" style={{ color: 'white', fontWeight: '500', marginBottom: '0.25rem', display: 'block' }}>
+            Course
           </label>
           <input
             type="text"
@@ -95,37 +95,20 @@ export default function AddCourseForm({ onSuccess }: AddCourseFormProps) {
             value={courseInput}
             onChange={(e) => setCourseInput(removeDotsLive(e.target.value))}
           />
-          <div
-            style={{
-              color: 'blue',
-              opacity: '50%',
-              marginTop: '-5px',
-            }}
-          >
-            &nbsp;Course Code & Name Separated by&nbsp;
-            <b
-              style={{
-                color: 'rgb(255, 0, 0)',
-                fontWeight: '700',
-                fontSize: '20px',
-                marginTop: '100px',
-              }}
-            >
-              -
-            </b>
+          <div style={{ color: 'rgba(255, 255, 255, 0.6)', fontSize: '0.85rem', marginTop: '0.25rem' }}>
+            Course Code & Name Separated by <b style={{ color: '#ff6b6b' }}>-</b>
           </div>
+        </div>
 
-          <label
-            style={{ marginTop: '15px' }}
-            htmlFor="credits-input"
-          >
-            &nbsp;Credits
+        <div>
+          <label htmlFor="credits-input" style={{ color: 'white', fontWeight: '500', marginBottom: '0.25rem', display: 'block' }}>
+            Credits
           </label>
           <input
             id="credits-input"
-            className="form-control text-uppercase"
+            className="form-control"
             type="number"
-            style={{ maxWidth: '25%' }}
+            style={{ maxWidth: '150px' }}
             autoComplete="off"
             placeholder="4"
             min="0"
@@ -134,27 +117,23 @@ export default function AddCourseForm({ onSuccess }: AddCourseFormProps) {
             value={creditsInput}
             onChange={(e) => setCreditsInput(e.target.value)}
           />
-          
-          {error && (
-            <div className="alert alert-danger mt-2" role="alert">
-              {error}
-            </div>
-          )}
-          
-          <br />
-          <hr />
         </div>
-        
-        <div className="modal-footer">
-          <button
-            style={{ width: '30%' }}
-            type="submit"
-            className="btn btn-primary"
-          >
-            Save
-          </button>
-        </div>
-      </form>
-    </div>
+
+        {error && (
+          <div className="alert alert-danger mt-2" role="alert">
+            {error}
+          </div>
+        )}
+      </div>
+
+      <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'flex-end', marginTop: '1rem', paddingTop: '1rem', borderTop: '1px solid rgba(255, 255, 255, 0.1)' }}>
+        <button
+          type="submit"
+          className="btn btn-primary btn-sm"
+        >
+          Save
+        </button>
+      </div>
+    </form>
   );
 }

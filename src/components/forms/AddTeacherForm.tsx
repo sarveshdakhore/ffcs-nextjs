@@ -397,55 +397,44 @@ export default function AddTeacherForm() {
   return (
     <>
       <form onSubmit={handleSubmit} style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
-        <div>
-          <h4 style={{ padding: '4.5%', paddingBottom: '0' }}>
+        <div style={{ marginBottom: '1rem' }}>
+          <h4 style={{ color: 'white', fontWeight: '600', margin: 0, fontSize: '1.25rem' }}>
             Add Teachers
           </h4>
-          <hr />
         </div>
-        
+
         <div
           style={{
-            margin: '4.5%',
-            paddingTop: '10px',
-            paddingBottom: '0',
-            paddingRight: '0%',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '0.5rem',
             flex: '1',
           }}
         >
           {/* Course Select */}
-          <label htmlFor="course-select-add-teacher">
-            &nbsp;Course&nbsp;
-            <a
-              id="course_link"
-              href="#"
-              onClick={(e) => {
-                e.preventDefault();
-                // Navigate to add course
-              }}
+          <div>
+            <label htmlFor="course-select-add-teacher" style={{ color: 'white', fontWeight: '500', marginBottom: '0.25rem', display: 'block' }}>
+              Course
+            </label>
+            <select
+              id="course-select-add-teacher"
+              className="form-select"
+              value={selectedCourse}
+              onChange={(e) => setSelectedCourse(e.target.value)}
             >
-              Add Courses
-            </a>
-          </label>
-          <select
-            id="course-select-add-teacher"
-            className="form-select"
-            value={selectedCourse}
-            onChange={(e) => setSelectedCourse(e.target.value)}
-          >
-            <option value="">Select a course</option>
-            {state.courses.map((course) => (
-              <option key={course.code} value={course.code}>
-                {course.code} - {course.name}
-              </option>
-            ))}
-          </select>
-          <br />
+              <option value="">Select Course</option>
+              {state.courses.map((course) => (
+                <option key={course.code} value={course.code}>
+                  {course.code} - {course.name}
+                </option>
+              ))}
+            </select>
+          </div>
 
           <div style={{ display: 'flex', flexDirection: 'row' }}>
             <div style={{ width: '72%' }}>
-              <label htmlFor="teacher-input_remove">
-                &nbsp;Teacher Name
+              <label htmlFor="teacher-input_remove" style={{ color: 'white', fontWeight: '500', marginBottom: '0.25rem', display: 'block' }}>
+                Teacher Name
               </label>
               <input
                 type="text"
@@ -459,8 +448,8 @@ export default function AddTeacherForm() {
             </div>
             <div style={{ width: '2%' }}></div>
             <div style={{ width: '26%' }}>
-              <label htmlFor="color1-select">
-                &nbsp;Color
+              <label htmlFor="color1-select" style={{ color: 'white', fontWeight: '500', marginBottom: '0.25rem', display: 'block' }}>
+                Color
               </label>
               <select
                 id="color1-select"
@@ -472,7 +461,6 @@ export default function AddTeacherForm() {
                   <option
                     key={colorOption.value}
                     value={colorOption.value}
-                    style={{ backgroundColor: colorOption.value }}
                   >
                     {colorOption.name}
                   </option>
@@ -481,19 +469,15 @@ export default function AddTeacherForm() {
             </div>
           </div>
 
-          <div style={{ display: 'flex', flexDirection: 'row' }}>
-            <div style={{ width: '58%' }}>
-              <label
-                style={{ marginTop: '15px' }}
-                htmlFor="slot-input"
-              >
-                &nbsp;Slots
+          <div style={{ display: 'flex', gap: '1rem' }}>
+            <div style={{ flex: '1' }}>
+              <label htmlFor="slot-input" style={{ color: 'white', fontWeight: '500', marginBottom: '0.25rem', display: 'block' }}>
+                Slots
               </label>
               <input
                 id="slot-input"
                 className="form-control text-uppercase"
                 type="text"
-                style={{ maxWidth: '100%' }}
                 autoComplete="off"
                 placeholder="A1+TA1"
                 value={slot}
@@ -501,20 +485,14 @@ export default function AddTeacherForm() {
               />
             </div>
 
-            <div style={{ width: '10%' }}></div>
-
-            <div style={{ width: '30%' }}>
-              <label
-                style={{ marginTop: '15px' }}
-                htmlFor="venue-input"
-              >
-                &nbsp;Venue
+            <div style={{ flex: '0 0 200px' }}>
+              <label htmlFor="venue-input" style={{ color: 'white', fontWeight: '500', marginBottom: '0.25rem', display: 'block' }}>
+                Venue
               </label>
               <input
                 id="venue-input"
                 className="form-control text-uppercase"
                 type="text"
-                style={{ maxWidth: '100%' }}
                 autoComplete="off"
                 placeholder="SJTG01"
                 value={venue}
@@ -529,24 +507,20 @@ export default function AddTeacherForm() {
             </div>
           )}
 
-          <br />
-          <hr />
         </div>
-        
-        <div className="modal-footer" style={{ marginTop: 'auto' }}>
+
+        <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'flex-end', marginTop: '1rem', paddingTop: '1rem', borderTop: '1px solid rgba(255, 255, 255, 0.1)' }}>
           <button
-            className="btn btn-success"
+            className="btn btn-success btn-sm"
             type="button"
             onClick={handleAddMultiple}
           >
             <i className="fas fa-plus"></i>
-            <span>{  }Add Multiple</span>
+            <span>&nbsp;&nbsp;Add Multiple</span>
           </button>
-          &nbsp;
           <button
-            style={{ width: '30%' }}
             type="submit"
-            className="btn btn-primary"
+            className="btn btn-primary btn-sm"
           >
             Save
           </button>

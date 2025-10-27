@@ -164,45 +164,7 @@
     color: white !important;
 }
 
-/* Better button styling for the right card */
-.add-course-card .btn {
-    background: rgba(78, 205, 196, 0.8) !important;
-    border: 1px solid rgba(78, 205, 196, 0.6) !important;
-    color: white !important;
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
-    transition: all 0.3s ease;
-    border-radius: 10px;
-}
-
-.add-course-card .btn:hover {
-    background: rgba(78, 205, 196, 1) !important;
-    border-color: rgba(78, 205, 196, 0.8) !important;
-    transform: translateY(-2px);
-    box-shadow: 0 8px 25px rgba(78, 205, 196, 0.3);
-}
-
-.add-course-card .btn-success {
-    background: rgba(40, 167, 69, 0.8) !important;
-    border-color: rgba(40, 167, 69, 0.6) !important;
-}
-
-.add-course-card .btn-success:hover {
-    background: rgba(40, 167, 69, 1) !important;
-    border-color: rgba(40, 167, 69, 0.8) !important;
-    box-shadow: 0 8px 25px rgba(40, 167, 69, 0.3);
-}
-
-.add-course-card .btn-primary {
-    background: rgba(13, 110, 253, 0.8) !important;
-    border-color: rgba(13, 110, 253, 0.6) !important;
-}
-
-.add-course-card .btn-primary:hover {
-    background: rgba(13, 110, 253, 1) !important;
-    border-color: rgba(13, 110, 253, 0.8) !important;
-    box-shadow: 0 8px 25px rgba(13, 110, 253, 0.3);
-}
+/* Button styling removed - using component styles */
 
 /* Text color improvements for the right card */
 .add-course-card h4,
