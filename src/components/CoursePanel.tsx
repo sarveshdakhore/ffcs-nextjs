@@ -1819,7 +1819,7 @@ export default function CoursePanel() {
         display: 'flex',
         flexDirection: 'row',
         gap: '24px',
-        minHeight: '450px',
+        minHeight: '580px',
         height: '70vh',
         padding: '0',
         width: '100%',
