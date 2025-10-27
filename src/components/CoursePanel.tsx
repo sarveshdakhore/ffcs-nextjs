@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useFFCS } from '@/context/FFCSContext';
-import { activateSortable, deactivateSortable } from '@/utils/sortableUtils';
+import { activateSortable, deactivateSortable, setDispatch, activateCoursesSortable, activateTeachersSortable } from '@/utils/sortableUtils';
 import { 
   processRawCourseName, 
   parseCreditValue,
@@ -64,6 +64,7 @@ export default function CoursePanel() {
   // Edit states
   const [editingCourse, setEditingCourse] = useState('');
   const [editingTeacher, setEditingTeacher] = useState('');
+  const [editingTeacherSlots, setEditingTeacherSlots] = useState(''); // Store old slots for matching
   const [editCourseName, setEditCourseName] = useState('');
   const [editCredits, setEditCredits] = useState('');
   const [editTeacherName, setEditTeacherName] = useState('');
@@ -160,6 +161,28 @@ export default function CoursePanel() {
     const timestamp = Date.now(); // Force new key every time
     return `${activeTable.id}-${subjectsString}-${dataString}-${state.forceUpdateCounter}-${renderKey}-${timestamp}`;
   }, [activeTable.id, JSON.stringify(activeTable.data), JSON.stringify(subjects), state.forceUpdateCounter, renderKey]);
+
+  // Set dispatch reference for sortableUtils
+  useEffect(() => {
+    setDispatch(dispatch);
+  }, [dispatch]);
+
+  // Reinitialize sortable when subjects change in edit mode
+  useEffect(() => {
+    if (state.globalVars.editSub) {
+      // Course edit mode - reinitialize course sortable
+      const timer = setTimeout(() => {
+        activateCoursesSortable();
+      }, 50);
+      return () => clearTimeout(timer);
+    } else if (state.globalVars.editTeacher) {
+      // Teacher edit mode - reinitialize teacher sortable
+      const timer = setTimeout(() => {
+        activateTeachersSortable();
+      }, 50);
+      return () => clearTimeout(timer);
+    }
+  }, [subjects, state.globalVars.editSub, state.globalVars.editTeacher]);
 
   // Load courses data on component mount (like getCourses in vanilla JS)
   useEffect(() => {
@@ -405,9 +428,12 @@ export default function CoursePanel() {
       const hasClashA = isCommonSlot(teacherSlotsA, consideredSlots);
       const hasClashB = isCommonSlot(teacherSlotsB, consideredSlots);
 
-      // 1. Non-clashing teachers come first
-      if (hasClashA && !hasClashB) return 1;
-      if (!hasClashA && hasClashB) return -1;
+      // 1. Non-clashing teachers come first (SKIP THIS IN EDIT MODE)
+      // In edit mode, we want to preserve the order from the data structure for drag-and-drop
+      if (!state.globalVars.editTeacher) {
+        if (hasClashA && !hasClashB) return 1;
+        if (!hasClashA && hasClashB) return -1;
+      }
 
       // 2. Sort by morning/evening preference FIRST (before color)
       // Use (E) marker to determine evening classes instead of slot parsing
@@ -900,24 +926,15 @@ export default function CoursePanel() {
       return;
     }
 
-    // If name changed, we need to remove old and add new
+    // If name changed, use RENAME_SUBJECT to preserve order
     if (processedName !== editingCourse) {
-      const oldSubject = subjects[editingCourse];
-      dispatch({ type: 'REMOVE_SUBJECT', payload: editingCourse });
       dispatch({
-        type: 'ADD_SUBJECT',
-        payload: { courseName: processedName, credits: creditValue }
-      });
-      // Re-add all teachers
-      Object.entries(oldSubject.teacher).forEach(([teacherName, teacherData]) => {
-        dispatch({
-          type: 'ADD_TEACHER_TO_SUBJECT',
-          payload: {
-            courseName: processedName,
-            teacherName,
-            ...teacherData
-          }
-        });
+        type: 'RENAME_SUBJECT',
+        payload: {
+          oldName: editingCourse,
+          newName: processedName,
+          credits: creditValue
+        }
       });
     } else {
       // Just update credits
@@ -929,6 +946,17 @@ export default function CoursePanel() {
 
     setCourseMessage({ text: 'Course updated successfully', color: 'green' });
     setTimeout(() => setCourseMessage({ text: '', color: '' }), 4000);
+
+    // Regenerate timetable to reflect updated credits and course name
+    dispatch({ type: 'REGENERATE_TIMETABLE' });
+
+    // Re-initialize Sortable after course edit to ensure dragging still works
+    if (state.globalVars.editSub) {
+      setTimeout(() => {
+        deactivateSortable();
+        activateCoursesSortable();
+      }, 100);
+    }
 
     setShowEditCourse(false);
     setEditingCourse('');
@@ -974,11 +1002,23 @@ export default function CoursePanel() {
     }
 
     // Add/update teacher
+    console.log('🔧 UPDATE_TEACHER_IN_SUBJECT payload:', {
+      courseName: editingCourse,
+      teacherName: processedTeacherName,
+      oldTeacherName: editingTeacher,
+      oldSlots: editingTeacherSlots,
+      newSlots: processedSlots || 'SLOTS',
+      venue: editVenue.toUpperCase().trim() || 'VENUE',
+      color: editColor
+    });
+
     dispatch({
       type: 'UPDATE_TEACHER_IN_SUBJECT',
       payload: {
         courseName: editingCourse,
         teacherName: processedTeacherName,
+        oldTeacherName: editingTeacher, // Pass old name to find courses in data/attackData
+        oldSlots: editingTeacherSlots, // Pass old slots for precise matching
         slots: processedSlots || 'SLOTS',
         venue: editVenue.toUpperCase().trim() || 'VENUE',
         color: editColor
@@ -991,15 +1031,19 @@ export default function CoursePanel() {
     // Update selection to new teacher name (important if (E) was added or name changed)
     setSelectedEditTeacher(`${editingCourse}|${processedTeacherName}`);
     setEditingTeacher(processedTeacherName);
+    setEditingTeacherSlots(processedSlots || 'SLOTS'); // Update old slots to current for next edit
     setEditTeacherName(processedTeacherName);
 
     // Keep edit mode active and form open with updated teacher selected
     // Blue border will stay on the updated teacher name
 
+    // Regenerate timetable to reflect updated slots/venue and remove clashing courses
+    dispatch({ type: 'REGENERATE_TIMETABLE' });
+
     // Re-initialize Sortable after DOM updates (teacher list changed)
     setTimeout(() => {
       deactivateSortable();
-      activateSortable();
+      activateTeachersSortable();
     }, 100);
   };
 
@@ -1012,10 +1056,10 @@ export default function CoursePanel() {
     setShowAddTeacher(false);
     setShowEditCourse(false);
     setShowEditTeacher(false);
-    
-    // Activate sortable after DOM updates
+
+    // Activate teacher dragging only for teacher edit mode
     setTimeout(() => {
-      activateSortable();
+      activateTeachersSortable();
     }, 100);
   };
 
@@ -1043,8 +1087,11 @@ export default function CoursePanel() {
       setShowEditTeacher(false);
       setShowEditCourse(false);
       setSelectedEditTeacher(null);
-      // Deactivate sortable in course edit mode
-      deactivateSortable();
+      // Activate ONLY course dragging in course edit mode
+      setTimeout(() => {
+        deactivateSortable();
+        activateCoursesSortable();
+      }, 100);
     } else {
       // Switch to Teacher Edit mode
       dispatch({ type: 'SET_GLOBAL_VAR', payload: { key: 'editSub', value: false } });
@@ -1052,9 +1099,10 @@ export default function CoursePanel() {
       openAllDropdowns();
       setShowEditTeacher(false);
       setShowEditCourse(false);
-      // Re-activate sortable after DOM updates
+      // Activate ONLY teacher dragging in teacher edit mode
       setTimeout(() => {
-        activateSortable();
+        deactivateSortable();
+        activateTeachersSortable();
       }, 100);
     }
   };
@@ -1318,13 +1366,22 @@ export default function CoursePanel() {
   const handleLiveFfcsModeToggle = (checked: boolean) => {
     console.log('🎯 Live FFCS Mode toggled:', checked);
     setLiveFfcsMode(checked);
-    
+
     // Update global state
     dispatch({ type: 'SET_UI_STATE', payload: { liveModeEnabled: checked } });
-    
+
     if (checked) {
       // ENABLE Live FFCS Mode
       console.log('✅ Enabling Live FFCS Mode - Attack Mode ON');
+
+      // Exit edit mode if active (mutually exclusive)
+      if (state.globalVars.editSub || state.globalVars.editTeacher) {
+        dispatch({ type: 'SET_GLOBAL_VAR', payload: { key: 'editSub', value: false } });
+        dispatch({ type: 'SET_GLOBAL_VAR', payload: { key: 'editTeacher', value: false } });
+        dispatch({ type: 'SET_GLOBAL_VAR', payload: { key: 'sortableIsActive', value: false } });
+        setSelectedEditTeacher(null);
+        deactivateSortable();
+      }
 
       // Hide normal edit/add UI
       setShowAddCourse(false);
@@ -1935,6 +1992,7 @@ export default function CoursePanel() {
                         setSelectedEditTeacher(`${subjectName}|${teacherName}`);
                         setEditingCourse(subjectName);
                         setEditingTeacher(teacherName);
+                        setEditingTeacherSlots(teacherData.slots); // Store original slots for matching
                         setEditTeacherName(teacherName);
                         setEditSlots(teacherData.slots);
                         setEditVenue(teacherData.venue === 'VENUE' ? '' : teacherData.venue);
@@ -2032,7 +2090,7 @@ export default function CoursePanel() {
                 type="button"
                 className="btn btn-success"
                 onClick={showAddTeacherDiv}
-                style={{ display: state.globalVars.editTeacher || state.globalVars.editSub ? 'none' : 'inline-block' }}
+                style={{ display: state.globalVars.editTeacher || state.globalVars.editSub || state.ui.attackMode ? 'none' : 'inline-block' }}
               >
                 <i className="fas fa-plus"></i> Teachers
               </button>
@@ -2046,7 +2104,7 @@ export default function CoursePanel() {
                   setShowEditCourse(false);
                   setShowEditTeacher(false);
                 }}
-                style={{ display: state.globalVars.editTeacher || state.globalVars.editSub ? 'none' : 'inline-block', marginLeft: '0.5rem' }}
+                style={{ display: state.globalVars.editTeacher || state.globalVars.editSub || state.ui.attackMode ? 'none' : 'inline-block', marginLeft: '0.5rem' }}
               >
                 <i className="fas fa-plus"></i> Course
               </button>
@@ -2056,7 +2114,7 @@ export default function CoursePanel() {
                 className="btn btn-warning"
                 type="button"
                 onClick={handleEditClick}
-                style={{ display: state.globalVars.editTeacher || state.globalVars.editSub ? 'none' : 'inline-block' }}
+                style={{ display: state.globalVars.editTeacher || state.globalVars.editSub || state.ui.attackMode ? 'none' : 'inline-block' }}
               >
                 <i className="fas fa-pencil"></i>
                 <span>&nbsp;&nbsp;Edit</span>

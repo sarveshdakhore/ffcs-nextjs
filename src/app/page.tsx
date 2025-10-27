@@ -102,7 +102,7 @@ export default function Home() {
                 marginBottom: '10px',
                 lineHeight: '1.3'
               }}>
-                Google Developer Student Clubs
+                Google Developer Group
               </h1>
 
               {/* University Name */}

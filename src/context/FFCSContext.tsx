@@ -188,8 +188,10 @@ type FFCSAction =
   | { type: 'CLEAR_ALL' }
   | { type: 'ADD_SUBJECT'; payload: { courseName: string; credits: number } }
   | { type: 'REMOVE_SUBJECT'; payload: string }
-  | { type: 'ADD_TEACHER_TO_SUBJECT'; payload: { courseName: string; teacherName: string; slots: string; venue: string; color: string } }
-  | { type: 'UPDATE_TEACHER_IN_SUBJECT'; payload: { courseName: string; teacherName: string; slots: string; venue: string; color: string } }
+  | { type: 'RENAME_SUBJECT'; payload: { oldName: string; newName: string; credits: number } }
+  | { type: 'REORDER_COURSES'; payload: { courseNames: string[] } }
+  | { type: 'ADD_TEACHER_TO_SUBJECT'; payload: { courseName: string; teacherName: string; oldTeacherName?: string; oldSlots?: string; slots: string; venue: string; color: string } }
+  | { type: 'UPDATE_TEACHER_IN_SUBJECT'; payload: { courseName: string; teacherName: string; oldTeacherName?: string; oldSlots?: string; slots: string; venue: string; color: string } }
   | { type: 'REMOVE_TEACHER_FROM_SUBJECT'; payload: { courseName: string; teacherName: string } }
   | { type: 'UPDATE_LOCALFORAGE' }
   | { type: 'SET_GLOBAL_VAR'; payload: { key: keyof GlobalVars; value: any } }
@@ -587,31 +589,61 @@ function ffcsReducer(state: FFCSState, action: FFCSAction): FFCSState {
     case 'ADD_SUBJECT': {
       const updatedTable = state.timetableStoragePref.map(table => {
         if (table.id === state.currentTableId) {
+          // Update credits in selected courses (data and attackData)
+          const updatedData = table.data.map(course =>
+            course.courseTitle === action.payload.courseName
+              ? { ...course, credits: action.payload.credits }
+              : course
+          );
+
+          const updatedAttackData = table.attackData.map(course =>
+            course.courseTitle === action.payload.courseName
+              ? { ...course, credits: action.payload.credits }
+              : course
+          );
+
           return {
             ...table,
             subject: {
               ...table.subject,
               [action.payload.courseName]: {
-                teacher: {},
+                ...table.subject[action.payload.courseName],
                 credits: action.payload.credits
               }
-            }
+            },
+            data: updatedData,
+            attackData: updatedAttackData
           };
         }
         return table;
       });
-      
+
+      // Update activeTable credits
+      const updatedActiveData = state.activeTable.data.map(course =>
+        course.courseTitle === action.payload.courseName
+          ? { ...course, credits: action.payload.credits }
+          : course
+      );
+
+      const updatedActiveAttackData = state.activeTable.attackData.map(course =>
+        course.courseTitle === action.payload.courseName
+          ? { ...course, credits: action.payload.credits }
+          : course
+      );
+
       const updatedActive = {
         ...state.activeTable,
         subject: {
           ...state.activeTable.subject,
           [action.payload.courseName]: {
-            teacher: {},
+            ...state.activeTable.subject[action.payload.courseName],
             credits: action.payload.credits
           }
-        }
+        },
+        data: updatedActiveData,
+        attackData: updatedActiveAttackData
       };
-      
+
       return {
         ...state,
         timetableStoragePref: updatedTable,
@@ -630,13 +662,167 @@ function ffcsReducer(state: FFCSState, action: FFCSAction): FFCSState {
         }
         return table;
       });
-      
+
       const { [action.payload]: removed, ...remainingSubjects } = state.activeTable.subject;
       const updatedActive = {
         ...state.activeTable,
         subject: remainingSubjects
       };
-      
+
+      return {
+        ...state,
+        timetableStoragePref: updatedTable,
+        activeTable: updatedActive
+      };
+    }
+
+    case 'RENAME_SUBJECT': {
+      // Rename subject while preserving order in the object
+      const updatedTable = state.timetableStoragePref.map(table => {
+        if (table.id === state.currentTableId) {
+          const newSubject: { [key: string]: SubjectData } = {};
+
+          // Iterate through existing subjects and rename the matching one
+          Object.entries(table.subject).forEach(([key, value]) => {
+            if (key === action.payload.oldName) {
+              // Rename this key
+              newSubject[action.payload.newName] = {
+                ...value,
+                credits: action.payload.credits
+              };
+            } else {
+              // Keep as is
+              newSubject[key] = value;
+            }
+          });
+
+          // Extract course title without code prefix for matching
+          const oldCourseTitle = action.payload.oldName.includes('-')
+            ? action.payload.oldName.split('-').slice(1).join('-').trim()
+            : action.payload.oldName;
+
+          const newCourseTitle = action.payload.newName.includes('-')
+            ? action.payload.newName.split('-').slice(1).join('-').trim()
+            : action.payload.newName;
+
+          console.log('📝 RENAME_SUBJECT - extracting titles:', {
+            oldName: action.payload.oldName,
+            oldCourseTitle,
+            newName: action.payload.newName,
+            newCourseTitle
+          });
+
+          // Also update data and attackData course names
+          const updatedData = table.data.map(course => {
+            if (course.courseTitle === oldCourseTitle) {
+              console.log('✅ Renaming course in data:', {
+                old: course.courseTitle,
+                new: newCourseTitle
+              });
+              return { ...course, courseTitle: newCourseTitle, credits: action.payload.credits };
+            }
+            return course;
+          });
+
+          const updatedAttackData = table.attackData.map(course => {
+            if (course.courseTitle === oldCourseTitle) {
+              console.log('✅ Renaming course in attackData:', {
+                old: course.courseTitle,
+                new: newCourseTitle
+              });
+              return { ...course, courseTitle: newCourseTitle, credits: action.payload.credits };
+            }
+            return course;
+          });
+
+          return {
+            ...table,
+            subject: newSubject,
+            data: updatedData,
+            attackData: updatedAttackData
+          };
+        }
+        return table;
+      });
+
+      // Update activeTable
+      const newActiveSubject: { [key: string]: SubjectData } = {};
+      Object.entries(state.activeTable.subject).forEach(([key, value]) => {
+        if (key === action.payload.oldName) {
+          newActiveSubject[action.payload.newName] = {
+            ...value,
+            credits: action.payload.credits
+          };
+        } else {
+          newActiveSubject[key] = value;
+        }
+      });
+
+      // Use same extracted course titles for activeTable
+      const activeOldCourseTitle = action.payload.oldName.includes('-')
+        ? action.payload.oldName.split('-').slice(1).join('-').trim()
+        : action.payload.oldName;
+
+      const activeNewCourseTitle = action.payload.newName.includes('-')
+        ? action.payload.newName.split('-').slice(1).join('-').trim()
+        : action.payload.newName;
+
+      const updatedActiveData = state.activeTable.data.map(course =>
+        course.courseTitle === activeOldCourseTitle
+          ? { ...course, courseTitle: activeNewCourseTitle, credits: action.payload.credits }
+          : course
+      );
+
+      const updatedActiveAttackData = state.activeTable.attackData.map(course =>
+        course.courseTitle === activeOldCourseTitle
+          ? { ...course, courseTitle: activeNewCourseTitle, credits: action.payload.credits }
+          : course
+      );
+
+      const updatedActive = {
+        ...state.activeTable,
+        subject: newActiveSubject,
+        data: updatedActiveData,
+        attackData: updatedActiveAttackData
+      };
+
+      return {
+        ...state,
+        timetableStoragePref: updatedTable,
+        activeTable: updatedActive
+      };
+    }
+
+    case 'REORDER_COURSES': {
+      // Reorder the subject object based on the provided course names array
+      const updatedTable = state.timetableStoragePref.map(table => {
+        if (table.id === state.currentTableId) {
+          const newSubject: { [key: string]: SubjectData } = {};
+
+          // Add courses in the new order
+          action.payload.courseNames.forEach(courseName => {
+            if (table.subject[courseName]) {
+              newSubject[courseName] = table.subject[courseName];
+            }
+          });
+
+          // Add any courses that weren't in the reorder list (safety check)
+          Object.entries(table.subject).forEach(([key, value]) => {
+            if (!newSubject[key]) {
+              newSubject[key] = value;
+            }
+          });
+
+          return {
+            ...table,
+            subject: newSubject
+          };
+        }
+        return table;
+      });
+
+      const updatedActive = updatedTable.find(t => t.id === state.currentTableId) || state.activeTable;
+
       return {
         ...state,
         timetableStoragePref: updatedTable,
@@ -645,7 +831,8 @@ function ffcsReducer(state: FFCSState, action: FFCSAction): FFCSState {
     }
 
     case 'ADD_TEACHER_TO_SUBJECT': {
-      
+      console.log('📥 ADD_TEACHER_TO_SUBJECT action received:', action.payload);
+
       const updatedTable = state.timetableStoragePref.map(table => {
         if (table.id === state.currentTableId) {
           const currentSubject = table.subject[action.payload.courseName] || { teacher: {}, credits: 0 };
@@ -660,19 +847,186 @@ function ffcsReducer(state: FFCSState, action: FFCSAction): FFCSState {
               }
             }
           };
-          
-          
+
+          // IMPORTANT: Also update selected courses in data and attackData
+          // This ensures course list, timetable highlighting, and clash detection use new teacher info
+          // Use oldTeacherName if provided (for teacher name changes), otherwise use teacherName
+          const teacherToFind = action.payload.oldTeacherName || action.payload.teacherName;
+          // Use oldSlots if provided for more precise matching
+          const oldSlotsToFind = action.payload.oldSlots;
+
+          console.log('🔍 Looking for course to update in data/attackData:', {
+            courseName: action.payload.courseName,
+            teacherToFind,
+            oldSlotsToFind,
+            currentDataLength: table.data.length,
+            currentAttackDataLength: table.attackData.length
+          });
+
+          const updatedData = table.data.map(course => {
+            // Match on course title and teacher name
+            // Handle case where courseName might include course code (e.g., "BMAT202L-Probability")
+            // or just be the title (e.g., "Probability")
+            const courseNameToMatch = action.payload.courseName.includes('-')
+              ? action.payload.courseName.split('-').slice(1).join('-').trim()
+              : action.payload.courseName;
+
+            const courseMatches = course.courseTitle === courseNameToMatch && course.faculty === teacherToFind;
+
+            // If oldSlots provided, also match on slots for precise identification
+            const slotsMatch = !oldSlotsToFind || course.slots.join('+') === oldSlotsToFind;
+
+            console.log('🔎 Checking course in data:', {
+              courseTitle: course.courseTitle,
+              faculty: course.faculty,
+              slots: course.slots.join('+'),
+              courseMatches,
+              slotsMatch,
+              willUpdate: courseMatches && slotsMatch
+            });
+
+            if (courseMatches && slotsMatch) {
+              // Parse slots string to array (e.g., "A1+TA1" → ["A1", "TA1"])
+              const slotsArray = action.payload.slots.split('+').filter(s => s.trim());
+              console.log('✅ UPDATING COURSE in data:', {
+                oldFaculty: course.faculty,
+                newFaculty: action.payload.teacherName,
+                oldSlots: course.slots,
+                newSlots: slotsArray,
+                oldVenue: course.venue,
+                newVenue: action.payload.venue
+              });
+              return {
+                ...course,
+                faculty: action.payload.teacherName, // Update to new teacher name
+                slots: slotsArray,
+                venue: action.payload.venue
+              };
+            }
+            return course;
+          });
+
+          let updatedAttackData = table.attackData.map(course => {
+            // Match on course title and teacher name
+            // Handle case where courseName might include course code (e.g., "BMAT202L-Probability")
+            // or just be the title (e.g., "Probability")
+            const courseNameToMatch = action.payload.courseName.includes('-')
+              ? action.payload.courseName.split('-').slice(1).join('-').trim()
+              : action.payload.courseName;
+
+            const courseMatches = course.courseTitle === courseNameToMatch && course.faculty === teacherToFind;
+
+            // If oldSlots provided, also match on slots for precise identification
+            const slotsMatch = !oldSlotsToFind || course.slots.join('+') === oldSlotsToFind;
+
+            console.log('🔎 Checking course in attackData:', {
+              courseTitle: course.courseTitle,
+              faculty: course.faculty,
+              slots: course.slots.join('+'),
+              courseMatches,
+              slotsMatch,
+              willUpdate: courseMatches && slotsMatch
+            });
+
+            if (courseMatches && slotsMatch) {
+              const slotsArray = action.payload.slots.split('+').filter(s => s.trim());
+              console.log('✅ UPDATING COURSE in attackData:', {
+                oldFaculty: course.faculty,
+                newFaculty: action.payload.teacherName,
+                oldSlots: course.slots,
+                newSlots: slotsArray,
+                oldVenue: course.venue,
+                newVenue: action.payload.venue
+              });
+              return {
+                ...course,
+                faculty: action.payload.teacherName, // Update to new teacher name
+                slots: slotsArray,
+                venue: action.payload.venue
+              };
+            }
+            return course;
+          });
+
+          // Check if edited course clashes with OTHER selected courses in Live FFCS
+          // If it does, REMOVE THE EDITED COURSE from attackData
+          // Use NEW teacher name to find the updated course
+          // IMPORTANT: Use courseNameToMatch (without course code prefix)
+          const courseNameForClashCheck = action.payload.courseName.includes('-')
+            ? action.payload.courseName.split('-').slice(1).join('-').trim()
+            : action.payload.courseName;
+
+          console.log('🔍 Checking for clashes in updatedAttackData:', {
+            courseNameForClashCheck,
+            teacherName: action.payload.teacherName,
+            attackDataLength: updatedAttackData.length,
+            attackDataCourses: updatedAttackData.map(c => ({ title: c.courseTitle, faculty: c.faculty, slots: c.slots }))
+          });
+
+          const editedCourseIndex = updatedAttackData.findIndex(
+            c => c.courseTitle === courseNameForClashCheck && c.faculty === action.payload.teacherName
+          );
+
+          console.log('🔍 Edited course index in attackData:', editedCourseIndex);
+
+          if (editedCourseIndex !== -1) {
+            const editedCourse = updatedAttackData[editedCourseIndex];
+            const editedSlots = editedCourse.slots;
+
+            console.log('🔍 Edited course found:', {
+              title: editedCourse.courseTitle,
+              faculty: editedCourse.faculty,
+              slots: editedSlots
+            });
+
+            // Check if edited course clashes with any OTHER course
+            const hasClashWithOthers = updatedAttackData.some((course, index) => {
+              if (index === editedCourseIndex) return false; // Skip self
+              const clash = course.slots.some(slot => editedSlots.includes(slot));
+              if (clash) {
+                console.log('⚠️ CLASH DETECTED with:', {
+                  course: course.courseTitle,
+                  faculty: course.faculty,
+                  theirSlots: course.slots,
+                  editedSlots: editedSlots,
+                  commonSlots: course.slots.filter(slot => editedSlots.includes(slot))
+                });
+              }
+              return clash;
+            });
+
+            console.log('🔍 Has clash with others?', hasClashWithOthers);
+
+            if (hasClashWithOthers) {
+              console.log(`⚠️ REMOVING edited course ${courseNameForClashCheck} (${action.payload.teacherName}) from Live FFCS - clashes with other selected courses`);
+              // Remove the edited course
+              updatedAttackData = updatedAttackData.filter((_, index) => index !== editedCourseIndex);
+              console.log('✅ Course removed. New attackData length:', updatedAttackData.length);
+            }
+          } else {
+            console.log('ℹ️ Edited course not found in attackData (not selected in Live FFCS mode)');
+          }
+
+          console.log('📊 Updated arrays:', {
+            updatedDataLength: updatedData.length,
+            updatedAttackDataLength: updatedAttackData.length
+          });
+
           return {
             ...table,
             subject: {
               ...table.subject,
               [action.payload.courseName]: updatedSubject
-            }
+            },
+            data: updatedData,
+            attackData: updatedAttackData
           };
         }
         return table;
       });
-      
+
+      console.log('✅ Completed table update in timetableStoragePref');
+
       const currentActiveSubject = state.activeTable.subject[action.payload.courseName] || { teacher: {}, credits: 0 };
       const updatedActiveSubject = {
         ...currentActiveSubject,
@@ -685,16 +1039,89 @@ function ffcsReducer(state: FFCSState, action: FFCSAction): FFCSState {
           }
         }
       };
-      
+
+      // Update activeTable data and attackData
+      // Use same teacherToFind and oldSlots logic
+      const activeTeacherToFind = action.payload.oldTeacherName || action.payload.teacherName;
+      const activeOldSlotsToFind = action.payload.oldSlots;
+
+      const updatedActiveData = state.activeTable.data.map(course => {
+        const courseNameToMatch = action.payload.courseName.includes('-')
+          ? action.payload.courseName.split('-').slice(1).join('-').trim()
+          : action.payload.courseName;
+
+        const courseMatches = course.courseTitle === courseNameToMatch && course.faculty === activeTeacherToFind;
+        const slotsMatch = !activeOldSlotsToFind || course.slots.join('+') === activeOldSlotsToFind;
+
+        if (courseMatches && slotsMatch) {
+          const slotsArray = action.payload.slots.split('+').filter(s => s.trim());
+          return {
+            ...course,
+            faculty: action.payload.teacherName, // Update to new teacher name
+            slots: slotsArray,
+            venue: action.payload.venue
+          };
+        }
+        return course;
+      });
+
+      let updatedActiveAttackData = state.activeTable.attackData.map(course => {
+        const courseNameToMatch = action.payload.courseName.includes('-')
+          ? action.payload.courseName.split('-').slice(1).join('-').trim()
+          : action.payload.courseName;
+
+        const courseMatches = course.courseTitle === courseNameToMatch && course.faculty === activeTeacherToFind;
+        const slotsMatch = !activeOldSlotsToFind || course.slots.join('+') === activeOldSlotsToFind;
+
+        if (courseMatches && slotsMatch) {
+          const slotsArray = action.payload.slots.split('+').filter(s => s.trim());
+          return {
+            ...course,
+            faculty: action.payload.teacherName, // Update to new teacher name
+            slots: slotsArray,
+            venue: action.payload.venue
+          };
+        }
+        return course;
+      });
+
+      // Check if edited course clashes with OTHER selected courses in activeTable
+      // Use NEW teacher name to find the updated course
+      // IMPORTANT: Use courseNameToMatch (without course code prefix)
+      const activeCourseNameForClashCheck = action.payload.courseName.includes('-')
+        ? action.payload.courseName.split('-').slice(1).join('-').trim()
+        : action.payload.courseName;
+
+      const editedActiveIndex = updatedActiveAttackData.findIndex(
+        c => c.courseTitle === activeCourseNameForClashCheck && c.faculty === action.payload.teacherName
+      );
+
+      if (editedActiveIndex !== -1) {
+        const editedCourse = updatedActiveAttackData[editedActiveIndex];
+        const editedSlots = editedCourse.slots;
+
+        const hasClashWithOthers = updatedActiveAttackData.some((course, index) => {
+          if (index === editedActiveIndex) return false;
+          return course.slots.some(slot => editedSlots.includes(slot));
+        });
+
+        if (hasClashWithOthers) {
+          console.log(`⚠️ Removing edited course ${activeCourseNameForClashCheck} (${action.payload.teacherName}) from Active Live FFCS - clashes with other selected courses`);
+          updatedActiveAttackData = updatedActiveAttackData.filter((_, index) => index !== editedActiveIndex);
+        }
+      }
+
       const updatedActive = {
         ...state.activeTable,
         subject: {
           ...state.activeTable.subject,
           [action.payload.courseName]: updatedActiveSubject
-        }
+        },
+        data: updatedActiveData,
+        attackData: updatedActiveAttackData
       };
-      
-      
+
+
       return {
         ...state,
         timetableStoragePref: updatedTable,

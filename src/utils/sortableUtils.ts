@@ -1,30 +1,89 @@
 import Sortable from 'sortablejs';
 
-let sortableInstances: Sortable[] = [];
+let courseSortableInstance: Sortable | null = null;
+let teacherSortableInstances: Sortable[] = [];
 
-export const activateSortable = () => {
-  // Check if already active
-  if (sortableInstances.length > 0) return;
-  
+type DispatchFunction = (action: any) => void;
+let dispatchRef: DispatchFunction | null = null;
+
+export const setDispatch = (dispatch: DispatchFunction) => {
+  dispatchRef = dispatch;
+};
+
+// Activate ONLY course reordering (for Course Edit mode)
+export const activateCoursesSortable = () => {
+  // Deactivate any existing course sortable
+  if (courseSortableInstance) {
+    courseSortableInstance.destroy();
+    courseSortableInstance = null;
+  }
+
   // Detect mobile device
   const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-  
+
   // Make courses sortable
   const leftBox = document.querySelector('.left-box') as HTMLElement;
   if (leftBox) {
-    const coursesSortable = Sortable.create(leftBox, {
+    courseSortableInstance = Sortable.create(leftBox, {
       animation: 150,
       delay: isMobile ? 170 : 5,
       chosenClass: 'sortable-chosen',
+      ghostClass: 'sortable-ghost',
+      dragClass: 'sortable-drag',
       handle: '.dropdown-heading', // Only allow dragging by course header
-      onEnd: () => {
-        // Update course order in state if needed
-        console.log('Course order changed');
+      forceFallback: true, // Force HTML5 fallback for better control
+      onEnd: (evt) => {
+        // Remove any lingering classes from the dragged item
+        if (evt.item) {
+          evt.item.classList.remove('sortable-chosen', 'sortable-ghost', 'sortable-drag');
+        }
+
+        // Clean up any lingering sortable classes from all items
+        const allItems = leftBox.querySelectorAll('.dropdown-teacher');
+        allItems.forEach(item => {
+          item.classList.remove('sortable-chosen', 'sortable-ghost', 'sortable-drag');
+        });
+
+        // Get the new order of courses from DOM
+        const courseElements = leftBox.querySelectorAll('.dropdown-teacher');
+        const courseNames: string[] = [];
+
+        courseElements.forEach((element) => {
+          const heading = element.querySelector('.dropdown-heading');
+          if (heading) {
+            const courseNameSpan = heading.querySelector('.cname');
+            if (courseNameSpan) {
+              const courseName = courseNameSpan.textContent?.trim();
+              if (courseName) {
+                courseNames.push(courseName);
+              }
+            }
+          }
+        });
+
+        // Dispatch the new order to update state
+        if (dispatchRef && courseNames.length > 0) {
+          console.log('Course order changed:', courseNames);
+          dispatchRef({
+            type: 'REORDER_COURSES',
+            payload: { courseNames }
+          });
+          // Note: Sortable will be reinitialized by useEffect in CoursePanel
+        }
       }
     });
-    sortableInstances.push(coursesSortable);
   }
-  
+};
+
+// Activate ONLY teacher priority reordering (for Teacher Edit mode)
+export const activateTeachersSortable = () => {
+  // Deactivate any existing teacher sortables
+  teacherSortableInstances.forEach(instance => instance.destroy());
+  teacherSortableInstances = [];
+
+  // Detect mobile device
+  const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+
   // Make teachers within each course sortable
   const dropdownLists = document.querySelectorAll('.dropdown-list') as NodeListOf<HTMLElement>;
   dropdownLists.forEach((dropdownList) => {
@@ -32,23 +91,49 @@ export const activateSortable = () => {
       animation: 70,
       delay: isMobile ? 170 : 5,
       chosenClass: 'sortable-chosen',
-      onEnd: () => {
+      ghostClass: 'sortable-ghost',
+      dragClass: 'sortable-drag',
+      forceFallback: true,
+      onEnd: (evt) => {
+        // Remove any lingering classes from the dragged item
+        if (evt.item) {
+          evt.item.classList.remove('sortable-chosen', 'sortable-ghost', 'sortable-drag');
+        }
+
+        // Clean up any lingering sortable classes from all items in this list
+        const allItems = dropdownList.querySelectorAll('.dropdown-item');
+        allItems.forEach(item => {
+          item.classList.remove('sortable-chosen', 'sortable-ghost', 'sortable-drag');
+        });
+
         // Update teacher order in state if needed
         console.log('Teacher order changed');
       }
     });
-    sortableInstances.push(teachersSortable);
+    teacherSortableInstances.push(teachersSortable);
   });
+};
+
+// Legacy function - activates both courses and teachers (kept for backward compatibility)
+export const activateSortable = () => {
+  activateCoursesSortable();
+  activateTeachersSortable();
 };
 
 export const deactivateSortable = () => {
-  // Destroy all sortable instances
-  sortableInstances.forEach(instance => {
+  // Destroy course sortable
+  if (courseSortableInstance) {
+    courseSortableInstance.destroy();
+    courseSortableInstance = null;
+  }
+
+  // Destroy all teacher sortables
+  teacherSortableInstances.forEach(instance => {
     instance.destroy();
   });
-  sortableInstances = [];
+  teacherSortableInstances = [];
 };
 
 export const isSortableActive = () => {
-  return sortableInstances.length > 0;
+  return courseSortableInstance !== null || teacherSortableInstances.length > 0;
 };
