@@ -129,7 +129,7 @@
 }
 
 .dropdown-list li:hover {
-  background-color: #f8f9fa;
+  background-color: rgba(255, 255, 255, 0.1) !important;
 }
 
 .dropdown-list li:last-child {
