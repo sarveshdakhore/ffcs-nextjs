@@ -344,7 +344,7 @@ export default function Modals() {
           <div className="modal-dialog">
             <div className="modal-content">
               <div className="modal-header">
-                <h5 className="modal-title">Reset Table</h5>
+                <h5 className="modal-title">Erase Table</h5>
                 <button
                   type="button"
                   className="btn-close"
@@ -353,7 +353,7 @@ export default function Modals() {
               </div>
               <div className="modal-body">
                 <p>
-                  Are you sure you want to reset this table? All selected
+                  Are you sure you want to erase this table? All selected
                   courses will be erased.
                 </p>
               </div>
@@ -428,7 +428,7 @@ export default function Modals() {
                 ></button>
               </div>
               <div className="modal-body">
-                <p className="text-muted mb-3">
+                <p className="mb-3" style={{ color: 'white' }}>
                   Upload a previously saved timetable file (.ffcsplanner)
                 </p>
                 <button

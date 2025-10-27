@@ -1401,7 +1401,7 @@ export default function Timetable() {
               style={{ whiteSpace: 'nowrap' }}
             >
               <i className="fas fa-redo"></i>
-              <span>&nbsp;&nbsp;Reset Table</span>
+              <span>&nbsp;&nbsp;Erase Table</span>
             </button>
           </div>
         </div>

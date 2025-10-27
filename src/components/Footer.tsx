@@ -29,29 +29,14 @@ export default function Footer() {
                 GDG VIT
               </span>
             </div>
-            <p 
+            <p
               style={{
                 color: 'rgba(255, 255, 255, 0.6)',
                 margin: '0',
                 fontSize: '0.8rem'
               }}
             >
-              Made with <i className="fas fa-heart" style={{ color: '#e74c3c', fontSize: '0.7rem' }}></i> for VITians • 
-              Modified from{' '}
-              <a 
-                href="https://github.com/vatz88/FFCSonTheGo"
-                target="_blank"
-                rel="noopener noreferrer"
-                style={{
-                  color: '#4ECDCC',
-                  textDecoration: 'none',
-                  transition: 'color 0.3s ease'
-                }}
-                onMouseOver={(e) => e.currentTarget.style.color = '#ffffff'}
-                onMouseOut={(e) => e.currentTarget.style.color = '#4ECDCC'}
-              >
-                original repository
-              </a>
+              Made with <i className="fas fa-heart" style={{ color: '#e74c3c', fontSize: '0.7rem' }}></i> for VITians
             </p>
           </div>
         </div>

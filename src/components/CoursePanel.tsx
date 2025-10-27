@@ -2964,7 +2964,7 @@ export default function CoursePanel() {
           </div> {/* End Add/Edit Course Card */}
 
           {/* Bottom Buttons Card */}
-          <div style={{ marginTop: '0.5rem', background: 'transparent', border: 'none', boxShadow: 'none' }}>
+          <div style={{ marginTop: '1rem', background: 'transparent', border: 'none', boxShadow: 'none' }}>
             <div style={{ padding: '0' }}>
               <div style={{ display: 'flex', flexDirection: 'row', gap: '0.5rem', flexWrap: 'nowrap', alignItems: 'center' }}>
                 <button
@@ -2990,7 +2990,7 @@ export default function CoursePanel() {
                 <button
                   id="clear-course-button"
                   type="button"
-                  className="btn btn-danger"
+                  className="btn btn-primary"
                   style={{ flex: '1' }}
                   onClick={() => {
                     // Different confirmation messages for normal vs attack mode (like vanilla JS)
@@ -3003,7 +3003,7 @@ export default function CoursePanel() {
                     }
                   }}
                 >
-                  Clear List
+                  Clear Selection
                 </button>
               </div>
             </div>

@@ -69,9 +69,14 @@ export default function UpdateNotification() {
 
       <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
         <i className="fas fa-sync-alt" style={{ color: '#4ECDCC', fontSize: '1.2rem' }}></i>
-        <span style={{ color: 'white', fontWeight: 500, fontSize: '0.95rem' }}>
-          New version available! Reload to get the latest updates.
-        </span>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+          <span style={{ color: 'white', fontWeight: 500, fontSize: '0.95rem' }}>
+            New version available! Reload to get the latest updates.
+          </span>
+          <span style={{ color: 'rgba(255, 255, 255, 0.7)', fontSize: '0.85rem' }}>
+            Your data will not be lost upon reload.
+          </span>
+        </div>
       </div>
 
       <div style={{ display: 'flex', gap: '0.5rem', marginLeft: 'auto' }}>
