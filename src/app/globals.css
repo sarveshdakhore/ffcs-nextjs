@@ -559,3 +559,97 @@
 .teacher-focused {
   border: 4px solid #00d9ff !important;
 }
+
+/* iPad and tablet screen adjustments */
+@media (min-width: 768px) and (max-width: 1024px) {
+  .course-panel-container {
+    width: 100% !important;
+  }
+
+  /* Change column widths to 57/43 split */
+  .course-panel-left {
+    flex: 0 0 calc(57% - 14.4px) !important;
+  }
+
+  .course-panel-right {
+    flex: 0 0 calc(43% - 9.6px) !important;
+  }
+
+  /* Reduce font sizes in course/subject area */
+  .h2s h2 {
+    font-size: 0.95rem !important;
+  }
+
+  .h2s h4 {
+    font-size: 0.8rem !important;
+  }
+
+  .cname {
+    font-size: 0.95rem !important;
+  }
+
+  /* Reduce teacher list item font sizes */
+  .dropdown-list li {
+    font-size: 0.85rem !important;
+    padding: 6px 8px !important;
+  }
+
+  /* Reduce course list general text */
+  #course-list {
+    font-size: 0.9rem !important;
+  }
+
+  #course-list h2 {
+    font-size: 0.95rem !important;
+  }
+
+  #course-list h4 {
+    font-size: 0.8rem !important;
+  }
+}
+
+/* Smaller screens (phones and small tablets) */
+@media (max-width: 767px) {
+  .course-panel-container {
+    width: 100% !important;
+  }
+
+  /* Change column widths to 57/43 split */
+  .course-panel-left {
+    flex: 0 0 calc(57% - 14.4px) !important;
+  }
+
+  .course-panel-right {
+    flex: 0 0 calc(43% - 9.6px) !important;
+  }
+
+  /* Reduce font sizes even more for small screens */
+  .h2s h2 {
+    font-size: 0.85rem !important;
+  }
+
+  .h2s h4 {
+    font-size: 0.75rem !important;
+  }
+
+  .cname {
+    font-size: 0.85rem !important;
+  }
+
+  .dropdown-list li {
+    font-size: 0.8rem !important;
+    padding: 5px 6px !important;
+  }
+
+  #course-list {
+    font-size: 0.85rem !important;
+  }
+
+  #course-list h2 {
+    font-size: 0.85rem !important;
+  }
+
+  #course-list h4 {
+    font-size: 0.75rem !important;
+  }
+}

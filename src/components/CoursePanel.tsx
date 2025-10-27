@@ -48,6 +48,10 @@ export default function CoursePanel() {
   // Multiple teachers modal states
   const [multipleTeachersText, setMultipleTeachersText] = useState('');
   const [multipleError, setMultipleError] = useState('');
+
+  // Delete confirmation states
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [showTeacherDeleteConfirm, setShowTeacherDeleteConfirm] = useState(false);
   const [showMultipleTeachersModal, setShowMultipleTeachersModal] = useState(false);
   
   // Live FFCS Mode (Attack Mode) states
@@ -189,6 +193,7 @@ export default function CoursePanel() {
       setShowEditCourse(false);
       setShowAddCourse(false);
       setShowAddTeacher(false);
+      setShowTeacherDeleteConfirm(false); // Reset confirmation state
 
       // Activate teacher sortable after a delay
       setTimeout(() => {
@@ -515,6 +520,31 @@ export default function CoursePanel() {
     );
   };
 
+  // Auto-open/close dropdowns based on search results
+  useEffect(() => {
+    const trimmedQuery = teacherSearchQuery.trim();
+
+    if (!trimmedQuery || trimmedQuery.length < 2) {
+      // No search query or less than 2 characters - close all dropdowns
+      setOpenDropdowns(new Set());
+      return;
+    }
+
+    // Search query exists with 2+ characters - open dropdowns that have matching results
+    const newOpenDropdowns = new Set<string>();
+
+    Object.entries(activeTable.subject).forEach(([subjectName, subjectData]) => {
+      const sortedTeachers = sortTeachersByColor(subjectData.teacher, subjectName);
+      const filteredTeachers = filterTeachersBySearch(sortedTeachers);
+
+      if (filteredTeachers.length > 0) {
+        newOpenDropdowns.add(subjectName);
+      }
+    });
+
+    setOpenDropdowns(newOpenDropdowns);
+  }, [teacherSearchQuery, activeTable.subject]);
+
   // Check if a teacher is selected (in the timetable data or attack data)
   const isTeacherSelected = (courseName: string, teacherName: string): boolean => {
     const dataToCheck = state.ui.attackMode ? activeTable.attackData : activeTable.data;
@@ -767,11 +797,9 @@ export default function CoursePanel() {
     setCourseMessage({ text: spanMsg, color: spanMsgColor });
     setTimeout(() => setCourseMessage({ text: '', color: '' }), 4000);
 
+    // Clear inputs but stay on Add Course form
     setCourseName('');
     setCredits('');
-    
-    // Update course select dropdown
-    showAddTeacherDiv();
   };
 
   // Show add teacher div and refresh course select
@@ -916,26 +944,20 @@ export default function CoursePanel() {
     setVenue('');
   };
 
-  // Handle course delete
+  // Handle course delete - show confirmation UI
   const handleDeleteCourse = () => {
+    if (!showDeleteConfirm) {
+      setShowDeleteConfirm(true);
+      return;
+    }
+
+    // Actual deletion when confirmed
     console.log('\n🚨🚨🚨 ============= COURSE DELETE FROM EDIT PANEL ============= 🚨🚨🚨');
     console.log(`📋 Course to delete: "${editingCourse}"`);
     console.log(`📊 Current state:`);
     console.log(`   - subject keys: ${Object.keys(state.activeTable.subject).join(', ')}`);
     console.log(`   - data.length: ${state.activeTable.data.length}`);
     console.log(`   - attackData.length: ${state.activeTable.attackData.length}`);
-
-    // Use window.confirm to ensure it works
-    const userConfirmed = window.confirm(`⚠️ Are you sure you want to delete "${editingCourse}"?\n\nThis will remove the course and all its teachers.`);
-
-    console.log(`🔍 User confirmed: ${userConfirmed}`);
-
-    if (!userConfirmed) {
-      console.log('❌ User cancelled deletion');
-      setCourseMessage({ text: 'Course not deleted', color: 'red' });
-      setTimeout(() => setCourseMessage({ text: '', color: '' }), 4000);
-      return;
-    }
 
     console.log('✅ User confirmed deletion');
     console.log(`📝 Dispatching REMOVE_SUBJECT with payload: "${editingCourse}"`);
@@ -948,19 +970,26 @@ export default function CoursePanel() {
     console.log('✅ Dispatch completed');
     console.log('🚨🚨🚨 ============= COURSE DELETE DISPATCHED ============= 🚨🚨🚨\n');
 
-    setCourseMessage({ text: 'Course deleted successfully', color: 'green' });
-    setTimeout(() => setCourseMessage({ text: '', color: '' }), 3000);
-
-    setShowEditCourse(false);
+    // Clear the editing course and hide the form to show "Click on course to edit" message
     setEditingCourse('');
-    dispatch({ type: 'SET_GLOBAL_VAR', payload: { key: 'editSub', value: false } });
+    setEditCourseName('');
+    setEditCredits('');
+    setShowDeleteConfirm(false);
+    setShowEditCourse(false); // Hide the form, show the instruction message
+    setCourseMessage({ text: '', color: '' }); // Clear any messages
   };
 
-  // Handle teacher delete
+  // Cancel course deletion
+  const handleCancelDeleteCourse = () => {
+    setShowDeleteConfirm(false);
+    setCourseMessage({ text: 'Deletion cancelled', color: 'orange' });
+    setTimeout(() => setCourseMessage({ text: '', color: '' }), 2000);
+  };
+
+  // Handle teacher delete - show confirmation UI
   const handleDeleteTeacher = () => {
-    if (!window.confirm(`⚠️ Are you sure you want to delete teacher "${editingTeacher}"?`)) {
-      setTeacherMessage({ text: 'Teacher not deleted', color: 'red' });
-      setTimeout(() => setTeacherMessage({ text: '', color: '' }), 4000);
+    if (!showTeacherDeleteConfirm) {
+      setShowTeacherDeleteConfirm(true);
       return;
     }
 
@@ -972,8 +1001,22 @@ export default function CoursePanel() {
       }
     });
 
-    setShowEditTeacher(false);
+    // Clear the editing teacher and hide the form to show "Click on teacher to edit" message
     setEditingTeacher('');
+    setEditingTeacherSlots('');
+    setEditTeacherName('');
+    setEditSlots('');
+    setEditVenue('');
+    setShowTeacherDeleteConfirm(false);
+    setShowEditTeacher(false); // Hide the form, show the instruction message
+    setTeacherMessage({ text: '', color: '' }); // Clear any messages
+  };
+
+  // Cancel teacher deletion
+  const handleCancelDeleteTeacher = () => {
+    setShowTeacherDeleteConfirm(false);
+    setTeacherMessage({ text: 'Deletion cancelled', color: 'orange' });
+    setTimeout(() => setTeacherMessage({ text: '', color: '' }), 2000);
   };
 
   // Handle course edit save
@@ -1534,7 +1577,7 @@ export default function CoursePanel() {
   // Process multiple teachers from VTOP data
   const processMultipleTeachers = () => {
     console.log('🔄 Processing multiple teachers...');
-    
+
     // Validate inputs
     if (!selectedCourse) {
       setMultipleError('Please select a course before adding multiple teachers');
@@ -1554,10 +1597,67 @@ export default function CoursePanel() {
 
       console.log('📝 Parsed teacher list:', teacherList);
 
+      // Determine the full course name ONCE before processing teachers
+      const courseObj = state.courses.find(course => course.code === selectedCourse);
+      const courseName = courseObj?.name || selectedCourse;
+
+      // IMPORTANT: Check if subject already exists with exact key to avoid duplicates
+      let fullCourseName = '';
+      const possibleKeys = [
+        `${selectedCourse}-${courseName}`,     // "BMAT202L-Probability"
+        `${selectedCourse} - ${courseName}`,   // "BMAT202L - Probability"
+        courseName,                             // "Probability" or "CSE-try" (no separate code)
+        selectedCourse,                         // "BMAT202L" or "CSE-try" (just code)
+        `${courseName}-${selectedCourse}`,     // "Probability-BMAT202L" (reversed)
+      ];
+
+      // Find existing subject key
+      for (const key of possibleKeys) {
+        if (state.activeTable.subject[key]) {
+          fullCourseName = key;
+          console.log(`✅ Found existing subject key: "${key}"`);
+          break;
+        }
+      }
+
+      // If not found, use standard format based on what we have
+      if (!fullCourseName) {
+        if (selectedCourse && courseName && selectedCourse !== courseName) {
+          fullCourseName = `${selectedCourse}-${courseName}`;
+        } else if (courseName) {
+          fullCourseName = courseName;
+        } else {
+          fullCourseName = selectedCourse;
+        }
+        console.log(`🆕 Creating new subject key: "${fullCourseName}"`);
+      }
+
+      console.log('📋 Full course name:', fullCourseName);
+
+      // IMPORTANT: Initialize local tracking object ONCE before loop
+      // This solves the state synchronization issue where dispatched actions
+      // don't update state until next render
+      let localTeachers: { [key: string]: { slots: string; venue: string; color: string } } =
+        state.activeTable.subject[fullCourseName]?.teacher || {};
+
+      console.log('🔍 Initialized localTeachers with existing teachers:', Object.keys(localTeachers));
+
+      // Ensure the course exists in subject data
+      if (!state.activeTable.subject[fullCourseName]) {
+        dispatch({
+          type: 'ADD_SUBJECT',
+          payload: {
+            courseName: fullCourseName,
+            credits: courseObj?.credits || 0
+          }
+        });
+        console.log('➕ Added new subject to state');
+      }
+
       // Process each teacher
       teacherList.forEach((teacherData, index) => {
-        console.log(`🔄 Processing teacher ${index + 1}:`, teacherData);
-        
+        console.log(`\n🔄 Processing teacher ${index + 1}:`, teacherData);
+
         // Validate teacher data - for VTOP format, we need slots, course code (in venue field), and faculty
         if (!teacherData.slots.trim() || !teacherData.venue.trim() || !teacherData.faculty.trim()) {
           console.log(`❌ Invalid teacher data at index ${index}:`, teacherData);
@@ -1568,59 +1668,126 @@ export default function CoursePanel() {
         // Apply original character filtering rules
         const rawTeacherName = teacherData.faculty.trim().toUpperCase();
         const cleanedTeacherName = applyOriginalCharacterFiltering(rawTeacherName);
-        
+
         const rawSlots = teacherData.slots.trim().toUpperCase();
         const cleanedSlots = applySlotCharacterFiltering(rawSlots);
-        
+
         // Process teacher name (add (E) for evening classes if needed)
         const processedTeacherName = processTeacherName(cleanedTeacherName, cleanedSlots);
 
         // CORRECT: Parse the VTOP format correctly
-        // VTOP data format: SLOTS(0)    VENUE(1)         TEACHER_NAME(2)    TYPE(3)  
+        // VTOP data format: SLOTS(0)    VENUE(1)         TEACHER_NAME(2)    TYPE(3)
         // Our parser maps to:  slots      venue            faculty           ct
         // So: venue = VENUE, faculty = TEACHER_NAME (this is correct!)
         const actualVenue = teacherData.venue.trim() || 'VENUE'; // This is the actual venue
-        
+
         console.log('🔍 Venue:', actualVenue);
         console.log('🔍 Teacher name:', teacherData.faculty);
-        console.log('🔍 Slots:', teacherData.slots);
-        
-        // Add teacher to the SELECTED COURSE (like original FFCSonTheGo)
-        const courseObj = state.courses.find(course => course.code === selectedCourse);
-        const courseName = courseObj?.name || selectedCourse;
-        
-        // Use the SELECTED COURSE for adding teachers
-        const rawFullCourseName = `${selectedCourse} - ${courseName}`;
-        const fullCourseName = processRawCourseName(rawFullCourseName);
-        
-        console.log('🔍 Adding teacher to SELECTED course:', selectedCourse);
-        
-        console.log('📋 Full course name:', fullCourseName);
+        console.log('🔍 Slots:', teacherData.slots)
 
-        // Ensure the course exists in subject data
-        if (!state.activeTable.subject[fullCourseName]) {
-          dispatch({
-            type: 'ADD_SUBJECT',
-            payload: {
-              courseName: fullCourseName,
-              credits: courseObj?.credits || 0
+        // Apply original combining logic using LOCAL teachers tracking
+        const checkLocalTeacherAndSlotsMatch = (teacherName: string, slotString: string): string | boolean => {
+          const slots = slotString.split('+');
+
+          const doSlotsMatch = (teacherSlots: string[], inputSlots: string[]): boolean => {
+            const lowerCaseInputSlots = inputSlots.map(slot => slot.toLowerCase());
+            const lowerCaseTeacherSlots = teacherSlots.map(slot => slot.toLowerCase());
+            return lowerCaseInputSlots.every(slot => lowerCaseTeacherSlots.includes(slot));
+          };
+
+          const generateUniqueNameAndCheckSlots = (baseName: string, counter: number = 1): string | boolean => {
+            const uniqueName = counter === 1 ? baseName : `${baseName} ${counter}`;
+            console.log('🔍 Checking unique name:', uniqueName);
+
+            const existingTeacher = localTeachers[uniqueName];
+            const uniqueNameSlots = existingTeacher ? existingTeacher.slots.split('+') : [];
+
+            console.log('🔍 Existing teacher slots:', uniqueNameSlots);
+
+            if (doSlotsMatch(uniqueNameSlots, slots)) {
+              console.log('❌ Slots match - this is a duplicate');
+              return false;
+            } else if (localTeachers.hasOwnProperty(uniqueName)) {
+              const existingSlots = localTeachers[uniqueName]?.slots || '';
+
+              if (!existingSlots) {
+                return false;
+              }
+
+              // Theory and Lab slots are not allowed to merge if theory already contains lab
+              if (isTheory(existingSlots) && existingSlots.includes('L')) {
+                console.log('🔄 Theory and Lab slots already combined, trying next counter');
+                return generateUniqueNameAndCheckSlots(baseName, counter + 1);
+              }
+
+              // Case 1: Existing is Theory, new is Lab
+              if (isTheory(existingSlots) && !isTheory(slotString)) {
+                if (isMorningTheory(existingSlots) && !isMorningLab(slotString)) {
+                  const mergedSlots = existingSlots + '+' + slotString;
+                  console.log('✅ Merging morning theory + evening lab:', mergedSlots);
+                  // Update local tracking
+                  localTeachers[uniqueName] = {
+                    ...localTeachers[uniqueName],
+                    slots: mergedSlots
+                  };
+                  // Dispatch update to state
+                  updateTeacherSlots(fullCourseName, uniqueName, mergedSlots);
+                  return true;
+                } else if (!isMorningTheory(existingSlots) && isMorningLab(slotString)) {
+                  const mergedSlots = existingSlots + '+' + slotString;
+                  console.log('✅ Merging evening theory + morning lab:', mergedSlots);
+                  localTeachers[uniqueName] = {
+                    ...localTeachers[uniqueName],
+                    slots: mergedSlots
+                  };
+                  updateTeacherSlots(fullCourseName, uniqueName, mergedSlots);
+                  return true;
+                }
+              }
+              // Case 2: Existing is Lab, new is Theory
+              else if (!isTheory(existingSlots) && isTheory(slotString)) {
+                if (isMorningTheory(slotString) && !isMorningLab(existingSlots)) {
+                  const mergedSlots = slotString + '+' + existingSlots;
+                  console.log('✅ Merging morning theory + evening lab:', mergedSlots);
+                  localTeachers[uniqueName] = {
+                    ...localTeachers[uniqueName],
+                    slots: mergedSlots
+                  };
+                  updateTeacherSlots(fullCourseName, uniqueName, mergedSlots);
+                  return true;
+                } else if (!isMorningTheory(slotString) && isMorningLab(existingSlots)) {
+                  const mergedSlots = slotString + '+' + existingSlots;
+                  console.log('✅ Merging evening theory + morning lab:', mergedSlots);
+                  localTeachers[uniqueName] = {
+                    ...localTeachers[uniqueName],
+                    slots: mergedSlots
+                  };
+                  updateTeacherSlots(fullCourseName, uniqueName, mergedSlots);
+                  return true;
+                }
+              }
+
+              console.log('🔄 No merge possible, trying next counter');
+              return generateUniqueNameAndCheckSlots(baseName, counter + 1);
+            } else {
+              console.log('✅ Unique name found:', uniqueName);
+              return uniqueName;
             }
-          });
-        }
+          };
 
-        // Apply original combining logic
-        const uniqueName = checkTeacherAndSlotsMatch(fullCourseName, processedTeacherName, cleanedSlots);
-        
+          return generateUniqueNameAndCheckSlots(teacherName);
+        };
+
+        const uniqueName = checkLocalTeacherAndSlotsMatch(processedTeacherName, cleanedSlots);
+
         if (uniqueName === false) {
-          // This is a duplicate teacher with same slots - skip
           console.log(`⚠️ Skipping duplicate teacher: ${processedTeacherName} with slots: ${cleanedSlots}`);
           skippedCount++;
           return;
         }
-        
+
         if (uniqueName === true) {
-          // This shouldn't happen in our implementation, but handle it
-          console.log(`✅ Teacher already exists: ${processedTeacherName}`);
+          console.log(`✅ Teacher merged successfully`);
           addedCount++;
           return;
         }
@@ -1628,6 +1795,13 @@ export default function CoursePanel() {
         // Use the unique name (could be original name or name with counter)
         const finalTeacherName = uniqueName as string;
         console.log(`📝 Using final teacher name: ${finalTeacherName}`);
+
+        // Add to local tracking IMMEDIATELY
+        localTeachers[finalTeacherName] = {
+          slots: cleanedSlots,
+          venue: actualVenue,
+          color: color
+        };
 
         // Add teacher to subject data
         dispatch({
@@ -1647,14 +1821,14 @@ export default function CoursePanel() {
           slot: cleanedSlots,
           venue: actualVenue,
           color: color,
-          course: selectedCourse, // Use the selected course
+          course: selectedCourse,
         };
 
         dispatch({
           type: 'ADD_TEACHER',
           payload: { courseCode: selectedCourse, teacher: newTeacher }
         });
-        
+
         console.log(`✅ Added teacher: ${finalTeacherName} for course ${selectedCourse}`);
 
         addedCount++;
@@ -1877,7 +2051,7 @@ export default function CoursePanel() {
 
   return (
     <>
-      <div key={`course-panel-${dataKey}`} style={{
+      <div key={`course-panel-${dataKey}`} className="course-panel-container" style={{
         display: 'flex',
         flexDirection: 'row',
         gap: '24px',
@@ -1888,9 +2062,9 @@ export default function CoursePanel() {
         margin: '0 auto',
         boxSizing: 'border-box'
       }}>
-      {/* Left Column - 60% minus gap */}
-      <div style={{
-        flex: '0 0 calc(57% - 14.4px)',
+      {/* Left Column - 64% for desktop, 57% for iPad/mobile via CSS */}
+      <div className="course-panel-left" style={{
+        flex: '0 0 calc(64% - 15.36px)',
         display: 'flex',
         flexDirection: 'column',
         height: '100%',
@@ -2069,6 +2243,7 @@ export default function CoursePanel() {
                     setShowEditTeacher(false);
                     setShowAddCourse(false);
                     setShowAddTeacher(false);
+                    setShowDeleteConfirm(false); // Reset confirmation state
                   } else if (!state.globalVars.editTeacher) {
                     // Only toggle if not in teacher edit mode
                     toggleDropdown(subjectName);
@@ -2094,7 +2269,7 @@ export default function CoursePanel() {
 
                   if (filteredTeachers.length === 0 && teacherSearchQuery.trim()) {
                     return (
-                      <li className="text-white/50 text-center py-4 text-sm italic">
+                      <li className="text-white/50 text-center py-4 text-sm italic hover:bg-transparent hover:text-white/50 cursor-default">
                         No teachers found matching "{teacherSearchQuery}"
                       </li>
                     );
@@ -2185,6 +2360,7 @@ export default function CoursePanel() {
                         setShowEditCourse(false);
                         setShowAddCourse(false);
                         setShowAddTeacher(false);
+                        setShowTeacherDeleteConfirm(false); // Reset confirmation state
                       } else if (!state.globalVars.editSub && !state.globalVars.editTeacher) {
                         // In attack mode, prevent clicking on clashing teachers
                         if (state.ui.attackMode && hasClash) {
@@ -2225,9 +2401,9 @@ export default function CoursePanel() {
         </div>
       </div>
 
-      {/* Right Column - 40% minus gap */}
-      <div style={{
-        flex: '0 0 calc(43% - 9.6px)',
+      {/* Right Column - 36% for desktop, 43% for iPad/mobile via CSS */}
+      <div className="course-panel-right" style={{
+        flex: '0 0 calc(36% - 8.64px)',
         display: 'flex',
         flexDirection: 'column',
         height: '100%',
@@ -2695,21 +2871,42 @@ export default function CoursePanel() {
                   <br style={{ display: courseMessage.text ? 'none' : 'inline' }} id="hide_br-edit" />
                 </div>
                 <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'space-between', marginTop: '1rem', paddingTop: '1rem' }}>
-                  <button
-                    type="button"
-                    className="btn btn-danger btn-sm"
-                    id="deleteSubjectEdit"
-                    onClick={handleDeleteCourse}
-                  >
-                    Delete
-                  </button>
-                  <button
-                    type="submit"
-                    className="btn btn-primary btn-sm"
-                    id="saveSubjectEditModal"
-                  >
-                    Save
-                  </button>
+                  {!showDeleteConfirm ? (
+                    <>
+                      <button
+                        type="button"
+                        className="btn btn-danger btn-sm"
+                        id="deleteSubjectEdit"
+                        onClick={handleDeleteCourse}
+                      >
+                        Delete
+                      </button>
+                      <button
+                        type="submit"
+                        className="btn btn-primary btn-sm"
+                        id="saveSubjectEditModal"
+                      >
+                        Save
+                      </button>
+                    </>
+                  ) : (
+                    <>
+                      <button
+                        type="button"
+                        className="btn btn-secondary btn-sm"
+                        onClick={handleCancelDeleteCourse}
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        type="button"
+                        className="btn btn-danger btn-sm"
+                        onClick={handleDeleteCourse}
+                      >
+                        Confirm Delete
+                      </button>
+                    </>
+                  )}
                 </div>
               </form>
             </div>
@@ -3003,21 +3200,42 @@ export default function CoursePanel() {
                   <br id="hide_br_teacher-edit" style={{ display: teacherMessage.text ? 'none' : 'inline' }} />
                 </div>
                 <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'space-between', marginTop: '0.5rem', paddingTop: '0.5rem' }}>
-                  <button
-                    type="button"
-                    className="btn btn-danger btn-sm"
-                    id="deleteTeacherEdit"
-                    onClick={handleDeleteTeacher}
-                  >
-                    Delete
-                  </button>
-                  <button
-                    type="submit"
-                    className="btn btn-primary btn-sm"
-                    id="saveTeacherEdit"
-                  >
-                    Save
-                  </button>
+                  {!showTeacherDeleteConfirm ? (
+                    <>
+                      <button
+                        type="button"
+                        className="btn btn-danger btn-sm"
+                        id="deleteTeacherEdit"
+                        onClick={handleDeleteTeacher}
+                      >
+                        Delete
+                      </button>
+                      <button
+                        type="submit"
+                        className="btn btn-primary btn-sm"
+                        id="saveTeacherEdit"
+                      >
+                        Save
+                      </button>
+                    </>
+                  ) : (
+                    <>
+                      <button
+                        type="button"
+                        className="btn btn-secondary btn-sm"
+                        onClick={handleCancelDeleteTeacher}
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        type="button"
+                        className="btn btn-danger btn-sm"
+                        onClick={handleDeleteTeacher}
+                      >
+                        Confirm Delete
+                      </button>
+                    </>
+                  )}
                 </div>
               </form>
             </div>

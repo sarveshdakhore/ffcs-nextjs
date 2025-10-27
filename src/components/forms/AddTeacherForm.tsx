@@ -172,12 +172,52 @@ export default function AddTeacherForm() {
       // Find the course or create a generic name
       const courseObj = state.courses.find(course => course.code === selectedCourse);
       const courseName = courseObj?.name || 'Unknown Course';
-      const fullCourseName = `${selectedCourse} - ${courseName}`;
+
+      // IMPORTANT: Check if subject already exists with exact key to avoid duplicates
+      // Subjects could be stored in various formats:
+      // 1. "CODE-Name" (with code)
+      // 2. "CODE - Name" (with code and spaces)
+      // 3. "Name" (without code - manually added courses)
+      // 4. Just "CODE" (edge case)
+      let fullCourseName = '';
+      const possibleKeys = [
+        `${selectedCourse}-${courseName}`,     // "BMAT202L-Probability"
+        `${selectedCourse} - ${courseName}`,   // "BMAT202L - Probability"
+        courseName,                             // "Probability" (no code)
+        selectedCourse,                         // "BMAT202L" (just code)
+        `${courseName}-${selectedCourse}`,     // "Probability-BMAT202L" (reversed)
+      ];
+
+      // Find existing subject key
+      for (const key of possibleKeys) {
+        if (state.activeTable.subject[key]) {
+          fullCourseName = key;
+          break;
+        }
+      }
+
+      // If not found, use standard format based on what we have
+      if (!fullCourseName) {
+        if (selectedCourse && courseName && selectedCourse !== courseName) {
+          // Have both code and name: use "CODE-Name" format
+          fullCourseName = `${selectedCourse}-${courseName}`;
+        } else if (courseName) {
+          // Only have name: use just the name
+          fullCourseName = courseName;
+        } else {
+          // Fallback: use code
+          fullCourseName = selectedCourse;
+        }
+      }
 
       console.log(`\n📚 [ADD MULTIPLE] Processing for course: "${fullCourseName}"`);
       console.log(`   - Selected course code: ${selectedCourse}`);
       console.log(`   - Course name: ${courseName}`);
       console.log(`   - Already exists: ${!!state.activeTable.subject[fullCourseName]}`);
+
+      // Get current teachers for the course (for smart slot matching)
+      // IMPORTANT: Must read BEFORE dispatching ADD_SUBJECT to handle state sync correctly
+      let currentTeachers = state.activeTable.subject[fullCourseName]?.teacher || {};
 
       // Ensure the course exists in subject data (add if it doesn't exist)
       if (!state.activeTable.subject[fullCourseName]) {
@@ -189,10 +229,11 @@ export default function AddTeacherForm() {
             credits: courseObj?.credits || 0
           }
         });
+        // Initialize empty teachers object for local tracking since state won't update until next render
+        currentTeachers = {};
+        console.log(`   🔧 Initialized local currentTeachers tracking object`);
       }
 
-      // Get current teachers for the course (for smart slot matching)
-      const currentTeachers = state.activeTable.subject[fullCourseName]?.teacher || {};
       console.log(`   - Existing teachers: ${Object.keys(currentTeachers).length}`);
 
       // Process each teacher
