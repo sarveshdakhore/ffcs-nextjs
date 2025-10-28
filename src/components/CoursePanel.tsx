@@ -505,6 +505,18 @@ export default function CoursePanel() {
     setOpenDropdowns(newOpenDropdowns);
   }, [teacherSearchQuery, activeTable.subject]);
 
+  // When Live FFCS mode is enabled, collapse all and open only the first subject
+  useEffect(() => {
+    if (state.ui.attackMode) {
+      const firstSubjectName = Object.keys(activeTable.subject)[0];
+      if (firstSubjectName) {
+        setOpenDropdowns(new Set([firstSubjectName]));
+      } else {
+        setOpenDropdowns(new Set());
+      }
+    }
+  }, [state.ui.attackMode, activeTable.subject]);
+
   // Restore scroll positions after re-render (runs synchronously before paint)
   useEffect(() => {
     // Restore subject area scroll position

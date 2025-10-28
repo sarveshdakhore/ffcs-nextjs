@@ -26,7 +26,6 @@ export default function Timetable() {
   const [currentTable, setCurrentTable] = useState(state.currentTableId);
   const [showQuickButtons, setShowQuickButtons] = useState(false);
   const [showTableDropdown, setShowTableDropdown] = useState(false);
-  const [isLiveModeEnabled, setIsLiveModeEnabled] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const stateRef = useRef(state);
 
@@ -35,13 +34,6 @@ export default function Timetable() {
     console.log('🔄 Updating stateRef with QV:', state.ui.quickVisualizationEnabled);
     stateRef.current = state;
   }, [state]);
-
-  // Sync isLiveModeEnabled with Redux state
-  useEffect(() => {
-    if (isLiveModeEnabled !== state.ui.attackMode) {
-      setIsLiveModeEnabled(state.ui.attackMode);
-    }
-  }, [state.ui.attackMode]);
 
   // Console log all table data for debugging
   useEffect(() => {
@@ -144,11 +136,6 @@ export default function Timetable() {
     setCurrentTable(state.currentTableId);
   }, [state.currentTableId]);
 
-  // Sync live mode state
-  useEffect(() => {
-    setIsLiveModeEnabled(state.ui.attackModeEnabled || false);
-  }, [state.ui.attackModeEnabled]);
-
   // Get the appropriate schema based on campus
   const getTimetableSchema = (): TimetableSchema => {
     return state.currentCampus === 'Chennai' ? chennaiSchema as TimetableSchema : velloreSchema as TimetableSchema;
@@ -225,12 +212,11 @@ export default function Timetable() {
   };
 
   const handleLiveModeToggle = () => {
-    const newLiveModeState = !isLiveModeEnabled;
-    setIsLiveModeEnabled(newLiveModeState);
-    
-    dispatch({ 
-      type: 'SET_ATTACK_MODE', 
-      payload: { enabled: newLiveModeState } 
+    const newLiveModeState = !state.ui.attackMode;
+
+    dispatch({
+      type: 'SET_ATTACK_MODE',
+      payload: { enabled: newLiveModeState }
     });
   };
 
@@ -392,7 +378,7 @@ export default function Timetable() {
     consideredSlots: string[];
   } => {
     // Determine data source based on mode
-    const dataSource = isLiveModeEnabled ? state.activeTable.attackData : state.activeTable.data;
+    const dataSource = state.ui.attackMode ? state.activeTable.attackData : state.activeTable.data;
     
     // Step 1: Get slots used by THIS specific course (getSlotsOfCourse equivalent)
     const slotsOfCourse = getSlotsOfCourse(courseName, dataSource);
@@ -745,7 +731,7 @@ export default function Timetable() {
     const cellsByDayAndIndex: { [day: string]: { [index: number]: CellData } } = {};
 
     // FIRST PASS: Collect all cell data organized by day and index
-    const dataToCheck = isLiveModeEnabled ? state.activeTable.attackData : state.activeTable.data;
+    const dataToCheck = state.ui.attackMode ? state.activeTable.attackData : state.activeTable.data;
 
     DAYS.forEach(day => {
       cellsByDayAndIndex[day] = {};
@@ -877,13 +863,13 @@ export default function Timetable() {
           const labSlot = parts[1]?.trim() || null;
 
           // Check for courses in this slot (live mode or normal mode)
-          const dataToCheck = isLiveModeEnabled ? state.activeTable.attackData : state.activeTable.data;
+          const dataToCheck = state.ui.attackMode ? state.activeTable.attackData : state.activeTable.data;
           const coursesInSlot = dataToCheck.filter(course =>
             course.slots.includes(theorySlot) || (labSlot && course.slots.includes(labSlot))
           );
 
           // Check if this specific cell is highlighted in quick array
-          const quickArray = isLiveModeEnabled ? state.activeTable.attackQuick : state.activeTable.quick;
+          const quickArray = state.ui.attackMode ? state.activeTable.attackQuick : state.activeTable.quick;
           const dayRowMap: { [key: string]: number } = {
             mon: 2, tue: 3, wed: 4, thu: 5, fri: 6, sat: 7, sun: 8
           };
@@ -1046,14 +1032,14 @@ export default function Timetable() {
       if (positions.length === 0) return;
 
       // Check if tile is visually highlighted (ALL cells highlighted, either 2-element OR 3-element)
-      const quickArray = isLiveModeEnabled ? state.activeTable.attackQuick : state.activeTable.quick;
+      const quickArray = state.ui.attackMode ? state.activeTable.attackQuick : state.activeTable.quick;
       const isHighlighted = positions.every(([r, c]) =>
         quickArray.some((entry: any[]) => entry[0] === r && entry[1] === c)
       );
 
       // FFCSonTheGo logic: Prevent click in attack mode if slot is in slotsForAttack and NOT highlighted
       // This blocks clicks when the tile is not fully highlighted AND the slot clashes with existing selections
-      if (isLiveModeEnabled && !isHighlighted) {
+      if (state.ui.attackMode && !isHighlighted) {
         const occupied = getSlotsForAttack();
         if (occupied.includes(slot)) {
           console.log(`🚫 Blocking ${slot} tile click in attack mode: slot is in slotsForAttack but tile not highlighted`);
@@ -1062,7 +1048,7 @@ export default function Timetable() {
       }
 
       // Check if all cells are empty (no courses) and no clash class
-      const dataToCheck = isLiveModeEnabled ? state.activeTable.attackData : state.activeTable.data;
+      const dataToCheck = state.ui.attackMode ? state.activeTable.attackData : state.activeTable.data;
       const hasCourses = dataToCheck.some(course => course.slots.includes(slot));
 
       if (hasCourses) {
@@ -1078,7 +1064,7 @@ export default function Timetable() {
 
     const renderButton = (slot: string) => {
       // Check if this slot is highlighted in quick array (QV tile highlights have third parameter true)
-      const quickArray = isLiveModeEnabled ? state.activeTable.attackQuick : state.activeTable.quick;
+      const quickArray = state.ui.attackMode ? state.activeTable.attackQuick : state.activeTable.quick;
       
       // Define where each theory slot appears in the timetable based on dayRowsData
       // Column mapping: dayRowsData index 0-5 -> table col 1-6, index 6-12 -> table col 8-14 (lunch at col 7)
@@ -1107,7 +1093,7 @@ export default function Timetable() {
         })
       );
 
-      const dataToCheck = isLiveModeEnabled ? state.activeTable.attackData : state.activeTable.data;
+      const dataToCheck = state.ui.attackMode ? state.activeTable.attackData : state.activeTable.data;
       const hasCoursesInSlot = dataToCheck.some(course =>
         course.slots.includes(slot)
       );
@@ -1191,14 +1177,14 @@ export default function Timetable() {
       if (positions.length === 0) return;
 
       // Check if tile is visually highlighted (ALL cells highlighted, either 2-element OR 3-element)
-      const quickArray = isLiveModeEnabled ? state.activeTable.attackQuick : state.activeTable.quick;
+      const quickArray = state.ui.attackMode ? state.activeTable.attackQuick : state.activeTable.quick;
       const isHighlighted = positions.every(([r, c]) =>
         quickArray.some((entry: any[]) => entry[0] === r && entry[1] === c)
       );
 
       // FFCSonTheGo logic: Prevent click in attack mode if slot is in slotsForAttack and NOT highlighted
       // This blocks clicks when the tile is not fully highlighted AND the slot clashes with existing selections
-      if (isLiveModeEnabled && !isHighlighted) {
+      if (state.ui.attackMode && !isHighlighted) {
         const occupied = getSlotsForAttack();
         if (occupied.includes(slot)) {
           console.log(`🚫 Blocking ${slot} tile click in attack mode: slot is in slotsForAttack but tile not highlighted`);
@@ -1207,7 +1193,7 @@ export default function Timetable() {
       }
 
       // Check if all cells are empty (no courses) and no clash class
-      const dataToCheck = isLiveModeEnabled ? state.activeTable.attackData : state.activeTable.data;
+      const dataToCheck = state.ui.attackMode ? state.activeTable.attackData : state.activeTable.data;
       const hasCourses = dataToCheck.some(course => course.slots.includes(slot));
 
       if (hasCourses) {
@@ -1223,7 +1209,7 @@ export default function Timetable() {
 
     const renderButton = (slot: string) => {
       // Check if this slot is highlighted in quick array (QV tile highlights have third parameter true)
-      const quickArray = isLiveModeEnabled ? state.activeTable.attackQuick : state.activeTable.quick;
+      const quickArray = state.ui.attackMode ? state.activeTable.attackQuick : state.activeTable.quick;
       
       // Define where each theory slot appears in the timetable based on dayRowsData
       // Row indices: theory=0, lab=1, mon=2, tue=3, wed=4, thu=5, fri=6, sat=7, sun=8
@@ -1253,7 +1239,7 @@ export default function Timetable() {
         })
       );
 
-      const dataToCheck = isLiveModeEnabled ? state.activeTable.attackData : state.activeTable.data;
+      const dataToCheck = state.ui.attackMode ? state.activeTable.attackData : state.activeTable.data;
       const hasCoursesInSlot = dataToCheck.some(course =>
         course.slots.includes(slot)
       );
