@@ -2318,11 +2318,43 @@ export default function CoursePanel() {
                   let teachersToRender: [string, any][];
 
                   if (state.globalVars.editTeacher) {
-                    // Edit mode: use original sorted order
-                    teachersToRender = filteredTeachers;
+                    // Edit mode: Use same morning/evening grouping as normal mode (preserve order)
+                    const morningTeachers: [string, any][] = [];
+                    const eveningTeachers: [string, any][] = [];
+
+                    filteredTeachers.forEach(([name, data]) => {
+                      if (name.includes('(E)')) {
+                        eveningTeachers.push([name, data]);
+                      } else {
+                        morningTeachers.push([name, data]);
+                      }
+                    });
+
+                    // Apply same morning priority logic as normal mode
+                    if (state.ui.morningPriority) {
+                      teachersToRender = [...morningTeachers, ...eveningTeachers];
+                    } else {
+                      teachersToRender = [...eveningTeachers, ...morningTeachers];
+                    }
                   } else if (state.ui.attackMode) {
-                    // Attack mode (Live FFCS): ALL disabled at bottom regardless of morning/evening
-                    teachersToRender = [...enabledTeachers, ...disabledTeachers];
+                    // Attack mode (Live FFCS): Sort enabled by morning/evening, then ALL disabled at bottom
+                    const enabledMorning: [string, any][] = [];
+                    const enabledEvening: [string, any][] = [];
+
+                    enabledTeachers.forEach(([name, data]) => {
+                      if (name.includes('(E)')) {
+                        enabledEvening.push([name, data]);
+                      } else {
+                        enabledMorning.push([name, data]);
+                      }
+                    });
+
+                    // Apply morning priority setting, then add ALL disabled at bottom
+                    if (state.ui.morningPriority) {
+                      teachersToRender = [...enabledMorning, ...enabledEvening, ...disabledTeachers];
+                    } else {
+                      teachersToRender = [...enabledEvening, ...enabledMorning, ...disabledTeachers];
+                    }
                   } else {
                     // Normal mode: disabled at bottom within their morning/evening section
                     // Split enabled and disabled by morning/evening
