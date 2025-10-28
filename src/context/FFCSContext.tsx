@@ -1959,6 +1959,7 @@ function ffcsReducer(state: FFCSState, action: FFCSAction): FFCSState {
       // Update UI state and ensure activeTable is synced from timetableStoragePref
       const currentTable = state.timetableStoragePref.find(t => t.id === state.currentTableId) || state.activeTable;
 
+      // Force a fresh copy to trigger React re-renders
       return {
         ...state,
         ui: {
@@ -1966,7 +1967,13 @@ function ffcsReducer(state: FFCSState, action: FFCSAction): FFCSState {
           attackMode: action.payload.enabled,
           attackModeEnabled: action.payload.enabled
         },
-        activeTable: currentTable // Sync activeTable from storage to preserve attackQuick data
+        activeTable: {
+          ...currentTable,
+          // Ensure quick arrays are fresh references to trigger re-renders
+          quick: [...currentTable.quick],
+          attackQuick: [...currentTable.attackQuick]
+        },
+        forceUpdateCounter: state.forceUpdateCounter + 1 // Force update to trigger re-renders
       };
     }
 
