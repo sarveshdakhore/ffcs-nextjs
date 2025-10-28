@@ -21,11 +21,15 @@ import {
   slotsForAttack,
   getSlots
 } from '@/utils/timetableHelpers';
-import { 
-  parseTextToListForMultipleAdd, 
-  validateTeacherData, 
-  processTeacherName 
+import {
+  parseTextToListForMultipleAdd,
+  validateTeacherData,
+  processTeacherName
 } from '@/utils/teacherUtils';
+import {
+  parseCoursesFromText,
+  groupTheoryAndLab
+} from '@/utils/courseUtils';
 import { CourseData } from '@/context/FFCSContext';
 
 export default function CoursePanel() {
@@ -48,6 +52,11 @@ export default function CoursePanel() {
   // Multiple teachers modal states
   const [multipleTeachersText, setMultipleTeachersText] = useState('');
   const [multipleError, setMultipleError] = useState('');
+
+  // Multiple courses modal states
+  const [showMultipleCoursesModal, setShowMultipleCoursesModal] = useState(false);
+  const [multipleCoursesText, setMultipleCoursesText] = useState('');
+  const [multipleCourseError, setMultipleCourseError] = useState('');
 
   // Scroll position preservation
   const scrollPositionsRef = useRef<Map<string, number>>(new Map());
@@ -1856,6 +1865,79 @@ export default function CoursePanel() {
     }
   };
 
+  // Process multiple courses from pasted data
+  const processMultipleCourses = () => {
+    console.log('🔄 Processing multiple courses...');
+
+    if (!multipleCoursesText.trim()) {
+      setMultipleCourseError('Please paste course data');
+      return;
+    }
+
+    try {
+      // Parse the text input with dynamic column detection
+      const parsedCourses = parseCoursesFromText(multipleCoursesText);
+
+      if (parsedCourses.length === 0) {
+        setMultipleCourseError('No valid courses found. Please check the format.');
+        return;
+      }
+
+      console.log(`📝 Parsed ${parsedCourses.length} courses`);
+
+      // Group theory + lab courses
+      const groupedCourses = groupTheoryAndLab(parsedCourses);
+
+      console.log(`🔗 Grouped into ${groupedCourses.length} courses (theory with combined credits)`);
+
+      let addedCount = 0;
+      let skippedCount = 0;
+
+      groupedCourses.forEach((course) => {
+        const fullCourseName = `${course.courseCode}-${course.courseName}`;
+
+        // Check if course already exists
+        if (state.activeTable.subject[fullCourseName]) {
+          console.log(`   ⏭️  Skipped: "${fullCourseName}" (already exists)`);
+          skippedCount++;
+          return;
+        }
+
+        // Add course to timetable
+        dispatch({
+          type: 'ADD_SUBJECT',
+          payload: {
+            courseName: fullCourseName,
+            credits: course.credits
+          }
+        });
+
+        console.log(`   ✅ Added: "${fullCourseName}" (${course.credits} credits)`);
+        addedCount++;
+      });
+
+      // Show success message
+      setCourseMessage({
+        text: `✅ Successfully added ${addedCount} course${addedCount !== 1 ? 's' : ''} ${skippedCount > 0 ? `(${skippedCount} skipped - duplicate${skippedCount !== 1 ? 's' : ''})` : ''}`,
+        color: 'green'
+      });
+
+      // Clear form and close modal
+      setMultipleCoursesText('');
+      setMultipleCourseError('');
+      setShowMultipleCoursesModal(false);
+
+      // Clear success message after 5 seconds
+      setTimeout(() => {
+        setCourseMessage({ text: '', color: '' });
+      }, 5000);
+
+    } catch (err) {
+      console.error('Error processing multiple courses:', err);
+      setMultipleCourseError('Error parsing course data. Please check the format and try again.');
+    }
+  };
+
   // Helper to get cell slot text by row and column (complete mapping from vellore.json)
   const getCellSlotText = (row: number, col: number): string[] => {
     // Complete mapping based on vellore.json schema
@@ -2901,7 +2983,16 @@ export default function CoursePanel() {
                   </span>
                   <br style={{ display: courseMessage.text ? 'none' : 'inline' }} id="hide_br" />
                 </div>
-                <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '1rem', paddingTop: '1rem' }}>
+                <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.5rem', marginTop: '1rem', paddingTop: '1rem' }}>
+                  <button
+                    className="btn btn-success btn-sm"
+                    type="button"
+                    id="addMultipleCourse"
+                    onClick={() => setShowMultipleCoursesModal(true)}
+                  >
+                    <i className="fas fa-plus"></i>
+                    <span>&nbsp;&nbsp;Add Multiple</span>
+                  </button>
                   <button
                     type="submit"
                     className="btn btn-primary btn-sm"
@@ -3441,6 +3532,71 @@ export default function CoursePanel() {
                   }}
                 >
                   Add
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Add Multiple Courses Modal */}
+      {showMultipleCoursesModal && (
+        <div
+          className="modal fade show"
+          style={{
+            display: 'block',
+            backgroundColor: 'rgba(0, 0, 0, 0.5)',
+            zIndex: 1055
+          }}
+          tabIndex={-1}
+        >
+          <div className="modal-dialog">
+            <div className="modal-content">
+              <div className="modal-header">
+                <h5 className="modal-title">Add Multiple Courses</h5>
+                <button
+                  type="button"
+                  className="btn-close"
+                  onClick={() => setShowMultipleCoursesModal(false)}
+                ></button>
+              </div>
+              <div className="modal-body">
+                <label htmlFor="courses-input"><strong>Paste Course Data Here:</strong></label>
+                <p style={{ fontSize: '0.875rem', color: '#6c757d', marginTop: '0.25rem' }}>
+                  Copy the course data from your curriculum table and paste it here.
+                </p>
+                <textarea
+                  className="form-control"
+                  id="courses-input"
+                  rows={10}
+                  placeholder="Paste your course data here (should include Course Code, Course Name, Credits, etc.)"
+                  value={multipleCoursesText}
+                  onChange={(e) => setMultipleCoursesText(e.target.value)}
+                ></textarea>
+
+                {multipleCourseError && (
+                  <div className="alert alert-danger mt-2" role="alert">
+                    {multipleCourseError}
+                  </div>
+                )}
+              </div>
+              <div className="modal-footer">
+                <button
+                  type="button"
+                  className="btn btn-secondary"
+                  onClick={() => setShowMultipleCoursesModal(false)}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-primary"
+                  onClick={() => {
+                    processMultipleCourses();
+                    setShowMultipleCoursesModal(false);
+                  }}
+                >
+                  Add Courses
                 </button>
               </div>
             </div>
