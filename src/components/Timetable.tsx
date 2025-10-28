@@ -36,6 +36,13 @@ export default function Timetable() {
     stateRef.current = state;
   }, [state]);
 
+  // Sync isLiveModeEnabled with Redux state
+  useEffect(() => {
+    if (isLiveModeEnabled !== state.ui.attackMode) {
+      setIsLiveModeEnabled(state.ui.attackMode);
+    }
+  }, [state.ui.attackMode]);
+
   // Console log all table data for debugging
   useEffect(() => {
     console.log('📊 TIMETABLE DATA:', {
@@ -1039,14 +1046,14 @@ export default function Timetable() {
       if (positions.length === 0) return;
 
       // Check if tile is visually highlighted (ALL cells highlighted, either 2-element OR 3-element)
-      const quickArray = state.ui.attackMode ? state.activeTable.attackQuick : state.activeTable.quick;
+      const quickArray = isLiveModeEnabled ? state.activeTable.attackQuick : state.activeTable.quick;
       const isHighlighted = positions.every(([r, c]) =>
         quickArray.some((entry: any[]) => entry[0] === r && entry[1] === c)
       );
 
       // FFCSonTheGo logic: Prevent click in attack mode if slot is in slotsForAttack and NOT highlighted
       // This blocks clicks when the tile is not fully highlighted AND the slot clashes with existing selections
-      if (state.ui.attackMode && !isHighlighted) {
+      if (isLiveModeEnabled && !isHighlighted) {
         const occupied = getSlotsForAttack();
         if (occupied.includes(slot)) {
           console.log(`🚫 Blocking ${slot} tile click in attack mode: slot is in slotsForAttack but tile not highlighted`);
@@ -1055,7 +1062,7 @@ export default function Timetable() {
       }
 
       // Check if all cells are empty (no courses) and no clash class
-      const dataToCheck = state.ui.attackMode ? state.activeTable.attackData : state.activeTable.data;
+      const dataToCheck = isLiveModeEnabled ? state.activeTable.attackData : state.activeTable.data;
       const hasCourses = dataToCheck.some(course => course.slots.includes(slot));
 
       if (hasCourses) {
@@ -1184,14 +1191,14 @@ export default function Timetable() {
       if (positions.length === 0) return;
 
       // Check if tile is visually highlighted (ALL cells highlighted, either 2-element OR 3-element)
-      const quickArray = state.ui.attackMode ? state.activeTable.attackQuick : state.activeTable.quick;
+      const quickArray = isLiveModeEnabled ? state.activeTable.attackQuick : state.activeTable.quick;
       const isHighlighted = positions.every(([r, c]) =>
         quickArray.some((entry: any[]) => entry[0] === r && entry[1] === c)
       );
 
       // FFCSonTheGo logic: Prevent click in attack mode if slot is in slotsForAttack and NOT highlighted
       // This blocks clicks when the tile is not fully highlighted AND the slot clashes with existing selections
-      if (state.ui.attackMode && !isHighlighted) {
+      if (isLiveModeEnabled && !isHighlighted) {
         const occupied = getSlotsForAttack();
         if (occupied.includes(slot)) {
           console.log(`🚫 Blocking ${slot} tile click in attack mode: slot is in slotsForAttack but tile not highlighted`);
@@ -1200,7 +1207,7 @@ export default function Timetable() {
       }
 
       // Check if all cells are empty (no courses) and no clash class
-      const dataToCheck = state.ui.attackMode ? state.activeTable.attackData : state.activeTable.data;
+      const dataToCheck = isLiveModeEnabled ? state.activeTable.attackData : state.activeTable.data;
       const hasCourses = dataToCheck.some(course => course.slots.includes(slot));
 
       if (hasCourses) {
