@@ -80,8 +80,8 @@ export function parseCoursesFromText(text: string): ParsedCourseData[] {
     let ltpjcFound = false;
     for (let i = 0; i <= rightColumns.length - 5; i++) {
       const slice = rightColumns.slice(i, i + 5);
-      if (slice.every(col => /^\d+$/.test(col))) {
-        const numbers = slice.map(n => parseInt(n, 10));
+      if (slice.every(col => /^\d+(\.\d+)?$/.test(col))) {
+        const numbers = slice.map(n => parseFloat(n));
         credits = numbers[4]; // C is at index 4 (0=L, 1=T, 2=P, 3=J, 4=C)
         ltpjcFound = true;
         console.log(`   ✅ Found L-T-P-J-C: [${numbers.join(', ')}], Credits = ${credits}`);
@@ -92,8 +92,8 @@ export function parseCoursesFromText(text: string): ParsedCourseData[] {
     // Strategy 2: If L-T-P-J-C not found, look for any single number < 15
     if (!ltpjcFound) {
       const validCredits = rightColumns
-        .filter(col => /^\d+$/.test(col))
-        .map(n => parseInt(n, 10))
+        .filter(col => /^\d+(\.\d+)?$/.test(col))
+        .map(n => parseFloat(n))
         .filter(n => n > 0 && n < 15);
 
       if (validCredits.length > 0) {
