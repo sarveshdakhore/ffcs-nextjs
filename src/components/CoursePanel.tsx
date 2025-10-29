@@ -1663,6 +1663,20 @@ export default function CoursePanel() {
           return;
         }
 
+        // Skip header rows - check if any field contains common header keywords
+        const headerKeywords = ['FACULTY', 'SLOTDETAIL', 'SLOT DETAIL', 'VENUE', 'EMPLOYEE', 'NAME', 'COURSE', 'CODE'];
+        const isHeader = headerKeywords.some(keyword =>
+          teacherData.faculty.toUpperCase().includes(keyword) ||
+          teacherData.slots.toUpperCase().includes(keyword) ||
+          teacherData.venue.toUpperCase().includes(keyword)
+        );
+
+        if (isHeader) {
+          console.log(`⏭️  Skipping header row at index ${index}:`, teacherData);
+          skippedCount++;
+          return;
+        }
+
         // Apply original character filtering rules
         const rawTeacherName = teacherData.faculty.trim().toUpperCase();
         const cleanedTeacherName = applyOriginalCharacterFiltering(rawTeacherName);
