@@ -126,15 +126,15 @@ export function parseCoursesFromText(text: string): ParsedCourseData[] {
 
 /**
  * Groups theory and lab courses together, combining their credits
- * Only returns theory courses with combined credits
+ * Returns theory courses with combined credits, and standalone lab courses
  * @param courses - Array of parsed course data
- * @returns Array of grouped course data (theory only with combined credits)
+ * @returns Array of grouped course data (theory with combined credits, or standalone labs)
  */
 export function groupTheoryAndLab(courses: ParsedCourseData[]): ParsedCourseData[] {
   const grouped = new Map<string, ParsedCourseData>();
 
   for (const course of courses) {
-    // Only add theory courses to the final list
+    // Add theory courses to the final list
     if (course.isTheory) {
       // Check if corresponding lab course exists
       const labCourse = courses.find(c =>
@@ -150,6 +150,21 @@ export function groupTheoryAndLab(courses: ParsedCourseData[]): ParsedCourseData
         ...course,
         credits: totalCredits
       });
+    }
+  }
+
+  // Add standalone lab courses (no corresponding theory course)
+  for (const course of courses) {
+    if (course.isLab) {
+      const theoryCourse = courses.find(c =>
+        c.baseCode === course.baseCode && c.isTheory
+      );
+
+      // Only add if no theory course exists
+      if (!theoryCourse) {
+        console.log(`   🧪 Adding standalone lab: ${course.baseCode} (${course.credits} credits)`);
+        grouped.set(course.baseCode, course);
+      }
     }
   }
 
