@@ -440,7 +440,8 @@ export default function CoursePanel() {
     clearPanel();
   };
 
-  // Sort teachers by color priority (Green > Orange > Red), clash status, and morning/evening preference
+  // Sort teachers by color only (Green > Orange > Red), preserving insertion order
+  // This provides the base sorting that will be used by rendering logic
   const sortTeachersByColor = (teachers: { [key: string]: any } | undefined, courseName: string): [string, any][] => {
     // Handle undefined or null teachers
     if (!teachers) {
@@ -460,13 +461,12 @@ export default function CoursePanel() {
       'rgb(255, 205, 205)': 3, // Light red (legacy) - lowest priority
     };
 
-    // Sort by color ONLY (both in edit mode and normal mode)
-    // Color is the ONLY sorting criteria - preserve insertion order within each color
+    // Sort by color only, preserve insertion order within same color
     return teacherEntries.sort(([_nameA, teacherDataA], [_nameB, teacherDataB]) => {
       const priorityA = colorPriority[teacherDataA.color as keyof typeof colorPriority] || 4;
       const priorityB = colorPriority[teacherDataB.color as keyof typeof colorPriority] || 4;
 
-      // Sort by color priority only (Green=1 > Orange=2 > Red=3)
+      // Sort by color priority (Green=1 > Orange=2 > Red=3)
       if (priorityA !== priorityB) {
         return priorityA - priorityB;
       }
@@ -2426,10 +2426,12 @@ export default function CoursePanel() {
                   let teachersToRender: [string, any][];
 
                   if (state.globalVars.editTeacher) {
-                    // Edit mode: Use same morning/evening grouping as normal mode (preserve order)
+                    // Edit mode: filteredTeachers is sorted by color, now split by morning/evening
+                    // Priority: 1) Time group 2) Color (already sorted) 3) Insertion order
                     const morningTeachers: [string, any][] = [];
                     const eveningTeachers: [string, any][] = [];
 
+                    // Split while preserving color order
                     filteredTeachers.forEach(([name, data]) => {
                       if (name.includes('(E)')) {
                         eveningTeachers.push([name, data]);
@@ -2438,7 +2440,7 @@ export default function CoursePanel() {
                       }
                     });
 
-                    // Apply same morning priority logic as normal mode
+                    // Merge based on toggle (morning/evening priority)
                     if (state.ui.morningPriority) {
                       teachersToRender = [...morningTeachers, ...eveningTeachers];
                     } else {
